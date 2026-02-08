@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCIM Validator</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}" href="/favicon.svg">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f5f6f8; color: #202124; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .site-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 14px; border-bottom: 1px solid #d8dbe1; margin-bottom: 20px; gap: 12px; }
+        .site-header-brand h2 { margin: 0; font-size: 1.2rem; }
+        .site-header-user { display: flex; align-items: center; gap: 10px; }
+        .user-name { font-size: 13px; color: #4b5563; }
+        .logout-form { margin: 0; }
+        .logout-button { margin-top: 0; padding: 8px 14px; background: #374151; color: #fff; font-size: 13px; }
+        .card { background: #fff; border: 1px solid #d8dbe1; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 20px; font-size: 14px; }
+        .key { font-weight: 700; }
+        .status-success { color: #166534; font-weight: 700; }
+        .status-failed, .status-aborted, .status-error { color: #b91c1c; font-weight: 700; }
+        pre { white-space: pre-wrap; word-break: break-word; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 12px; }
+        .exchange { border: 1px solid #e6e8ee; border-radius: 6px; margin: 10px 0; }
+        .exchange summary { cursor: pointer; padding: 10px; font-weight: 600; }
+        .exchange-content { padding: 10px; border-top: 1px solid #e6e8ee; }
+        .overview-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .overview-table th, .overview-table td { border: 1px solid #e6e8ee; padding: 8px; text-align: left; vertical-align: top; }
+        .overview-table th { background: #f8fafc; }
+        .expand-link { font-weight: 600; border: 0; background: transparent; color: #1d4ed8; cursor: pointer; padding: 0; font-size: 14px; }
+        .details-row { display: none; }
+        .details-row.is-open { display: table-row; }
+        .details-panel { background: #fcfdff; }
+        a { color: #1d4ed8; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="site-header">
+        <div class="site-header-brand">
+            <h2>SCIM Validator</h2>
+        </div>
+        <div class="site-header-user">
+            <span class="user-name" th:text="${currentUser}">User</span>
+            <form method="post" th:action="@{/logout}" class="logout-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </header>
+    <div class="card">
+        <h1>Validation Run</h1>
+        <p><a th:href="@{/}">← Back to runs</a></p>
+        <div class="meta">
+            <div><span class="key">ID:</span> <span th:text="${run.id}">id</span></div>
+            <div><span class="key">Name:</span> <span th:text="${run.name}">name</span></div>
+            <div><span class="key">Owner:</span> <span th:text="${run.createdByUsername}">owner</span></div>
+            <div><span class="key">Target URL:</span> <span th:text="${run.targetUrl}">url</span></div>
+            <div><span class="key">Date:</span> <span th:text="${#temporals.format(run.executedAt, 'yyyy-MM-dd HH:mm:ssXXX')}">date</span></div>
+            <div><span class="key">Status:</span> <span th:text="${run.status}" th:classappend="${'status-' + #strings.toLowerCase(run.status)}">status</span></div>
+            <div><span class="key">Result:</span> <span th:text="${run.passedTests + ' passed / ' + run.failedTests + ' failed / ' + run.totalTests + ' total'}">summary</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Individual Test Results</h2>
+        <div th:if="${#lists.isEmpty(tests)}">No test results recorded.</div>
+
+        <div th:if="${!#lists.isEmpty(tests)}">
+            <table class="overview-table">
+                <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Test</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+                </thead>
+                <tbody>
+                <th:block th:each="test : ${tests}">
+                    <tr>
+                        <td th:text="${test.className}">specs.A1_ServiceDiscoverySpec</td>
+                        <td th:text="${test.displayName}">ServiceProviderConfig response is valid and contains required fields</td>
+                        <td>
+                            <span th:text="${test.status}" th:classappend="${'status-' + #strings.toLowerCase(test.status)}">SUCCESS</span>
+                        </td>
+                        <td><button type="button" class="expand-link" th:attr="data-target=${'details-' + test.id}">Expand</button></td>
+                    </tr>
+                    <tr class="details-row" th:id="${'details-' + test.id}">
+                        <td colspan="4" class="details-panel">
+                            <div>
+                                <strong>Time:</strong>
+                                <span th:text="${#temporals.format(test.startedAt, 'HH:mm:ss') + ' → ' + #temporals.format(test.finishedAt, 'HH:mm:ss')}">time</span>
+                            </div>
+
+                            <div th:if="${test.errorMessage != null}">
+                                <strong>Error:</strong>
+                                <pre th:text="${test.errorMessage}">error</pre>
+                            </div>
+                            <div th:if="${test.stackTrace != null}">
+                                <strong>Stack Trace:</strong>
+                                <pre th:text="${test.stackTrace}">stack</pre>
+                            </div>
+
+                            <h3>Requests and Responses</h3>
+                            <div th:if="${#lists.isEmpty(test.exchanges)}">No exchanges recorded for this test.</div>
+                            <details th:each="exchange : ${test.exchanges}" class="exchange">
+                                <summary th:text="${'#' + exchange.sequenceNumber + ' ' + exchange.method + ' ' + exchange.displayUrl + ' → ' + exchange.responseStatus}">exchange</summary>
+                                <div class="exchange-content">
+                                    <strong>Request URL</strong>
+                                    <pre th:text="${exchange.displayUrl}">request url</pre>
+                                    <strong>Request Headers</strong>
+                                    <pre th:text="${exchange.requestHeaders}">request headers</pre>
+                                    <strong>Request Body</strong>
+                                    <pre th:text="${exchange.requestBody}">request body</pre>
+                                    <strong>Response Headers</strong>
+                                    <pre th:text="${exchange.responseHeaders}">response headers</pre>
+                                    <strong>Response Body</strong>
+                                    <pre th:text="${exchange.responseBody}">response body</pre>
+                                </div>
+                            </details>
+                        </td>
+                    </tr>
+                </th:block>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    document.querySelectorAll('.expand-link[data-target]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var targetId = button.getAttribute('data-target');
+            if (!targetId) {
+                return;
+            }
+            var detailsRow = document.getElementById(targetId);
+            if (!detailsRow) {
+                return;
+            }
+
+            var isOpen = detailsRow.classList.toggle('is-open');
+            button.textContent = isOpen ? 'Collapse' : 'Expand';
+        });
+    });
+</script>
+</body>
+</html>

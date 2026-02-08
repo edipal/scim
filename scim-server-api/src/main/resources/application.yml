@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: scim-server-api
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+logging:
+  level:
+    "[com.scimplayground]": DEBUG
+    "[org.springframework.security]": WARN

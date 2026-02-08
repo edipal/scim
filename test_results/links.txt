@@ -1,0 +1,3 @@
+https://developer.okta.com/docs/guides/scim-provisioning-integration-prepare/main/#test-your-scim-api
+https://scimvalidator.microsoft.com/
+https://verify.scim.dev/

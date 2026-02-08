@@ -1,0 +1,4758 @@
+{
+  "assertion_count": 53,
+  "assertion_success": 53,
+  "bucket_key": "4lbityhzisho",
+  "bucket_level_test_run_uuid": null,
+  "created_at": 1770888970.605544,
+  "csv_base_event_uuid": null,
+  "environment_name": "Test Settings",
+  "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+  "error_count": 0,
+  "extractor_count": 3,
+  "extractor_success": 3,
+  "finished_at": 1770889089.8759239,
+  "id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+  "is_csv_rerun": false,
+  "is_data_driven": false,
+  "message_count": 12,
+  "message_success": 12,
+  "messages": [
+    {
+      "context": {
+        "InvalidUserEmail": "abcdefgh@atko.com",
+        "SCIMBaseURL": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2",
+        "UserIdThatDoesNotExist": "010101001010101011001010101011",
+        "auth": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+        "randomEmail": "Runscope021Gmqvpiygh559@atko.com",
+        "randomFamilyName": "Gmqvpiygh559",
+        "randomGivenName": "Runscope021",
+        "randomUsername": "Runscope021Gmqvpiygh559@atko.com",
+        "randomUsernameCaps": "RUNSCOPE021GMQVPIYGH559@ATKO.COM"
+      },
+      "csv_context": [],
+      "environment_auth": {},
+      "environment_headers": {},
+      "result": [
+        {
+          "assertions": null,
+          "error": "",
+          "log": "",
+          "result": true,
+          "script": {
+            "uuid": "",
+            "value": "function generate_lastname()\n{\n    var lastname = \"\";\n    var lower_alphabets = \"abcdefghijklmnopqrstuvwxyz\";\n    var upper_alphabets = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";\n    var digits = \"0123456789\";\n    \n    lastname += upper_alphabets.charAt(Math.floor(Math.random() * upper_alphabets.length));\n\n    for( var i=0; i < 8; i++ )\n        lastname += lower_alphabets.charAt(Math.floor(Math.random() * lower_alphabets.length));\n\n    for( var j=0; j < 3; j++ )\n        lastname += digits.charAt(Math.floor(Math.random() * digits.length));\n\n    return lastname;\n}\n\nfunction generate_firstname()\n{\n    var firstname = \"Runscope\";\n    var digits = \"0123456789\";\n    for( var j=0; j < 3; j++ )\n        firstname += digits.charAt(Math.floor(Math.random() * digits.length));\n    return firstname;    \n}\n\nvar firstname = generate_firstname();\nvar lastname = generate_lastname();\nvar email = firstname + lastname + \"@atko.com\";\n\nvariables.set(\"randomGivenName\", firstname);\nvariables.set(\"randomFamilyName\", lastname);\nvariables.set(\"randomEmail\", email);\nvariables.set(\"randomUsername\", email);\nvariables.set(\"InvalidUserEmail\", \"abcdefgh@atko.com\");\nvariables.set(\"UserIdThatDoesNotExist\", \"010101001010101011001010101011\");\nvariables.set(\"randomUsernameCaps\",email.toUpperCase());"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "rank": -1,
+        "step_type": "initial"
+      },
+      "template_uuid": "fde7ecde-3519-4aed-9b11-3b99a8da6376"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "e3b23a13-22e2-41c5-8020-a573db49d8b8",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "data": "",
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770888972.2506483,
+              "dial_end_ts": 1770888971.857716,
+              "dial_start_ts": 1770888971.8476555,
+              "first_response_byte_ts": 1770888972.2506094,
+              "get_conn_end_ts": 1770888971.8715022,
+              "get_conn_start_ts": 1770888971.8464797,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "52.8.87.87:443",
+              "request_body_done_ts": 1770888971.8715308,
+              "request_header_done_ts": 1770888971.8715296,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "52.8.87.87:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770888971.8476274,
+              "start_ts": 1770888971.8465116,
+              "whitelist_dns_check_done_ts": 1770888971.8464494,
+              "whitelist_dns_check_start_ts": 1770888971.8406126
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?count=1&startIndex=1",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-ghw5l",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770888971.846462,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?count=1&startIndex=1",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {
+            "count": [
+              "1"
+            ],
+            "startIndex": [
+              "1"
+            ]
+          },
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "raw_body": "",
+          "request_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:ListResponse\"],\"totalResults\":1,\"startIndex\":1,\"itemsPerPage\":1,\"Resources\":[{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"id\":\"e68443de-ef90-4736-b508-96fa45699b2f\",\"userName\":\"test11111111111\",\"name\":{\"familyName\":\"Doe\",\"givenName\":\"Joe\"},\"active\":true,\"emails\":[{\"value\":\"test@test.de\",\"type\":\"work\",\"primary\":true}],\"meta\":{\"resourceType\":\"User\",\"created\":\"2026-02-12T09:30:41.359725Z\",\"lastModified\":\"2026-02-12T09:35:59.864093Z\",\"location\":\"https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e68443de-ef90-4736-b508-96fa45699b2f\",\"version\":\"W/\\\"1\\\"\"}}]}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "668"
+            ],
+            "Content-Type": [
+              "application/scim+json"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:36:11 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.404343843460083,
+            "response_time_ms": 404,
+            "response_time_s": 0.404343843460083,
+            "size_bytes": 668,
+            "status": "completed",
+            "status_code": 200,
+            "tls_version": "TLS v1.3",
+            "ts": 1770888972.2508059,
+            "version": 2
+          },
+          "reason": "OK",
+          "size_bytes": 668,
+          "status": 200,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "200"
+          },
+          "error": null,
+          "found": 200,
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "[{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"id\": \"e68443de-ef90-4736-b508-96fa45699b2f\", \"userName\": \"test11111111111\", \"name\": {\"familyName\": \"Doe\", \"givenName\": \"Joe\"}, \"active\": true, \"emails\": [{\"value\": \"test@test.de\", \"type...",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+          },
+          "error": null,
+          "found": "[\"urn:ietf:params:scim:api:messages:2.0:ListResponse\"]",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "numeric",
+            "extractor": {
+              "path": "itemsPerPage",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "1",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "numeric",
+            "extractor": {
+              "path": "startIndex",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "1",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "numeric",
+            "extractor": {
+              "path": "totalResults",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "1",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].id",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "e68443de-ef90-4736-b508-96fa45699b2f",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].name.familyName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "Doe",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].name.givenName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "Joe",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].userName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "test11111111111",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].active",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "true",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].emails[0].value",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "test@test.de",
+          "result": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "error": null,
+          "extractor": {
+            "name": "ISVUserid",
+            "path": "Resources[0].id",
+            "source": "body",
+            "type": "json"
+          },
+          "name": "ISVUserid",
+          "result": "e68443de-ef90-4736-b508-96fa45699b2f",
+          "success": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "success": true,
+          "template_id": "e3b23a13-22e2-41c5-8020-a573db49d8b8",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+          },
+          {
+            "assert": "numeric",
+            "extractor": {
+              "path": "itemsPerPage",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "numeric",
+            "extractor": {
+              "path": "startIndex",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "numeric",
+            "extractor": {
+              "path": "totalResults",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].id",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].name.familyName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].name.givenName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].userName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].active",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "Resources[0].emails[0].value",
+              "source": "body",
+              "type": "json"
+            }
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [
+          {
+            "name": "ISVUserid",
+            "path": "Resources[0].id",
+            "source": "body",
+            "type": "json"
+          }
+        ],
+        "id": "e3b23a13-22e2-41c5-8020-a573db49d8b8",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Test Users endpoint",
+        "pause": null,
+        "rank": 1,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [
+            {
+              "name": "count",
+              "value": "1"
+            },
+            {
+              "name": "startIndex",
+              "value": "1"
+            }
+          ],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "e3b23a13-22e2-41c5-8020-a573db49d8b8",
+        "variables": [
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        ]
+      },
+      "template_uuid": "e3b23a13-22e2-41c5-8020-a573db49d8b8"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770888979.3410888,
+        "id": "33af1938-108f-4767-97a1-8bb0a64ee52c",
+        "started_at": 1770888973.533481
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "33af1938-108f-4767-97a1-8bb0a64ee52c",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 2,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "33af1938-108f-4767-97a1-8bb0a64ee52c",
+        "variables": null
+      },
+      "template_uuid": "33af1938-108f-4767-97a1-8bb0a64ee52c"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "8b437578-e227-498c-9e00-80bb0c857ad0",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "data": "",
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770888980.1869102,
+              "dial_end_ts": 1770888979.814868,
+              "dial_start_ts": 1770888979.8059542,
+              "first_response_byte_ts": 1770888980.1868737,
+              "get_conn_end_ts": 1770888979.8266447,
+              "get_conn_start_ts": 1770888979.8055074,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "54.183.107.205:443",
+              "request_body_done_ts": 1770888979.8266642,
+              "request_header_done_ts": 1770888979.8266635,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "54.183.107.205:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770888979.8059359,
+              "start_ts": 1770888979.805525,
+              "whitelist_dns_check_done_ts": 1770888979.8054888,
+              "whitelist_dns_check_start_ts": 1770888979.804546
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e68443de-ef90-4736-b508-96fa45699b2f",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-cdwz6",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770888979.8054986,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e68443de-ef90-4736-b508-96fa45699b2f",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {},
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e68443de-ef90-4736-b508-96fa45699b2f",
+          "raw_body": "",
+          "request_id": "8b437578-e227-498c-9e00-80bb0c857ad0",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"id\":\"e68443de-ef90-4736-b508-96fa45699b2f\",\"userName\":\"test11111111111\",\"name\":{\"familyName\":\"Doe\",\"givenName\":\"Joe\"},\"active\":true,\"emails\":[{\"value\":\"test@test.de\",\"type\":\"work\",\"primary\":true}],\"meta\":{\"resourceType\":\"User\",\"created\":\"2026-02-12T09:30:41.359725Z\",\"lastModified\":\"2026-02-12T09:35:59.864093Z\",\"location\":\"https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e68443de-ef90-4736-b508-96fa45699b2f\",\"version\":\"W/\\\"1\\\"\"}}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "538"
+            ],
+            "Content-Type": [
+              "application/scim+json"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:36:19 GMT"
+            ],
+            "Etag": [
+              "W/\"1\""
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.38147687911987305,
+            "response_time_ms": 381,
+            "response_time_s": 0.38147687911987305,
+            "size_bytes": 538,
+            "status": "completed",
+            "status_code": 200,
+            "tls_version": "TLS v1.3",
+            "ts": 1770888980.1869755,
+            "version": 2
+          },
+          "reason": "OK",
+          "size_bytes": 538,
+          "status": 200,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "200"
+          },
+          "error": null,
+          "found": 200,
+          "result": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "id",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "e68443de-ef90-4736-b508-96fa45699b2f",
+          "result": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "name.familyName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "Doe",
+          "result": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "name.givenName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "Joe",
+          "result": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "userName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "test11111111111",
+          "result": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "active",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "true",
+          "result": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "emails[0].value",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "test@test.de",
+          "result": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "id",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "e68443de-ef90-4736-b508-96fa45699b2f"
+          },
+          "error": null,
+          "found": "e68443de-ef90-4736-b508-96fa45699b2f",
+          "result": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0"
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e68443de-ef90-4736-b508-96fa45699b2f",
+          "success": true,
+          "template_id": "8b437578-e227-498c-9e00-80bb0c857ad0",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users/{{ISVUserid}}"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "id",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "name.familyName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "name.givenName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "userName",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "active",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "emails[0].value",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "id",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "{{ISVUserid}}"
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "8b437578-e227-498c-9e00-80bb0c857ad0",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Get Users/{{id}} ",
+        "pause": null,
+        "rank": 3,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users/{{ISVUserid}}"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "8b437578-e227-498c-9e00-80bb0c857ad0",
+        "variables": [
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users/{{ISVUserid}}"
+          }
+        ]
+      },
+      "template_uuid": "8b437578-e227-498c-9e00-80bb0c857ad0"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770888987.506907,
+        "id": "2aa58477-74e4-4d7a-9c17-7da6a13486eb",
+        "started_at": 1770888981.6180599
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "2aa58477-74e4-4d7a-9c17-7da6a13486eb",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 4,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "2aa58477-74e4-4d7a-9c17-7da6a13486eb",
+        "variables": null
+      },
+      "template_uuid": "2aa58477-74e4-4d7a-9c17-7da6a13486eb"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "data": "",
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770888988.3347135,
+              "dial_end_ts": 1770888987.9695315,
+              "dial_start_ts": 1770888987.9595437,
+              "first_response_byte_ts": 1770888988.334684,
+              "get_conn_end_ts": 1770888987.9823468,
+              "get_conn_start_ts": 1770888987.9592218,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "13.56.217.111:443",
+              "request_body_done_ts": 1770888987.9823859,
+              "request_header_done_ts": 1770888987.9823847,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "13.56.217.111:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770888987.9595294,
+              "start_ts": 1770888987.9592474,
+              "whitelist_dns_check_done_ts": 1770888987.9591975,
+              "whitelist_dns_check_start_ts": 1770888987.9588063
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?filter=userName%20eq%20%22abcdefgh%40atko.com%22",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-w8bdc",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770888987.959207,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?filter=userName%20eq%20%22abcdefgh%40atko.com%22",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {
+            "filter": [
+              "userName eq \"abcdefgh@atko.com\""
+            ]
+          },
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "raw_body": "",
+          "request_id": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:ListResponse\"],\"totalResults\":0,\"startIndex\":1,\"itemsPerPage\":0,\"Resources\":[]}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "130"
+            ],
+            "Content-Type": [
+              "application/scim+json"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:36:28 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.37558770179748535,
+            "response_time_ms": 376,
+            "response_time_s": 0.37558770179748535,
+            "size_bytes": 130,
+            "status": "completed",
+            "status_code": 200,
+            "tls_version": "TLS v1.3",
+            "ts": 1770888988.3347948,
+            "version": 2
+          },
+          "reason": "OK",
+          "size_bytes": 130,
+          "status": 200,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "200"
+          },
+          "error": null,
+          "found": 200,
+          "result": true,
+          "template_id": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c"
+        },
+        {
+          "assertion": {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+          },
+          "error": null,
+          "found": "[\"urn:ietf:params:scim:api:messages:2.0:ListResponse\"]",
+          "result": true,
+          "template_id": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "totalResults",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "0"
+          },
+          "error": null,
+          "found": "0",
+          "result": true,
+          "template_id": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c"
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "params[0].value",
+          "result": "userName eq \"abcdefgh@atko.com\"",
+          "success": true,
+          "template_id": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c",
+          "variable": {
+            "name": "params[0].value",
+            "value": "userName eq \"{{InvalidUserEmail}}\""
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "success": true,
+          "template_id": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "totalResults",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "0"
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Test invalid User by username",
+        "pause": null,
+        "rank": 5,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [
+            {
+              "name": "filter",
+              "value": "userName eq \"{{InvalidUserEmail}}\""
+            }
+          ],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c",
+        "variables": [
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "params[0].value",
+            "value": "userName eq \"{{InvalidUserEmail}}\""
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        ]
+      },
+      "template_uuid": "1be543b9-2c32-4cf8-bf91-fcabea59bb4c"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770888998.2398632,
+        "id": "9fd0b3ee-e507-4fb9-a83f-73a1600e71ae",
+        "started_at": 1770888992.1833615
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "9fd0b3ee-e507-4fb9-a83f-73a1600e71ae",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 6,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "9fd0b3ee-e507-4fb9-a83f-73a1600e71ae",
+        "variables": null
+      },
+      "template_uuid": "9fd0b3ee-e507-4fb9-a83f-73a1600e71ae"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "data": "",
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770888998.9751666,
+              "dial_end_ts": 1770888998.6205926,
+              "dial_start_ts": 1770888998.610978,
+              "first_response_byte_ts": 1770888998.9750955,
+              "get_conn_end_ts": 1770888998.635191,
+              "get_conn_start_ts": 1770888998.6098275,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "54.183.107.205:443",
+              "request_body_done_ts": 1770888998.6352303,
+              "request_header_done_ts": 1770888998.6352284,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "54.183.107.205:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770888998.6109617,
+              "start_ts": 1770888998.6098628,
+              "whitelist_dns_check_done_ts": 1770888998.609793,
+              "whitelist_dns_check_start_ts": 1770888998.6085966
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/010101001010101011001010101011",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-c8c64",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770888998.6098073,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/010101001010101011001010101011",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {},
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/010101001010101011001010101011",
+          "raw_body": "",
+          "request_id": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:Error\"],\"status\":\"404\",\"detail\":\"User not found: 010101001010101011001010101011\"}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "132"
+            ],
+            "Content-Type": [
+              "application/scim+json;charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:36:38 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.3655581474304199,
+            "response_time_ms": 366,
+            "response_time_s": 0.3655581474304199,
+            "size_bytes": 132,
+            "status": "completed",
+            "status_code": 404,
+            "tls_version": "TLS v1.3",
+            "ts": 1770888998.9753654,
+            "version": 2
+          },
+          "reason": "Not Found",
+          "size_bytes": 132,
+          "status": 404,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "404",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "404"
+          },
+          "error": null,
+          "found": 404,
+          "result": true,
+          "template_id": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "detail",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "User not found: 010101001010101011001010101011",
+          "result": true,
+          "template_id": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4"
+        },
+        {
+          "assertion": {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:Error"
+          },
+          "error": null,
+          "found": "[\"urn:ietf:params:scim:api:messages:2.0:Error\"]",
+          "result": true,
+          "template_id": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4"
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/010101001010101011001010101011",
+          "success": true,
+          "template_id": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users/{{UserIdThatDoesNotExist}}"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "404",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "detail",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:Error"
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Test invalid User by ID",
+        "pause": null,
+        "rank": 7,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users/{{UserIdThatDoesNotExist}}"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4",
+        "variables": [
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users/{{UserIdThatDoesNotExist}}"
+          }
+        ]
+      },
+      "template_uuid": "3fb321a0-2d2f-4837-92b1-f4504dcd91c4"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770889006.2488842,
+        "id": "20296b61-c279-42bb-95ad-d008212471d4",
+        "started_at": 1770889000.3229263
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "20296b61-c279-42bb-95ad-d008212471d4",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 8,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "20296b61-c279-42bb-95ad-d008212471d4",
+        "variables": null
+      },
+      "template_uuid": "20296b61-c279-42bb-95ad-d008212471d4"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "1f9a981c-ba7f-4300-ba78-96a0b68e692d",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "data": "",
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770889006.9003634,
+              "dial_end_ts": 1770889006.5300703,
+              "dial_start_ts": 1770889006.521051,
+              "first_response_byte_ts": 1770889006.9003286,
+              "get_conn_end_ts": 1770889006.5425045,
+              "get_conn_start_ts": 1770889006.520564,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "50.18.8.146:443",
+              "request_body_done_ts": 1770889006.542542,
+              "request_header_done_ts": 1770889006.5425403,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "50.18.8.146:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770889006.5208926,
+              "start_ts": 1770889006.520594,
+              "whitelist_dns_check_done_ts": 1770889006.520532,
+              "whitelist_dns_check_start_ts": 1770889006.5153506
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?filter=userName%20eq%20%22Runscope021Gmqvpiygh559%40atko.com%22",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-v2fvf",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770889006.5205486,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?filter=userName%20eq%20%22Runscope021Gmqvpiygh559%40atko.com%22",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {
+            "filter": [
+              "userName eq \"Runscope021Gmqvpiygh559@atko.com\""
+            ]
+          },
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "raw_body": "",
+          "request_id": "1f9a981c-ba7f-4300-ba78-96a0b68e692d",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:ListResponse\"],\"totalResults\":0,\"startIndex\":1,\"itemsPerPage\":0,\"Resources\":[]}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "130"
+            ],
+            "Content-Type": [
+              "application/scim+json"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:36:46 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.3798975944519043,
+            "response_time_ms": 380,
+            "response_time_s": 0.3798975944519043,
+            "size_bytes": 130,
+            "status": "completed",
+            "status_code": 200,
+            "tls_version": "TLS v1.3",
+            "ts": 1770889006.9004462,
+            "version": 2
+          },
+          "reason": "OK",
+          "size_bytes": 130,
+          "status": 200,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "200"
+          },
+          "error": null,
+          "found": 200,
+          "result": true,
+          "template_id": "1f9a981c-ba7f-4300-ba78-96a0b68e692d"
+        },
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "0",
+            "extractor": {
+              "path": "totalResults",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "0"
+          },
+          "error": null,
+          "found": "0",
+          "result": true,
+          "template_id": "1f9a981c-ba7f-4300-ba78-96a0b68e692d"
+        },
+        {
+          "assertion": {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+          },
+          "error": null,
+          "found": "[\"urn:ietf:params:scim:api:messages:2.0:ListResponse\"]",
+          "result": true,
+          "template_id": "1f9a981c-ba7f-4300-ba78-96a0b68e692d"
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "1f9a981c-ba7f-4300-ba78-96a0b68e692d",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "params[0].value",
+          "result": "userName eq \"Runscope021Gmqvpiygh559@atko.com\"",
+          "success": true,
+          "template_id": "1f9a981c-ba7f-4300-ba78-96a0b68e692d",
+          "variable": {
+            "name": "params[0].value",
+            "value": "userName eq \"{{randomEmail}}\""
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "success": true,
+          "template_id": "1f9a981c-ba7f-4300-ba78-96a0b68e692d",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "numeric",
+            "eq": "0",
+            "extractor": {
+              "path": "totalResults",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "1f9a981c-ba7f-4300-ba78-96a0b68e692d",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Make sure random user doesn't exist",
+        "pause": null,
+        "rank": 9,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [
+            {
+              "name": "filter",
+              "value": "userName eq \"{{randomEmail}}\""
+            }
+          ],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "1f9a981c-ba7f-4300-ba78-96a0b68e692d",
+        "variables": [
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "params[0].value",
+            "value": "userName eq \"{{randomEmail}}\""
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        ]
+      },
+      "template_uuid": "1f9a981c-ba7f-4300-ba78-96a0b68e692d"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770889013.3460128,
+        "id": "f626d2a1-d6f6-4020-8c1e-bb888906ee79",
+        "started_at": 1770889007.6786652
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "f626d2a1-d6f6-4020-8c1e-bb888906ee79",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 10,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "f626d2a1-d6f6-4020-8c1e-bb888906ee79",
+        "variables": null
+      },
+      "template_uuid": "f626d2a1-d6f6-4020-8c1e-bb888906ee79"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"givenName\":\"Runscope021\",\"familyName\":\"Gmqvpiygh559\"},\"emails\":[{\"primary\":true,\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\"}],\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true}",
+          "connection": {
+            "agent": null,
+            "destination_ip": "50.18.8.146:443",
+            "region": "us2",
+            "scheme": "https",
+            "source": "radar"
+          },
+          "data": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"givenName\":\"Runscope021\",\"familyName\":\"Gmqvpiygh559\"},\"emails\":[{\"primary\":true,\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\"}],\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true}",
+          "files": [],
+          "form": {},
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Length": [
+              "307"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "runscope-radar/20fa8f9b2dcc85f19a6d11e7db8a54966baf0863"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770889015.2640898,
+              "dial_end_ts": 1770889014.8988245,
+              "dial_start_ts": 1770889014.8895028,
+              "first_response_byte_ts": 1770889015.2640386,
+              "get_conn_end_ts": 1770889014.911398,
+              "get_conn_start_ts": 1770889014.8884053,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "50.18.8.146:443",
+              "request_body_done_ts": 1770889014.9114406,
+              "request_header_done_ts": 1770889014.911435,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "50.18.8.146:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770889014.8894846,
+              "start_ts": 1770889014.8884492,
+              "whitelist_dns_check_done_ts": 1770889014.888374,
+              "whitelist_dns_check_start_ts": 1770889014.8866136
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-52jf5",
+            "size_bytes": 307,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770889014.8883905,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+            "version": 2
+          },
+          "method": "POST",
+          "params": {},
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "raw_body": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"givenName\":\"Runscope021\",\"familyName\":\"Gmqvpiygh559\"},\"emails\":[{\"primary\":true,\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\"}],\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true}",
+          "request_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777",
+          "scheme": "https",
+          "size_bytes": 307,
+          "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"id\":\"e5f577fe-b767-4c15-ad7c-add92d9f37e4\",\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"familyName\":\"Gmqvpiygh559\",\"givenName\":\"Runscope021\"},\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true,\"emails\":[{\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\",\"primary\":true}],\"meta\":{\"resourceType\":\"User\",\"created\":\"2026-02-12T09:36:54.977934690Z\",\"lastModified\":\"2026-02-12T09:36:54.977935274Z\",\"location\":\"https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e5f577fe-b767-4c15-ad7c-add92d9f37e4\",\"version\":\"W/\\\"0\\\"\"}}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "639"
+            ],
+            "Content-Type": [
+              "application/scim+json"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:36:54 GMT"
+            ],
+            "Etag": [
+              "W/\"0\""
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Location": [
+              "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e5f577fe-b767-4c15-ad7c-add92d9f37e4"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.37584733963012695,
+            "response_time_ms": 376,
+            "response_time_s": 0.37584733963012695,
+            "size_bytes": 639,
+            "status": "completed",
+            "status_code": 201,
+            "tls_version": "TLS v1.3",
+            "ts": 1770889015.2642379,
+            "version": 2
+          },
+          "reason": "Created",
+          "size_bytes": 639,
+          "status": 201,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "201",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "201"
+          },
+          "error": null,
+          "found": 201,
+          "result": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "active",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "true"
+          },
+          "error": null,
+          "found": "true",
+          "result": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "id",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "e5f577fe-b767-4c15-ad7c-add92d9f37e4",
+          "result": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "name.familyName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "Gmqvpiygh559"
+          },
+          "error": null,
+          "found": "Gmqvpiygh559",
+          "result": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "name.givenName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "Runscope021"
+          },
+          "error": null,
+          "found": "Runscope021",
+          "result": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "assertion": {
+            "assert": "contains",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:schemas:core:2.0:User"
+          },
+          "error": null,
+          "found": "[\"urn:ietf:params:scim:schemas:core:2.0:User\"]",
+          "result": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "userName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "Runscope021Gmqvpiygh559@atko.com"
+          },
+          "error": null,
+          "found": "Runscope021Gmqvpiygh559@atko.com",
+          "result": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "assertions": null,
+          "assertions_in_script": {
+            "failed_assertions": 0,
+            "passed_assertions": 0,
+            "total_assertions": 0
+          },
+          "error": "",
+          "log": "",
+          "result": true,
+          "script": {
+            "isScriptHash": false,
+            "uuid": "",
+            "value": ""
+          },
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "error": null,
+          "extractor": {
+            "name": "idUserOne",
+            "path": "id",
+            "source": "body",
+            "type": "json"
+          },
+          "name": "idUserOne",
+          "result": "e5f577fe-b767-4c15-ad7c-add92d9f37e4",
+          "success": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "error": null,
+          "extractor": {
+            "name": "randomUserEmail",
+            "path": "emails[0].value",
+            "source": "body",
+            "type": "json"
+          },
+          "name": "randomUserEmail",
+          "result": "Runscope021Gmqvpiygh559@atko.com",
+          "success": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+        },
+        {
+          "error": null,
+          "name": "body",
+          "result": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"givenName\":\"Runscope021\",\"familyName\":\"Gmqvpiygh559\"},\"emails\":[{\"primary\":true,\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\"}],\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true}",
+          "success": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777",
+          "variable": {
+            "name": "body",
+            "value": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"{{randomUsername}}\",\"name\":{\"givenName\":\"{{randomGivenName}}\",\"familyName\":\"{{randomFamilyName}}\"},\"emails\":[{\"primary\":true,\"value\":\"{{randomEmail}}\",\"type\":\"work\"}],\"displayName\":\"{{randomGivenName}} {{randomFamilyName}}\",\"active\":true}"
+          }
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "success": true,
+          "template_id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "201",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "active",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "true"
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "id",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "name.familyName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "{{randomFamilyName}}"
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "name.givenName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "{{randomGivenName}}"
+          },
+          {
+            "assert": "contains",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:schemas:core:2.0:User"
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "userName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "{{randomUsername}}"
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [
+          {
+            "name": "idUserOne",
+            "path": "id",
+            "source": "body",
+            "type": "json"
+          },
+          {
+            "name": "randomUserEmail",
+            "path": "emails[0].value",
+            "source": "body",
+            "type": "json"
+          }
+        ],
+        "id": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Create Okta user with realistic values",
+        "pause": null,
+        "rank": 11,
+        "request": {
+          "auth": {},
+          "binary_body": null,
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"{{randomUsername}}\",\"name\":{\"givenName\":\"{{randomGivenName}}\",\"familyName\":\"{{randomFamilyName}}\"},\"emails\":[{\"primary\":true,\"value\":\"{{randomEmail}}\",\"type\":\"work\"}],\"displayName\":\"{{randomGivenName}} {{randomFamilyName}}\",\"active\":true}",
+          "form": {},
+          "graphql_body": null,
+          "headers": {
+            "Accept": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "host": "",
+          "method": "POST",
+          "multipart_form": [],
+          "params": [],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [
+          {
+            "isScriptHash": false,
+            "uuid": "",
+            "value": ""
+          }
+        ],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777",
+        "variables": [
+          {
+            "name": "body",
+            "value": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"{{randomUsername}}\",\"name\":{\"givenName\":\"{{randomGivenName}}\",\"familyName\":\"{{randomFamilyName}}\"},\"emails\":[{\"primary\":true,\"value\":\"{{randomEmail}}\",\"type\":\"work\"}],\"displayName\":\"{{randomGivenName}} {{randomFamilyName}}\",\"active\":true}"
+          },
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        ]
+      },
+      "template_uuid": "edbbc438-2b4b-4dd2-9dc2-95ca7f621777"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770889024.5637374,
+        "id": "ab6dfd7d-cb8d-441f-9dec-df6ae17a724d",
+        "started_at": 1770889018.3622599
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "ab6dfd7d-cb8d-441f-9dec-df6ae17a724d",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 12,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "ab6dfd7d-cb8d-441f-9dec-df6ae17a724d",
+        "variables": null
+      },
+      "template_uuid": "ab6dfd7d-cb8d-441f-9dec-df6ae17a724d"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "69e2dbca-bbac-4f17-913a-e4a2d612ea31",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "data": "",
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770889025.4167469,
+              "dial_end_ts": 1770889025.0294113,
+              "dial_start_ts": 1770889025.018955,
+              "first_response_byte_ts": 1770889025.4167204,
+              "get_conn_end_ts": 1770889025.0425837,
+              "get_conn_start_ts": 1770889025.0185235,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "184.72.44.51:443",
+              "request_body_done_ts": 1770889025.0426006,
+              "request_header_done_ts": 1770889025.0426002,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "184.72.44.51:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770889025.0189373,
+              "start_ts": 1770889025.0185494,
+              "whitelist_dns_check_done_ts": 1770889025.0184972,
+              "whitelist_dns_check_start_ts": 1770889025.0180109
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e5f577fe-b767-4c15-ad7c-add92d9f37e4",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-gq6qx",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770889025.018508,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e5f577fe-b767-4c15-ad7c-add92d9f37e4",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {},
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e5f577fe-b767-4c15-ad7c-add92d9f37e4",
+          "raw_body": "",
+          "request_id": "69e2dbca-bbac-4f17-913a-e4a2d612ea31",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"id\":\"e5f577fe-b767-4c15-ad7c-add92d9f37e4\",\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"familyName\":\"Gmqvpiygh559\",\"givenName\":\"Runscope021\"},\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true,\"emails\":[{\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\",\"primary\":true}],\"meta\":{\"resourceType\":\"User\",\"created\":\"2026-02-12T09:36:54.977935Z\",\"lastModified\":\"2026-02-12T09:36:54.977935Z\",\"location\":\"https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e5f577fe-b767-4c15-ad7c-add92d9f37e4\",\"version\":\"W/\\\"0\\\"\"}}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "633"
+            ],
+            "Content-Type": [
+              "application/scim+json"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:37:05 GMT"
+            ],
+            "Etag": [
+              "W/\"0\""
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.398298978805542,
+            "response_time_ms": 398,
+            "response_time_s": 0.398298978805542,
+            "size_bytes": 633,
+            "status": "completed",
+            "status_code": 200,
+            "tls_version": "TLS v1.3",
+            "ts": 1770889025.416807,
+            "version": 2
+          },
+          "reason": "OK",
+          "size_bytes": 633,
+          "status": 200,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "200"
+          },
+          "error": null,
+          "found": 200,
+          "result": true,
+          "template_id": "69e2dbca-bbac-4f17-913a-e4a2d612ea31"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "userName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "Runscope021Gmqvpiygh559@atko.com"
+          },
+          "error": null,
+          "found": "Runscope021Gmqvpiygh559@atko.com",
+          "result": true,
+          "template_id": "69e2dbca-bbac-4f17-913a-e4a2d612ea31"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "name.familyName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "Gmqvpiygh559"
+          },
+          "error": null,
+          "found": "Gmqvpiygh559",
+          "result": true,
+          "template_id": "69e2dbca-bbac-4f17-913a-e4a2d612ea31"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "name.givenName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "Runscope021"
+          },
+          "error": null,
+          "found": "Runscope021",
+          "result": true,
+          "template_id": "69e2dbca-bbac-4f17-913a-e4a2d612ea31"
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "69e2dbca-bbac-4f17-913a-e4a2d612ea31",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e5f577fe-b767-4c15-ad7c-add92d9f37e4",
+          "success": true,
+          "template_id": "69e2dbca-bbac-4f17-913a-e4a2d612ea31",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users/{{idUserOne}}"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "userName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "{{randomUsername}}"
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "name.familyName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "{{randomFamilyName}}"
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "name.givenName",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "{{randomGivenName}}"
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "69e2dbca-bbac-4f17-913a-e4a2d612ea31",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Verify that user was created",
+        "pause": null,
+        "rank": 13,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users/{{idUserOne}}"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "69e2dbca-bbac-4f17-913a-e4a2d612ea31",
+        "variables": [
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users/{{idUserOne}}"
+          }
+        ]
+      },
+      "template_uuid": "69e2dbca-bbac-4f17-913a-e4a2d612ea31"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770889038.5572214,
+        "id": "7548c923-0fb0-4ed2-801e-537587509df4",
+        "started_at": 1770889027.628588
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "7548c923-0fb0-4ed2-801e-537587509df4",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 10
+        },
+        "rank": 14,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "7548c923-0fb0-4ed2-801e-537587509df4",
+        "variables": null
+      },
+      "template_uuid": "7548c923-0fb0-4ed2-801e-537587509df4"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "6c7d41fa-4fe2-4171-8734-c876d392d146",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"givenName\":\"Runscope021\",\"familyName\":\"Gmqvpiygh559\"},\"emails\":[{\"primary\":true,\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\"}],\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true}",
+          "data": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"givenName\":\"Runscope021\",\"familyName\":\"Gmqvpiygh559\"},\"emails\":[{\"primary\":true,\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\"}],\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true}",
+          "files": [],
+          "form": {},
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Length": [
+              "307"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "runscope-radar/20fa8f9b2dcc85f19a6d11e7db8a54966baf0863"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770889043.2548554,
+              "dial_end_ts": 1770889042.8749332,
+              "dial_start_ts": 1770889042.8654232,
+              "first_response_byte_ts": 1770889043.2548177,
+              "get_conn_end_ts": 1770889042.8879619,
+              "get_conn_start_ts": 1770889042.8647742,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "52.8.87.87:443",
+              "request_body_done_ts": 1770889042.8879936,
+              "request_header_done_ts": 1770889042.887989,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "52.8.87.87:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770889042.8654065,
+              "start_ts": 1770889042.8647957,
+              "whitelist_dns_check_done_ts": 1770889042.8647487,
+              "whitelist_dns_check_start_ts": 1770889042.8597956
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-2qfnf",
+            "size_bytes": 307,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770889042.8647616,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+            "version": 2
+          },
+          "method": "POST",
+          "params": {},
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "raw_body": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"givenName\":\"Runscope021\",\"familyName\":\"Gmqvpiygh559\"},\"emails\":[{\"primary\":true,\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\"}],\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true}",
+          "request_id": "6c7d41fa-4fe2-4171-8734-c876d392d146",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:Error\"],\"status\":\"409\",\"scimType\":\"uniqueness\",\"detail\":\"User with userName 'Runscope021Gmqvpiygh559@atko.com' already exists\"}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "178"
+            ],
+            "Content-Type": [
+              "application/scim+json;charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:37:22 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.39018917083740234,
+            "response_time_ms": 390,
+            "response_time_s": 0.39018917083740234,
+            "size_bytes": 178,
+            "status": "completed",
+            "status_code": 409,
+            "tls_version": "TLS v1.3",
+            "ts": 1770889043.2549508,
+            "version": 2
+          },
+          "reason": "Conflict",
+          "size_bytes": 178,
+          "status": 409,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "409",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "409"
+          },
+          "error": null,
+          "found": 409,
+          "result": true,
+          "template_id": "6c7d41fa-4fe2-4171-8734-c876d392d146"
+        },
+        {
+          "error": null,
+          "name": "body",
+          "result": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"givenName\":\"Runscope021\",\"familyName\":\"Gmqvpiygh559\"},\"emails\":[{\"primary\":true,\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\"}],\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true}",
+          "success": true,
+          "template_id": "6c7d41fa-4fe2-4171-8734-c876d392d146",
+          "variable": {
+            "name": "body",
+            "value": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"{{randomUsername}}\",\"name\":{\"givenName\":\"{{randomGivenName}}\",\"familyName\":\"{{randomFamilyName}}\"},\"emails\":[{\"primary\":true,\"value\":\"{{randomUsername}}\",\"type\":\"work\"}],\"displayName\":\"{{randomGivenName}} {{randomFamilyName}}\",\"active\":true}"
+          }
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "6c7d41fa-4fe2-4171-8734-c876d392d146",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "success": true,
+          "template_id": "6c7d41fa-4fe2-4171-8734-c876d392d146",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "409",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "6c7d41fa-4fe2-4171-8734-c876d392d146",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Expect failure when recreating user with same values",
+        "pause": null,
+        "rank": 15,
+        "request": {
+          "auth": {},
+          "binary_body": null,
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"{{randomUsername}}\",\"name\":{\"givenName\":\"{{randomGivenName}}\",\"familyName\":\"{{randomFamilyName}}\"},\"emails\":[{\"primary\":true,\"value\":\"{{randomUsername}}\",\"type\":\"work\"}],\"displayName\":\"{{randomGivenName}} {{randomFamilyName}}\",\"active\":true}",
+          "form": {},
+          "graphql_body": null,
+          "headers": {
+            "Accept": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "host": "",
+          "method": "POST",
+          "multipart_form": [],
+          "params": [],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "6c7d41fa-4fe2-4171-8734-c876d392d146",
+        "variables": [
+          {
+            "name": "body",
+            "value": "{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"userName\":\"{{randomUsername}}\",\"name\":{\"givenName\":\"{{randomGivenName}}\",\"familyName\":\"{{randomFamilyName}}\"},\"emails\":[{\"primary\":true,\"value\":\"{{randomUsername}}\",\"type\":\"work\"}],\"displayName\":\"{{randomGivenName}} {{randomFamilyName}}\",\"active\":true}"
+          },
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        ]
+      },
+      "template_uuid": "6c7d41fa-4fe2-4171-8734-c876d392d146"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770889058.7609496,
+        "id": "6106e28e-a569-4899-9aeb-66d2e09ea319",
+        "started_at": 1770889052.9906673
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "6106e28e-a569-4899-9aeb-66d2e09ea319",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 16,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "6106e28e-a569-4899-9aeb-66d2e09ea319",
+        "variables": null
+      },
+      "template_uuid": "6106e28e-a569-4899-9aeb-66d2e09ea319"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "0aae3baf-399e-4d53-a4ff-6119904b60b6",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "data": "",
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770889059.5194666,
+              "dial_end_ts": 1770889059.1176174,
+              "dial_start_ts": 1770889059.1069217,
+              "first_response_byte_ts": 1770889059.5194104,
+              "get_conn_end_ts": 1770889059.1318648,
+              "get_conn_start_ts": 1770889059.1054797,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "184.72.44.51:443",
+              "request_body_done_ts": 1770889059.1319072,
+              "request_header_done_ts": 1770889059.1319058,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "184.72.44.51:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770889059.1069005,
+              "start_ts": 1770889059.105557,
+              "whitelist_dns_check_done_ts": 1770889059.105447,
+              "whitelist_dns_check_start_ts": 1770889059.1041229
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?filter=userName%20eq%20%22RUNSCOPE021GMQVPIYGH559%40ATKO.COM%22",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-4plz5",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770889059.1054604,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?filter=userName%20eq%20%22RUNSCOPE021GMQVPIYGH559%40ATKO.COM%22",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {
+            "filter": [
+              "userName eq \"RUNSCOPE021GMQVPIYGH559@ATKO.COM\""
+            ]
+          },
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "raw_body": "",
+          "request_id": "0aae3baf-399e-4d53-a4ff-6119904b60b6",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:ListResponse\"],\"totalResults\":1,\"startIndex\":1,\"itemsPerPage\":1,\"Resources\":[{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\"],\"id\":\"e5f577fe-b767-4c15-ad7c-add92d9f37e4\",\"userName\":\"Runscope021Gmqvpiygh559@atko.com\",\"name\":{\"familyName\":\"Gmqvpiygh559\",\"givenName\":\"Runscope021\"},\"displayName\":\"Runscope021 Gmqvpiygh559\",\"active\":true,\"emails\":[{\"value\":\"Runscope021Gmqvpiygh559@atko.com\",\"type\":\"work\",\"primary\":true}],\"meta\":{\"resourceType\":\"User\",\"created\":\"2026-02-12T09:36:54.977935Z\",\"lastModified\":\"2026-02-12T09:36:54.977935Z\",\"location\":\"https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/e5f577fe-b767-4c15-ad7c-add92d9f37e4\",\"version\":\"W/\\\"0\\\"\"}}]}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "763"
+            ],
+            "Content-Type": [
+              "application/scim+json"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:37:39 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.414151668548584,
+            "response_time_ms": 414,
+            "response_time_s": 0.414151668548584,
+            "size_bytes": 763,
+            "status": "completed",
+            "status_code": 200,
+            "tls_version": "TLS v1.3",
+            "ts": 1770889059.519612,
+            "version": 2
+          },
+          "reason": "OK",
+          "size_bytes": 763,
+          "status": 200,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "200"
+          },
+          "error": null,
+          "found": 200,
+          "result": true,
+          "template_id": "0aae3baf-399e-4d53-a4ff-6119904b60b6"
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "0aae3baf-399e-4d53-a4ff-6119904b60b6",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "params[0].value",
+          "result": "userName eq \"RUNSCOPE021GMQVPIYGH559@ATKO.COM\"",
+          "success": true,
+          "template_id": "0aae3baf-399e-4d53-a4ff-6119904b60b6",
+          "variable": {
+            "name": "params[0].value",
+            "value": "userName eq \"{{randomUsernameCaps}}\""
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "success": true,
+          "template_id": "0aae3baf-399e-4d53-a4ff-6119904b60b6",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "0aae3baf-399e-4d53-a4ff-6119904b60b6",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Username Case Sensitivity Check",
+        "pause": null,
+        "rank": 17,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [
+            {
+              "name": "filter",
+              "value": "userName eq \"{{randomUsernameCaps}}\""
+            }
+          ],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "0aae3baf-399e-4d53-a4ff-6119904b60b6",
+        "variables": [
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "params[0].value",
+            "value": "userName eq \"{{randomUsernameCaps}}\""
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        ]
+      },
+      "template_uuid": "0aae3baf-399e-4d53-a4ff-6119904b60b6"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770889067.8051798,
+        "id": "5ee3d1c3-fbf6-4329-b50b-3a139f4bb375",
+        "started_at": 1770889062.2988477
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "5ee3d1c3-fbf6-4329-b50b-3a139f4bb375",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 18,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "5ee3d1c3-fbf6-4329-b50b-3a139f4bb375",
+        "variables": null
+      },
+      "template_uuid": "5ee3d1c3-fbf6-4329-b50b-3a139f4bb375"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "connection": {
+            "agent": null,
+            "destination_ip": "54.193.184.75:443",
+            "region": "us2",
+            "scheme": "https",
+            "source": "radar"
+          },
+          "data": "",
+          "files": null,
+          "form": null,
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770889070.723317,
+              "dial_end_ts": 1770889070.3565488,
+              "dial_start_ts": 1770889070.3475885,
+              "first_response_byte_ts": 1770889070.723263,
+              "get_conn_end_ts": 1770889070.3695931,
+              "get_conn_start_ts": 1770889070.3463767,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "54.193.184.75:443",
+              "request_body_done_ts": 1770889070.369628,
+              "request_header_done_ts": 1770889070.369626,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "54.193.184.75:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770889070.347547,
+              "start_ts": 1770889070.3464162,
+              "whitelist_dns_check_done_ts": 1770889070.3463204,
+              "whitelist_dns_check_start_ts": 1770889070.3450809
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Groups",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-vrl2m",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770889070.3463545,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Groups",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {},
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Groups",
+          "raw_body": "",
+          "request_id": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7",
+          "scheme": "https",
+          "size_bytes": 0,
+          "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Groups"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:ListResponse\"],\"totalResults\":1,\"startIndex\":1,\"itemsPerPage\":1,\"Resources\":[{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:Group\"],\"id\":\"e5fb46c1-6001-451d-97a5-cd67457d9dc4\",\"displayName\":\"test11111111111\",\"meta\":{\"resourceType\":\"Group\",\"created\":\"2026-02-12T09:30:46.261001Z\",\"lastModified\":\"2026-02-12T09:30:46.261003Z\",\"location\":\"https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Groups/e5fb46c1-6001-451d-97a5-cd67457d9dc4\",\"version\":\"W/\\\"0\\\"\"}}]}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "549"
+            ],
+            "Content-Type": [
+              "application/scim+json"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:37:50 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.377399206161499,
+            "response_time_ms": 377,
+            "response_time_s": 0.377399206161499,
+            "size_bytes": 549,
+            "status": "completed",
+            "status_code": 200,
+            "tls_version": "TLS v1.3",
+            "ts": 1770889070.7237537,
+            "version": 2
+          },
+          "reason": "OK",
+          "size_bytes": 549,
+          "status": 200,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "200"
+          },
+          "error": null,
+          "found": 200,
+          "result": true,
+          "template_id": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7"
+        },
+        {
+          "assertion": {
+            "assert": "numeric",
+            "extractor": {
+              "source": "meta.response_time_ms",
+              "type": "simple"
+            },
+            "lt": "600",
+            "value": "600"
+          },
+          "error": null,
+          "found": 377,
+          "result": true,
+          "template_id": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7"
+        },
+        {
+          "assertions": [
+            {
+              "message": "Resources is of type Array: expected true to be truthy",
+              "result": true
+            }
+          ],
+          "assertions_in_script": {
+            "failed_assertions": 0,
+            "passed_assertions": 1,
+            "total_assertions": 1
+          },
+          "error": "",
+          "log": "true\n",
+          "result": true,
+          "script": {
+            "isScriptHash": false,
+            "uuid": "",
+            "value": "var data = JSON.parse(response.body);\nvar max = data.totalResults;\nvar res = data.Resources;\nvar exists = false;\n\nif (max === 0)\n\tassert(\"nogroups\", \"No Groups found in the endpoint\");\nelse if (max >= 1 && Array.isArray(res)) {\n    exists = true;\n    assert.ok(exists, \"Resources is of type Array\");\n\tlog(exists);\n}"
+          },
+          "template_id": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7"
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Groups",
+          "success": true,
+          "template_id": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Groups"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "200",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "numeric",
+            "extractor": {
+              "source": "meta.response_time_ms",
+              "type": "simple"
+            },
+            "lt": "600"
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7",
+        "inbound": null,
+        "integration": null,
+        "note": "Optional Test: Verify Groups endpoint",
+        "pause": null,
+        "rank": 19,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Groups"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [
+          {
+            "isScriptHash": false,
+            "uuid": "",
+            "value": "var data = JSON.parse(response.body);\nvar max = data.totalResults;\nvar res = data.Resources;\nvar exists = false;\n\nif (max === 0)\n\tassert(\"nogroups\", \"No Groups found in the endpoint\");\nelse if (max >= 1 && Array.isArray(res)) {\n    exists = true;\n    assert.ok(exists, \"Resources is of type Array\");\n\tlog(exists);\n}"
+          }
+        ],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7",
+        "variables": [
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Groups"
+          }
+        ]
+      },
+      "template_uuid": "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770889078.409972,
+        "id": "be4ac033-b56f-4ce1-a8a4-cc2d2871f605",
+        "started_at": 1770889072.3604019
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "be4ac033-b56f-4ce1-a8a4-cc2d2871f605",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 20,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "be4ac033-b56f-4ce1-a8a4-cc2d2871f605",
+        "variables": null
+      },
+      "template_uuid": "be4ac033-b56f-4ce1-a8a4-cc2d2871f605"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "89ae8e40-d866-438b-9ae8-db82e8f1ade9",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "data": "",
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "non-token"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770889079.032018,
+              "dial_end_ts": 1770889078.6821578,
+              "dial_start_ts": 1770889078.671509,
+              "first_response_byte_ts": 1770889079.0319552,
+              "get_conn_end_ts": 1770889078.6967,
+              "get_conn_start_ts": 1770889078.6698709,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "184.72.44.51:443",
+              "request_body_done_ts": 1770889078.6967263,
+              "request_header_done_ts": 1770889078.6967251,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "184.72.44.51:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770889078.6714797,
+              "start_ts": 1770889078.6699114,
+              "whitelist_dns_check_done_ts": 1770889078.6698308,
+              "whitelist_dns_check_start_ts": 1770889078.6566353
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?filter=userName%20eq%20%22RUNSCOPE021GMQVPIYGH559%40ATKO.COM%22",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-64d2k",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770889078.669848,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users?filter=userName%20eq%20%22RUNSCOPE021GMQVPIYGH559%40ATKO.COM%22",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {
+            "filter": [
+              "userName eq \"RUNSCOPE021GMQVPIYGH559@ATKO.COM\""
+            ]
+          },
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "raw_body": "",
+          "request_id": "89ae8e40-d866-438b-9ae8-db82e8f1ade9",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:Error\"],\"status\":\"401\",\"detail\":\"Missing or invalid Authorization header\"}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "125"
+            ],
+            "Content-Type": [
+              "application/scim+json;charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:37:58 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.3623056411743164,
+            "response_time_ms": 362,
+            "response_time_s": 0.3623056411743164,
+            "size_bytes": 125,
+            "status": "completed",
+            "status_code": 401,
+            "tls_version": "TLS v1.3",
+            "ts": 1770889079.0321536,
+            "version": 2
+          },
+          "reason": "Unauthorized",
+          "size_bytes": 125,
+          "status": 401,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "401",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "401"
+          },
+          "error": null,
+          "found": 401,
+          "result": true,
+          "template_id": "89ae8e40-d866-438b-9ae8-db82e8f1ade9"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "detail",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "Missing or invalid Authorization header",
+          "result": true,
+          "template_id": "89ae8e40-d866-438b-9ae8-db82e8f1ade9"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "status",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "401"
+          },
+          "error": null,
+          "found": "401",
+          "result": true,
+          "template_id": "89ae8e40-d866-438b-9ae8-db82e8f1ade9"
+        },
+        {
+          "assertion": {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:Error"
+          },
+          "error": null,
+          "found": "[\"urn:ietf:params:scim:api:messages:2.0:Error\"]",
+          "result": true,
+          "template_id": "89ae8e40-d866-438b-9ae8-db82e8f1ade9"
+        },
+        {
+          "error": null,
+          "name": "params[0].value",
+          "result": "userName eq \"RUNSCOPE021GMQVPIYGH559@ATKO.COM\"",
+          "success": true,
+          "template_id": "89ae8e40-d866-438b-9ae8-db82e8f1ade9",
+          "variable": {
+            "name": "params[0].value",
+            "value": "userName eq \"{{randomUsernameCaps}}\""
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users",
+          "success": true,
+          "template_id": "89ae8e40-d866-438b-9ae8-db82e8f1ade9",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "401",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "detail",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "status",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "401"
+          },
+          {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:Error"
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "89ae8e40-d866-438b-9ae8-db82e8f1ade9",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Check status 401",
+        "pause": null,
+        "rank": 21,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "non-token"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [
+            {
+              "name": "filter",
+              "value": "userName eq \"{{randomUsernameCaps}}\""
+            }
+          ],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "89ae8e40-d866-438b-9ae8-db82e8f1ade9",
+        "variables": [
+          {
+            "name": "params[0].value",
+            "value": "userName eq \"{{randomUsernameCaps}}\""
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users"
+          }
+        ]
+      },
+      "template_uuid": "89ae8e40-d866-438b-9ae8-db82e8f1ade9"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "ended_at": 1770889087.353784,
+        "id": "f0cec0b4-0761-4901-b328-ef1dd55988c7",
+        "started_at": 1770889081.5919797
+      },
+      "result": [],
+      "status": "done",
+      "template": {
+        "assertions": null,
+        "before_scripts": null,
+        "conditional": null,
+        "extractors": null,
+        "id": "f0cec0b4-0761-4901-b328-ef1dd55988c7",
+        "inbound": null,
+        "integration": null,
+        "note": null,
+        "pause": {
+          "duration": 5
+        },
+        "rank": 22,
+        "request": null,
+        "response": null,
+        "run_once": false,
+        "scripts": null,
+        "skipped": false,
+        "step_type": "pause",
+        "subtest": null,
+        "uuid": "f0cec0b4-0761-4901-b328-ef1dd55988c7",
+        "variables": null
+      },
+      "template_uuid": "f0cec0b4-0761-4901-b328-ef1dd55988c7"
+    },
+    {
+      "is_step_under_loop": false,
+      "new_message": {
+        "id": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf",
+        "request": {
+          "__runscope__": "__200ok__",
+          "body": "",
+          "data": "",
+          "fragment": "",
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Accept-Encoding": [
+              "gzip"
+            ],
+            "Authorization": [
+              "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj"
+            ],
+            "Connection": [
+              "close"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "Host": [
+              "2e97-82-212-51-173.ngrok-free.app"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "2e97-82-212-51-173.ngrok-free.app",
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "captured": false,
+            "conn_info": {
+              "conn_end_ts": 1770889088.2474601,
+              "dial_end_ts": 1770889087.8823264,
+              "dial_start_ts": 1770889087.871672,
+              "first_response_byte_ts": 1770889088.2474098,
+              "get_conn_end_ts": 1770889087.896789,
+              "get_conn_start_ts": 1770889087.8706417,
+              "http_protocol_version": "HTTP/1.1",
+              "remote_ip": "184.72.44.51:443",
+              "request_body_done_ts": 1770889087.8968203,
+              "request_header_done_ts": 1770889087.896819,
+              "tls_version_used": "TLS v1.3"
+            },
+            "destination_ip": "184.72.44.51:443",
+            "direction": "request",
+            "dns_host": "2e97-82-212-51-173.ngrok-free.app",
+            "dns_info": {
+              "done_ts": 1770889087.8716545,
+              "start_ts": 1770889087.8706813,
+              "whitelist_dns_check_done_ts": 1770889087.8706172,
+              "whitelist_dns_check_start_ts": 1770889087.8692923
+            },
+            "environment_uuid": "a0d77b26-9293-4715-aec2-c9af9404c6ba",
+            "error": null,
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "original_url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/00919288221112222",
+            "region": "us2",
+            "runscope_host": "go-radar-us2-7d77ff7d9c-hs9zc",
+            "size_bytes": 0,
+            "source": "radar",
+            "test_id": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+            "test_run_id": "20330850-5d82-4070-8d33-be1bf1b8cfe8",
+            "ts": 1770889087.8706274,
+            "url": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/00919288221112222",
+            "version": 2
+          },
+          "method": "GET",
+          "params": {},
+          "path": "/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/00919288221112222",
+          "raw_body": "",
+          "request_id": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf",
+          "scheme": "https"
+        },
+        "response": {
+          "__runscope__": "__200ok__",
+          "body": "{\"schemas\":[\"urn:ietf:params:scim:api:messages:2.0:Error\"],\"status\":\"404\",\"detail\":\"User not found: 00919288221112222\"}",
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Content-Length": [
+              "119"
+            ],
+            "Content-Type": [
+              "application/scim+json;charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 12 Feb 2026 09:38:07 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Ngrok-Agent-Ips": [
+              "82.212.51.173"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "meta": {
+            "body_encoding": "",
+            "body_removed": false,
+            "bucket_id": "4lbityhzisho",
+            "direction": "response",
+            "organization_id": "e9e92659-bea6-4035-8c3a-f2188cf93b97",
+            "response_time": 0.3769257068634033,
+            "response_time_ms": 377,
+            "response_time_s": 0.3769257068634033,
+            "size_bytes": 119,
+            "status": "completed",
+            "status_code": 404,
+            "tls_version": "TLS v1.3",
+            "ts": 1770889088.247553,
+            "version": 2
+          },
+          "reason": "Not Found",
+          "size_bytes": 119,
+          "status": 404,
+          "tls_version_name": "TLS v1.3"
+        }
+      },
+      "result": [
+        {
+          "assertion": {
+            "assert": "numeric",
+            "eq": "404",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            },
+            "value": "404"
+          },
+          "error": null,
+          "found": 404,
+          "result": true,
+          "template_id": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf"
+        },
+        {
+          "assertion": {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "detail",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          "error": null,
+          "found": "User not found: 00919288221112222",
+          "result": true,
+          "template_id": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf"
+        },
+        {
+          "assertion": {
+            "assert": "equal",
+            "extractor": {
+              "path": "status",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "404"
+          },
+          "error": null,
+          "found": "404",
+          "result": true,
+          "template_id": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf"
+        },
+        {
+          "assertion": {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:Error"
+          },
+          "error": null,
+          "found": "[\"urn:ietf:params:scim:api:messages:2.0:Error\"]",
+          "result": true,
+          "template_id": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf"
+        },
+        {
+          "error": null,
+          "name": "headers.Authorization",
+          "result": "Bearer c7WAKocvpbzeahoEN2OBzdUExSoYMOCJ9NIhikUEMDXmhYRtZUfDprn2upBZqMyj",
+          "success": true,
+          "template_id": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf",
+          "variable": {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          }
+        },
+        {
+          "error": null,
+          "name": "url",
+          "result": "https://2e97-82-212-51-173.ngrok-free.app/ws/d28bd604-ae69-46eb-9afb-99971a80f86c/scim/v2/Users/00919288221112222",
+          "success": true,
+          "template_id": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf",
+          "variable": {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users/00919288221112222"
+          }
+        }
+      ],
+      "status": "done",
+      "template": {
+        "assertions": [
+          {
+            "assert": "numeric",
+            "eq": "404",
+            "extractor": {
+              "source": "status",
+              "type": "simple"
+            }
+          },
+          {
+            "assert": "not_empty",
+            "extractor": {
+              "path": "detail",
+              "source": "body",
+              "type": "json"
+            }
+          },
+          {
+            "assert": "equal",
+            "extractor": {
+              "path": "status",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "404"
+          },
+          {
+            "assert": "has_value",
+            "extractor": {
+              "path": "schemas",
+              "source": "body",
+              "type": "json"
+            },
+            "value": "urn:ietf:params:scim:api:messages:2.0:Error"
+          }
+        ],
+        "before_scripts": [],
+        "conditional": null,
+        "extractors": [],
+        "id": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf",
+        "inbound": null,
+        "integration": null,
+        "note": "Required Test: Check status 404",
+        "pause": null,
+        "rank": 23,
+        "request": {
+          "auth": {},
+          "binary_body": [],
+          "body": "",
+          "form": {},
+          "graphql_body": {},
+          "headers": {
+            "Accept": [
+              "application/scim+json"
+            ],
+            "Accept-Charset": [
+              "utf-8"
+            ],
+            "Authorization": [
+              "{{auth}}"
+            ],
+            "Content-Type": [
+              "application/scim+json; charset=utf-8"
+            ],
+            "User-Agent": [
+              "OKTA SCIM Integration"
+            ]
+          },
+          "host": "",
+          "method": "GET",
+          "multipart_form": [],
+          "params": [],
+          "path": "",
+          "port": "",
+          "scheme": "",
+          "url": "{{SCIMBaseURL}}/Users/00919288221112222"
+        },
+        "response": {
+          "body": null,
+          "headers": null,
+          "reason": null,
+          "status": null
+        },
+        "run_once": false,
+        "scripts": [],
+        "skipped": false,
+        "step_type": "request",
+        "subtest": null,
+        "uuid": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf",
+        "variables": [
+          {
+            "name": "headers.Authorization",
+            "name_variable": false,
+            "value": "{{auth}}",
+            "value_variable": true
+          },
+          {
+            "name": "url",
+            "value": "{{SCIMBaseURL}}/Users/00919288221112222"
+          }
+        ]
+      },
+      "template_uuid": "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf"
+    }
+  ],
+  "parent_test_uuid": "",
+  "region": "us2",
+  "remote_agent": null,
+  "remote_agent_name": null,
+  "remote_agent_uuid": null,
+  "remote_agent_version": "unknown",
+  "run_by": "Test User",
+  "schedule_uuid": "",
+  "script_count": 2,
+  "script_success": 2,
+  "source": "manual",
+  "status": "completed",
+  "sub_status": "",
+  "substitution_count": 0,
+  "substitution_success": 0,
+  "template_uuids": [
+    "fde7ecde-3519-4aed-9b11-3b99a8da6376",
+    "e3b23a13-22e2-41c5-8020-a573db49d8b8",
+    "33af1938-108f-4767-97a1-8bb0a64ee52c",
+    "8b437578-e227-498c-9e00-80bb0c857ad0",
+    "2aa58477-74e4-4d7a-9c17-7da6a13486eb",
+    "1be543b9-2c32-4cf8-bf91-fcabea59bb4c",
+    "9fd0b3ee-e507-4fb9-a83f-73a1600e71ae",
+    "3fb321a0-2d2f-4837-92b1-f4504dcd91c4",
+    "20296b61-c279-42bb-95ad-d008212471d4",
+    "1f9a981c-ba7f-4300-ba78-96a0b68e692d",
+    "f626d2a1-d6f6-4020-8c1e-bb888906ee79",
+    "edbbc438-2b4b-4dd2-9dc2-95ca7f621777",
+    "ab6dfd7d-cb8d-441f-9dec-df6ae17a724d",
+    "69e2dbca-bbac-4f17-913a-e4a2d612ea31",
+    "7548c923-0fb0-4ed2-801e-537587509df4",
+    "6c7d41fa-4fe2-4171-8734-c876d392d146",
+    "6106e28e-a569-4899-9aeb-66d2e09ea319",
+    "0aae3baf-399e-4d53-a4ff-6119904b60b6",
+    "5ee3d1c3-fbf6-4329-b50b-3a139f4bb375",
+    "020ed83e-4ed6-42d0-b8c5-fc64ade1bbd7",
+    "be4ac033-b56f-4ce1-a8a4-cc2d2871f605",
+    "89ae8e40-d866-438b-9ae8-db82e8f1ade9",
+    "f0cec0b4-0761-4901-b328-ef1dd55988c7",
+    "73b47e7f-5f8c-4f3c-9a86-7c7b3d292eaf"
+  ],
+  "test_name": "Okta SCIM 2.0 SPEC Test",
+  "test_uuid": "0336f224-a652-4e74-b6bc-24b9e54b8886",
+  "uuid": "20330850-5d82-4070-8d33-be1bf1b8cfe8"
+}

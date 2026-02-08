@@ -1,0 +1,77 @@
+services:
+  scim-server-api:
+    build:
+      context: .
+      dockerfile: scim-server-api/Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./docker/env/scim-server-api.env
+    environment:
+      - SERVER_PORT=8080
+    depends_on:
+      postgres-playground:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scim-server-mgmt:
+    build:
+      context: .
+      dockerfile: scim-server-mgmt/Dockerfile
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./docker/env/scim-server-mgmt.env
+    environment:
+      - SERVER_PORT=8081
+    depends_on:
+      postgres-playground:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scim-validator-mgmt:
+    build:
+      context: .
+      dockerfile: scim-validator-mgmt/Dockerfile
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./docker/env/scim-validator-mgmt.env
+    environment:
+      - SERVER_PORT=8082
+    depends_on:
+      postgres-validator:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres-playground:
+    image: postgres:16-alpine
+    env_file:
+      - ./docker/env/postgres-playground.env
+    volumes:
+      - pgdata-playground:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-validator:
+    image: postgres:16-alpine
+    env_file:
+      - ./docker/env/postgres-validator.env
+    volumes:
+      - pgdata-validator:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata-playground:
+  pgdata-validator:
