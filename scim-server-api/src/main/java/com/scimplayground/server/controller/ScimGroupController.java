@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * SCIM 2.0 Groups endpoint per RFC 7644 §3.
@@ -24,6 +23,8 @@ import java.util.stream.Collectors;
 public class ScimGroupController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
+    private static final String RESOURCE_GROUP = "Group";
+    private static final String KEY_SCHEMAS = "schemas";
 
     private final ScimGroupService groupService;
 
@@ -61,7 +62,7 @@ public class ScimGroupController {
             HttpServletRequest request) {
 
         UUID wsId = resolveWorkspaceId();
-        UUID gid = parseUUID(groupId, "Group");
+        UUID gid = parseUUID(groupId, RESOURCE_GROUP);
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
         ScimGroup group = groupService.getGroup(wsId, gid);
@@ -105,7 +106,7 @@ public class ScimGroupController {
                     applyAttributeProjection(scimResp, attributes, excludedAttributes);
                     return scimResp;
                 })
-                .collect(Collectors.toList());
+                .toList();
         result.put("Resources", resources);
 
         return ResponseEntity.ok()
@@ -123,7 +124,7 @@ public class ScimGroupController {
             HttpServletRequest request) {
 
         UUID wsId = resolveWorkspaceId();
-        UUID gid = parseUUID(groupId, "Group");
+        UUID gid = parseUUID(groupId, RESOURCE_GROUP);
         
         // Validate If-Match header for optimistic concurrency control
         if (ifMatch != null) {
@@ -156,7 +157,7 @@ public class ScimGroupController {
             HttpServletRequest request) {
 
         UUID wsId = resolveWorkspaceId();
-        UUID gid = parseUUID(groupId, "Group");
+        UUID gid = parseUUID(groupId, RESOURCE_GROUP);
         
         // Validate If-Match header for optimistic concurrency control
         if (ifMatch != null) {
@@ -169,7 +170,7 @@ public class ScimGroupController {
         
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
-        List<String> schemas = (List<String>) body.get("schemas");
+        List<String> schemas = (List<String>) body.get(KEY_SCHEMAS);
         if (schemas == null || !schemas.contains("urn:ietf:params:scim:api:messages:2.0:PatchOp")) {
             throw new ScimException(400, "invalidValue",
                     "PATCH request must include PatchOp schema");
@@ -196,7 +197,7 @@ public class ScimGroupController {
             @PathVariable(name = "compat", required = false) String compat) {
 
         UUID wsId = resolveWorkspaceId();
-        UUID gid = parseUUID(groupId, "Group");
+        UUID gid = parseUUID(groupId, RESOURCE_GROUP);
         groupService.deleteGroup(wsId, gid);
 
         return ResponseEntity.noContent().build();
@@ -247,13 +248,13 @@ public class ScimGroupController {
                                            String attributes, String excludedAttributes) {
         if (attributes != null && !attributes.isBlank()) {
             Set<String> requested = parseAttrList(attributes);
-            requested.add("schemas");
+            requested.add(KEY_SCHEMAS);
             requested.add("id");
             requested.add("meta");
             resource.keySet().retainAll(requested);
         } else if (excludedAttributes != null && !excludedAttributes.isBlank()) {
             Set<String> excluded = parseAttrList(excludedAttributes);
-            excluded.remove("schemas");
+            excluded.remove(KEY_SCHEMAS);
             excluded.remove("id");
             resource.keySet().removeAll(excluded);
         }

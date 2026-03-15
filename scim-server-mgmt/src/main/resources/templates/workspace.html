@@ -123,7 +123,7 @@
         </div>
         <div class="card-body" id="usersCard">
             <div class="list-controls">
-                <input class="search" type="text" id="userSearch" placeholder="Search users (user name)" oninput="onUserSearch()">
+                <input class="search" type="text" id="userSearch" aria-label="Search users" placeholder="Search users (user name)" oninput="onUserSearch()">
                 <span class="section-title" style="margin-bottom:0">20 per page</span>
             </div>
             <ul class="entity-list scrollable-list" id="userList">
@@ -148,7 +148,7 @@
         </div>
         <div class="card-body" id="groupsCard">
             <div class="list-controls">
-                <input class="search" type="text" id="groupSearch" placeholder="Search groups (display name, external ID)" oninput="onGroupSearch()">
+                <input class="search" type="text" id="groupSearch" aria-label="Search groups" placeholder="Search groups (display name, external ID)" oninput="onGroupSearch()">
                 <span class="section-title" style="margin-bottom:0">20 per page</span>
             </div>
             <ul class="entity-list scrollable-list" id="groupList">
@@ -367,24 +367,24 @@
         <input type="text" id="groupExternalId" placeholder="TEAM-ENG">
         <p class="section-title" style="margin-top:0.75rem">Members</p>
         <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem">Add a user or group by UUID (required). Display is optional.</p>
-        <label>Users</label>
+        <p class="section-title">Users</p>
         <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
-            <input type="text" id="groupUserSearch" placeholder="Search all users..." style="margin-bottom:0;flex:1">
+            <input type="text" id="groupUserSearch" aria-label="Search users to add as members" placeholder="Search all users..." style="margin-bottom:0;flex:1">
             <button class="btn btn-sm" style="background:var(--surface2)" onclick="searchUsersLookup()">Search</button>
         </div>
         <div class="lookup-row" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
-            <select id="groupUserLookup" class="lookup-select" style="flex:1;padding:0.5rem 0.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text)">
+            <select id="groupUserLookup" aria-label="Select a user to add" class="lookup-select" style="flex:1;padding:0.5rem 0.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text)">
                 <option value="">Pick from loaded users...</option>
             </select>
             <button class="btn btn-sm" style="background:var(--surface2)" onclick="addSelectedMember('User')">Add User</button>
         </div>
-        <label>Groups</label>
+        <p class="section-title">Groups</p>
         <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
-            <input type="text" id="groupGroupSearch" placeholder="Search all groups..." style="margin-bottom:0;flex:1">
+            <input type="text" id="groupGroupSearch" aria-label="Search groups to add as members" placeholder="Search all groups..." style="margin-bottom:0;flex:1">
             <button class="btn btn-sm" style="background:var(--surface2)" onclick="searchGroupsLookup()">Search</button>
         </div>
         <div class="lookup-row" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
-            <select id="groupGroupLookup" class="lookup-select" style="flex:1;padding:0.5rem 0.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text)">
+            <select id="groupGroupLookup" aria-label="Select a group to add" class="lookup-select" style="flex:1;padding:0.5rem 0.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text)">
                 <option value="">Pick from loaded groups...</option>
             </select>
             <button class="btn btn-sm" style="background:var(--surface2)" onclick="addSelectedMember('Group')">Add Group</button>

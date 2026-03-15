@@ -28,6 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @Service
 @Transactional
@@ -221,197 +222,156 @@ public class ScimAdminService {
     }
 
     private void applyUserFields(ScimUser user, UserUpsertRequest request, boolean isCreate) {
-        if (isCreate || request.displayName() != null) {
-            user.setDisplayName(normalizeOptional(request.displayName()));
-        }
-        if (isCreate || request.externalId() != null) {
-            user.setExternalId(normalizeOptional(request.externalId()));
-        }
-        if (request.active() != null) {
-            user.setActive(request.active());
-        }
-        if (isCreate || request.nameFormatted() != null) {
-            user.setNameFormatted(normalizeOptional(request.nameFormatted()));
-        }
-        if (isCreate || request.nameFamilyName() != null) {
-            user.setNameFamilyName(normalizeOptional(request.nameFamilyName()));
-        }
-        if (isCreate || request.nameGivenName() != null) {
-            user.setNameGivenName(normalizeOptional(request.nameGivenName()));
-        }
-        if (isCreate || request.nameMiddleName() != null) {
-            user.setNameMiddleName(normalizeOptional(request.nameMiddleName()));
-        }
-        if (isCreate || request.nameHonorificPrefix() != null) {
-            user.setNameHonorificPrefix(normalizeOptional(request.nameHonorificPrefix()));
-        }
-        if (isCreate || request.nameHonorificSuffix() != null) {
-            user.setNameHonorificSuffix(normalizeOptional(request.nameHonorificSuffix()));
-        }
-        if (isCreate || request.nickName() != null) {
-            user.setNickName(normalizeOptional(request.nickName()));
-        }
-        if (isCreate || request.profileUrl() != null) {
-            user.setProfileUrl(normalizeOptional(request.profileUrl()));
-        }
-        if (isCreate || request.title() != null) {
-            user.setTitle(normalizeOptional(request.title()));
-        }
-        if (isCreate || request.userType() != null) {
-            user.setUserType(normalizeOptional(request.userType()));
-        }
-        if (isCreate || request.preferredLanguage() != null) {
-            user.setPreferredLanguage(normalizeOptional(request.preferredLanguage()));
-        }
-        if (isCreate || request.locale() != null) {
-            user.setLocale(normalizeOptional(request.locale()));
-        }
-        if (isCreate || request.timezone() != null) {
-            user.setTimezone(normalizeOptional(request.timezone()));
-        }
-        if (isCreate || request.password() != null) {
-            user.setPassword(normalizeOptional(request.password()));
-        }
-        if (isCreate || request.enterpriseEmployeeNumber() != null) {
-            user.setEnterpriseEmployeeNumber(normalizeOptional(request.enterpriseEmployeeNumber()));
-        }
-        if (isCreate || request.enterpriseCostCenter() != null) {
-            user.setEnterpriseCostCenter(normalizeOptional(request.enterpriseCostCenter()));
-        }
-        if (isCreate || request.enterpriseOrganization() != null) {
-            user.setEnterpriseOrganization(normalizeOptional(request.enterpriseOrganization()));
-        }
-        if (isCreate || request.enterpriseDivision() != null) {
-            user.setEnterpriseDivision(normalizeOptional(request.enterpriseDivision()));
-        }
-        if (isCreate || request.enterpriseDepartment() != null) {
-            user.setEnterpriseDepartment(normalizeOptional(request.enterpriseDepartment()));
-        }
-        if (isCreate || request.enterpriseManagerValue() != null) {
-            user.setEnterpriseManagerValue(normalizeOptional(request.enterpriseManagerValue()));
-        }
-        if (isCreate || request.enterpriseManagerRef() != null) {
-            user.setEnterpriseManagerRef(normalizeOptional(request.enterpriseManagerRef()));
-        }
-        if (isCreate || request.enterpriseManagerDisplay() != null) {
-            user.setEnterpriseManagerDisplay(normalizeOptional(request.enterpriseManagerDisplay()));
-        }
+        applyScalarUserFields(user, request, isCreate);
+        if (request.emails() != null) applyEmails(user, request.emails());
+        if (request.phoneNumbers() != null) applyPhoneNumbers(user, request.phoneNumbers());
+        if (request.addresses() != null) applyAddresses(user, request.addresses());
+        if (request.entitlements() != null) applyEntitlements(user, request.entitlements());
+        if (request.roles() != null) applyRoles(user, request.roles());
+        if (request.ims() != null) applyIms(user, request.ims());
+        if (request.photos() != null) applyPhotos(user, request.photos());
+        if (request.x509Certificates() != null) applyX509Certs(user, request.x509Certificates());
+    }
 
-        if (request.emails() != null) {
-            user.getEmails().clear();
-            for (UserUpsertRequest.MultiValue mv : request.emails()) {
-                ScimUserEmail email = new ScimUserEmail();
-                email.setUser(user);
-                email.setValue(normalizeOptional(mv.value()));
-                email.setType(normalizeOptional(mv.type()));
-                email.setDisplay(normalizeOptional(mv.display()));
-                if (mv.primary() != null) {
-                    email.setPrimaryFlag(mv.primary());
-                }
-                user.getEmails().add(email);
-            }
+    private void applyScalarUserFields(ScimUser user, UserUpsertRequest request, boolean isCreate) {
+        applyIfChanged(isCreate, request.displayName(), user::setDisplayName);
+        applyIfChanged(isCreate, request.externalId(), user::setExternalId);
+        if (request.active() != null) user.setActive(request.active());
+        applyIfChanged(isCreate, request.nameFormatted(), user::setNameFormatted);
+        applyIfChanged(isCreate, request.nameFamilyName(), user::setNameFamilyName);
+        applyIfChanged(isCreate, request.nameGivenName(), user::setNameGivenName);
+        applyIfChanged(isCreate, request.nameMiddleName(), user::setNameMiddleName);
+        applyIfChanged(isCreate, request.nameHonorificPrefix(), user::setNameHonorificPrefix);
+        applyIfChanged(isCreate, request.nameHonorificSuffix(), user::setNameHonorificSuffix);
+        applyIfChanged(isCreate, request.nickName(), user::setNickName);
+        applyIfChanged(isCreate, request.profileUrl(), user::setProfileUrl);
+        applyIfChanged(isCreate, request.title(), user::setTitle);
+        applyIfChanged(isCreate, request.userType(), user::setUserType);
+        applyIfChanged(isCreate, request.preferredLanguage(), user::setPreferredLanguage);
+        applyIfChanged(isCreate, request.locale(), user::setLocale);
+        applyIfChanged(isCreate, request.timezone(), user::setTimezone);
+        applyIfChanged(isCreate, request.password(), user::setPassword);
+        applyIfChanged(isCreate, request.enterpriseEmployeeNumber(), user::setEnterpriseEmployeeNumber);
+        applyIfChanged(isCreate, request.enterpriseCostCenter(), user::setEnterpriseCostCenter);
+        applyIfChanged(isCreate, request.enterpriseOrganization(), user::setEnterpriseOrganization);
+        applyIfChanged(isCreate, request.enterpriseDivision(), user::setEnterpriseDivision);
+        applyIfChanged(isCreate, request.enterpriseDepartment(), user::setEnterpriseDepartment);
+        applyIfChanged(isCreate, request.enterpriseManagerValue(), user::setEnterpriseManagerValue);
+        applyIfChanged(isCreate, request.enterpriseManagerRef(), user::setEnterpriseManagerRef);
+        applyIfChanged(isCreate, request.enterpriseManagerDisplay(), user::setEnterpriseManagerDisplay);
+    }
+
+    private void applyIfChanged(boolean isCreate, String value, Consumer<String> setter) {
+        if (isCreate || value != null) {
+            setter.accept(normalizeOptional(value));
         }
-        if (request.phoneNumbers() != null) {
-            user.getPhoneNumbers().clear();
-            for (UserUpsertRequest.MultiValue mv : request.phoneNumbers()) {
-                ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
-                phone.setUser(user);
-                phone.setValue(normalizeOptional(mv.value()));
-                phone.setType(normalizeOptional(mv.type()));
-                phone.setDisplay(normalizeOptional(mv.display()));
-                if (mv.primary() != null) {
-                    phone.setPrimaryFlag(mv.primary());
-                }
-                user.getPhoneNumbers().add(phone);
-            }
+    }
+
+    private void applyEmails(ScimUser user, List<UserUpsertRequest.MultiValue> emails) {
+        user.getEmails().clear();
+        for (UserUpsertRequest.MultiValue mv : emails) {
+            ScimUserEmail email = new ScimUserEmail();
+            email.setUser(user);
+            email.setValue(normalizeOptional(mv.value()));
+            email.setType(normalizeOptional(mv.type()));
+            email.setDisplay(normalizeOptional(mv.display()));
+            if (mv.primary() != null) email.setPrimaryFlag(mv.primary());
+            user.getEmails().add(email);
         }
-        if (request.addresses() != null) {
-            user.getAddresses().clear();
-            for (UserUpsertRequest.Address addr : request.addresses()) {
-                ScimUserAddress address = new ScimUserAddress();
-                address.setUser(user);
-                address.setFormatted(normalizeOptional(addr.formatted()));
-                address.setStreetAddress(normalizeOptional(addr.streetAddress()));
-                address.setLocality(normalizeOptional(addr.locality()));
-                address.setRegion(normalizeOptional(addr.region()));
-                address.setPostalCode(normalizeOptional(addr.postalCode()));
-                address.setCountry(normalizeOptional(addr.country()));
-                address.setType(normalizeOptional(addr.type()));
-                if (addr.primary() != null) {
-                    address.setPrimaryFlag(addr.primary());
-                }
-                user.getAddresses().add(address);
-            }
+    }
+
+    private void applyPhoneNumbers(ScimUser user, List<UserUpsertRequest.MultiValue> phones) {
+        user.getPhoneNumbers().clear();
+        for (UserUpsertRequest.MultiValue mv : phones) {
+            ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
+            phone.setUser(user);
+            phone.setValue(normalizeOptional(mv.value()));
+            phone.setType(normalizeOptional(mv.type()));
+            phone.setDisplay(normalizeOptional(mv.display()));
+            if (mv.primary() != null) phone.setPrimaryFlag(mv.primary());
+            user.getPhoneNumbers().add(phone);
         }
-        if (request.entitlements() != null) {
-            user.getEntitlements().clear();
-            for (UserUpsertRequest.MultiValue mv : request.entitlements()) {
-                ScimUserEntitlement entitlement = new ScimUserEntitlement();
-                entitlement.setUser(user);
-                entitlement.setValue(normalizeOptional(mv.value()));
-                entitlement.setType(normalizeOptional(mv.type()));
-                entitlement.setDisplay(normalizeOptional(mv.display()));
-                if (mv.primary() != null) {
-                    entitlement.setPrimaryFlag(mv.primary());
-                }
-                user.getEntitlements().add(entitlement);
-            }
+    }
+
+    private void applyAddresses(ScimUser user, List<UserUpsertRequest.Address> addresses) {
+        user.getAddresses().clear();
+        for (UserUpsertRequest.Address addr : addresses) {
+            ScimUserAddress address = new ScimUserAddress();
+            address.setUser(user);
+            address.setFormatted(normalizeOptional(addr.formatted()));
+            address.setStreetAddress(normalizeOptional(addr.streetAddress()));
+            address.setLocality(normalizeOptional(addr.locality()));
+            address.setRegion(normalizeOptional(addr.region()));
+            address.setPostalCode(normalizeOptional(addr.postalCode()));
+            address.setCountry(normalizeOptional(addr.country()));
+            address.setType(normalizeOptional(addr.type()));
+            if (addr.primary() != null) address.setPrimaryFlag(addr.primary());
+            user.getAddresses().add(address);
         }
-        if (request.roles() != null) {
-            user.getRoles().clear();
-            for (UserUpsertRequest.MultiValue mv : request.roles()) {
-                ScimUserRole role = new ScimUserRole();
-                role.setUser(user);
-                role.setValue(normalizeOptional(mv.value()));
-                role.setType(normalizeOptional(mv.type()));
-                role.setDisplay(normalizeOptional(mv.display()));
-                if (mv.primary() != null) {
-                    role.setPrimaryFlag(mv.primary());
-                }
-                user.getRoles().add(role);
-            }
+    }
+
+    private void applyEntitlements(ScimUser user, List<UserUpsertRequest.MultiValue> entitlements) {
+        user.getEntitlements().clear();
+        for (UserUpsertRequest.MultiValue mv : entitlements) {
+            ScimUserEntitlement entitlement = new ScimUserEntitlement();
+            entitlement.setUser(user);
+            entitlement.setValue(normalizeOptional(mv.value()));
+            entitlement.setType(normalizeOptional(mv.type()));
+            entitlement.setDisplay(normalizeOptional(mv.display()));
+            if (mv.primary() != null) entitlement.setPrimaryFlag(mv.primary());
+            user.getEntitlements().add(entitlement);
         }
-        if (request.ims() != null) {
-            user.getIms().clear();
-            for (UserUpsertRequest.MultiValue mv : request.ims()) {
-                ScimUserIm im = new ScimUserIm();
-                im.setUser(user);
-                im.setValue(normalizeOptional(mv.value()));
-                im.setType(normalizeOptional(mv.type()));
-                im.setDisplay(normalizeOptional(mv.display()));
-                if (mv.primary() != null) {
-                    im.setPrimaryFlag(mv.primary());
-                }
-                user.getIms().add(im);
-            }
+    }
+
+    private void applyRoles(ScimUser user, List<UserUpsertRequest.MultiValue> roles) {
+        user.getRoles().clear();
+        for (UserUpsertRequest.MultiValue mv : roles) {
+            ScimUserRole role = new ScimUserRole();
+            role.setUser(user);
+            role.setValue(normalizeOptional(mv.value()));
+            role.setType(normalizeOptional(mv.type()));
+            role.setDisplay(normalizeOptional(mv.display()));
+            if (mv.primary() != null) role.setPrimaryFlag(mv.primary());
+            user.getRoles().add(role);
         }
-        if (request.photos() != null) {
-            user.getPhotos().clear();
-            for (UserUpsertRequest.MultiValue mv : request.photos()) {
-                ScimUserPhoto photo = new ScimUserPhoto();
-                photo.setUser(user);
-                photo.setValue(normalizeOptional(mv.value()));
-                photo.setType(normalizeOptional(mv.type()));
-                photo.setDisplay(normalizeOptional(mv.display()));
-                if (mv.primary() != null) {
-                    photo.setPrimaryFlag(mv.primary());
-                }
-                user.getPhotos().add(photo);
-            }
+    }
+
+    private void applyIms(ScimUser user, List<UserUpsertRequest.MultiValue> ims) {
+        user.getIms().clear();
+        for (UserUpsertRequest.MultiValue mv : ims) {
+            ScimUserIm im = new ScimUserIm();
+            im.setUser(user);
+            im.setValue(normalizeOptional(mv.value()));
+            im.setType(normalizeOptional(mv.type()));
+            im.setDisplay(normalizeOptional(mv.display()));
+            if (mv.primary() != null) im.setPrimaryFlag(mv.primary());
+            user.getIms().add(im);
         }
-        if (request.x509Certificates() != null) {
-            user.getX509Certificates().clear();
-            for (UserUpsertRequest.MultiValue mv : request.x509Certificates()) {
-                ScimUserX509Certificate cert = new ScimUserX509Certificate();
-                cert.setUser(user);
-                cert.setValue(normalizeOptional(mv.value()));
-                cert.setType(normalizeOptional(mv.type()));
-                cert.setDisplay(normalizeOptional(mv.display()));
-                if (mv.primary() != null) {
-                    cert.setPrimaryFlag(mv.primary());
-                }
-                user.getX509Certificates().add(cert);
-            }
+    }
+
+    private void applyPhotos(ScimUser user, List<UserUpsertRequest.MultiValue> photos) {
+        user.getPhotos().clear();
+        for (UserUpsertRequest.MultiValue mv : photos) {
+            ScimUserPhoto photo = new ScimUserPhoto();
+            photo.setUser(user);
+            photo.setValue(normalizeOptional(mv.value()));
+            photo.setType(normalizeOptional(mv.type()));
+            photo.setDisplay(normalizeOptional(mv.display()));
+            if (mv.primary() != null) photo.setPrimaryFlag(mv.primary());
+            user.getPhotos().add(photo);
+        }
+    }
+
+    private void applyX509Certs(ScimUser user, List<UserUpsertRequest.MultiValue> certs) {
+        user.getX509Certificates().clear();
+        for (UserUpsertRequest.MultiValue mv : certs) {
+            ScimUserX509Certificate cert = new ScimUserX509Certificate();
+            cert.setUser(user);
+            cert.setValue(normalizeOptional(mv.value()));
+            cert.setType(normalizeOptional(mv.type()));
+            cert.setDisplay(normalizeOptional(mv.display()));
+            if (mv.primary() != null) cert.setPrimaryFlag(mv.primary());
+            user.getX509Certificates().add(cert);
         }
     }
 
@@ -422,27 +382,34 @@ public class ScimAdminService {
         if (request.members() != null) {
             group.getMembers().clear();
             for (GroupUpsertRequest.Member member : request.members()) {
-                if (member == null || member.value() == null || member.value().isBlank()) {
-                    continue;
+                ScimGroupMembership membership = buildMembership(group, member);
+                if (membership != null) {
+                    group.getMembers().add(membership);
                 }
-                ScimGroupMembership membership = new ScimGroupMembership();
-                membership.setGroup(group);
-                try {
-                    membership.setMemberValue(UUID.fromString(member.value().trim()));
-                } catch (IllegalArgumentException ex) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid member UUID: " + member.value());
-                }
-                String memberType = normalizeOptional(member.type());
-                membership.setMemberType(memberType != null ? memberType : "User");
-                if ("Group".equalsIgnoreCase(membership.getMemberType())
-                        && group.getId() != null
-                        && group.getId().equals(membership.getMemberValue())) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Group cannot include itself as a member");
-                }
-                membership.setDisplay(normalizeOptional(member.display()));
-                group.getMembers().add(membership);
             }
         }
+    }
+
+    private ScimGroupMembership buildMembership(ScimGroup group, GroupUpsertRequest.Member member) {
+        if (member == null || member.value() == null || member.value().isBlank()) {
+            return null;
+        }
+        ScimGroupMembership membership = new ScimGroupMembership();
+        membership.setGroup(group);
+        try {
+            membership.setMemberValue(UUID.fromString(member.value().trim()));
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid member UUID: " + member.value());
+        }
+        String memberType = normalizeOptional(member.type());
+        membership.setMemberType(memberType != null ? memberType : "User");
+        if ("Group".equalsIgnoreCase(membership.getMemberType())
+                && group.getId() != null
+                && group.getId().equals(membership.getMemberValue())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Group cannot include itself as a member");
+        }
+        membership.setDisplay(normalizeOptional(member.display()));
+        return membership;
     }
 
     private String normalizeRequired(String field, String value) {

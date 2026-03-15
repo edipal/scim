@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * SCIM 2.0 Users endpoint per RFC 7644 §3.
@@ -27,6 +26,7 @@ import java.util.stream.Collectors;
 public class ScimUserController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
+    private static final String KEY_SCHEMAS = "schemas";
 
     private final ScimUserService userService;
 
@@ -52,7 +52,7 @@ public class ScimUserController {
         List<Map<String, Object>> groups = userService.getUserGroups(user.getId(), baseUrl);
         CompatMode compatMode = CompatMode.fromString(compat);
         Map<String, Object> scimResponse = ScimUserMapper.toScimResponse(user, compatBaseUrl, groups);
-        scimResponse = applyCompat(scimResponse, compatMode, false);
+        scimResponse = applyCompat(scimResponse, compatMode);
 
         return ResponseEntity.status(201)
                 .contentType(SCIM_JSON)
@@ -82,7 +82,7 @@ public class ScimUserController {
         List<Map<String, Object>> groups = userService.getUserGroups(user.getId(), baseUrl);
         CompatMode compatMode = CompatMode.fromString(compat);
         Map<String, Object> scimResponse = ScimUserMapper.toScimResponse(user, compatBaseUrl, groups);
-        scimResponse = applyCompat(scimResponse, compatMode, false);
+        scimResponse = applyCompat(scimResponse, compatMode);
 
         // Apply attribute projection
         applyAttributeProjection(scimResponse, attributes, excludedAttributes);
@@ -127,11 +127,11 @@ public class ScimUserController {
                 .map(u -> {
                     List<Map<String, Object>> groups = userService.getUserGroups(u.getId(), baseUrl);
                     Map<String, Object> scimResp = ScimUserMapper.toScimResponse(u, compatBaseUrl, groups);
-                    scimResp = applyCompat(scimResp, compatMode, true);
+                    scimResp = applyCompat(scimResp, compatMode);
                     applyAttributeProjection(scimResp, attributes, excludedAttributes);
                     return scimResp;
                 })
-                .collect(Collectors.toList());
+                .toList();
         result.put("Resources", resources);
 
         return ResponseEntity.ok()
@@ -169,7 +169,7 @@ public class ScimUserController {
         List<Map<String, Object>> groups = userService.getUserGroups(user.getId(), baseUrl);
         CompatMode compatMode = CompatMode.fromString(compat);
         Map<String, Object> scimResponse = ScimUserMapper.toScimResponse(user, compatBaseUrl, groups);
-        scimResponse = applyCompat(scimResponse, compatMode, false);
+        scimResponse = applyCompat(scimResponse, compatMode);
 
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
@@ -206,7 +206,7 @@ public class ScimUserController {
         String compatBaseUrl = buildBaseUrl(request, workspaceId, compat);
 
         // Validate PATCH schema
-        List<String> schemas = (List<String>) body.get("schemas");
+        List<String> schemas = (List<String>) body.get(KEY_SCHEMAS);
         if (schemas == null || !schemas.contains("urn:ietf:params:scim:api:messages:2.0:PatchOp")) {
             throw new ScimException(400, "invalidValue",
                     "PATCH request must include PatchOp schema");
@@ -221,7 +221,7 @@ public class ScimUserController {
         List<Map<String, Object>> groups = userService.getUserGroups(user.getId(), baseUrl);
         CompatMode compatMode = CompatMode.fromString(compat);
         Map<String, Object> scimResponse = ScimUserMapper.toScimResponse(user, compatBaseUrl, groups);
-        scimResponse = applyCompat(scimResponse, compatMode, false);
+        scimResponse = applyCompat(scimResponse, compatMode);
 
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
@@ -292,10 +292,9 @@ public class ScimUserController {
         return base;
     }
 
-    private Map<String, Object> applyCompat(Map<String, Object> scimResponse, CompatMode compatMode,
-                                            boolean listResponse) {
+    private Map<String, Object> applyCompat(Map<String, Object> scimResponse, CompatMode compatMode) {
         if (compatMode == CompatMode.MS) {
-            return MsScimUserMapper.toMsCompat(scimResponse, listResponse);
+            return MsScimUserMapper.toMsCompat(scimResponse);
         }
         return scimResponse;
     }
@@ -310,14 +309,14 @@ public class ScimUserController {
         if (attributes != null && !attributes.isBlank()) {
             Set<String> requested = parseAttrList(attributes);
             // Always keep schemas, id, meta
-            requested.add("schemas");
+            requested.add(KEY_SCHEMAS);
             requested.add("id");
             requested.add("meta");
             resource.keySet().retainAll(requested);
         } else if (excludedAttributes != null && !excludedAttributes.isBlank()) {
             Set<String> excluded = parseAttrList(excludedAttributes);
             // Never exclude schemas, id
-            excluded.remove("schemas");
+            excluded.remove(KEY_SCHEMAS);
             excluded.remove("id");
             resource.keySet().removeAll(excluded);
         }

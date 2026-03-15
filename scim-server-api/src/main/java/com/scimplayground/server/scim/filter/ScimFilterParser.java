@@ -18,10 +18,30 @@ import java.util.regex.Pattern;
  */
 public class ScimFilterParser {
 
+    private ScimFilterParser() {
+    }
+
+    private static final String ATTR_WORKSPACE = "workspace";
+    private static final String META_ATTR_CREATED = "created";
+    private static final String META_ATTR_LAST_MODIFIED = "lastModified";
+    private static final String ATTR_CREATED_AT = "createdAt";
+    private static final String ATTR_LAST_MODIFIED = "lastModified";
+    private static final String ATTR_NICK_NAME = "nickName";
+    private static final String ATTR_USER_TYPE = "userType";
+    private static final String ATTR_PREFERRED_LANGUAGE = "preferredLanguage";
+    private static final String ATTR_LOCALE = "locale";
+    private static final String ATTR_TIMEZONE = "timezone";
+    // Common attribute name constants
+    private static final String ATTR_USER_NAME = "userName";
+    private static final String ATTR_DISPLAY_NAME = "displayName";
+    private static final String ATTR_EXTERNAL_ID = "externalId";
+    private static final String ATTR_ID = "id";
+    private static final String ATTR_TITLE = "title";
+
     // Token patterns
     private static final Pattern TOKEN_PATTERN = Pattern.compile(
             "\\(|\\)|" +                           // Grouping
-            "\"(?:[^\"\\\\]|\\\\.)*\"|" +           // Quoted string
+            "\"(?:[^\"\\\\]|\\\\.)*+\"|" +           // Quoted string (possessive quantifier)
             "\\b(?:true|false)\\b|" +               // Boolean
             "\\b(?:and|or|not)\\b|" +               // Logical operators
             "\\b(?:eq|ne|co|sw|ew|pr|gt|ge|lt|le)\\b|" + // Comparison operators
@@ -33,13 +53,13 @@ public class ScimFilterParser {
 
     public static Specification<ScimUser> parseUserFilter(String filter, UUID workspaceId) {
         if (filter == null || filter.isBlank()) {
-            return (root, query, cb) -> cb.equal(root.get("workspace").get("id"), workspaceId);
+            return (root, query, cb) -> cb.equal(root.get(ATTR_WORKSPACE).get(ATTR_ID), workspaceId);
         }
         try {
             List<String> tokens = tokenize(filter);
             int[] pos = {0};
             Specification<ScimUser> spec = parseOrExpression(tokens, pos, true);
-            Specification<ScimUser> wsSpec = (root, query, cb) -> cb.equal(root.get("workspace").get("id"), workspaceId);
+            Specification<ScimUser> wsSpec = (root, query, cb) -> cb.equal(root.get(ATTR_WORKSPACE).get(ATTR_ID), workspaceId);
             return wsSpec.and(spec);
         } catch (ScimException e) {
             throw e;
@@ -52,13 +72,13 @@ public class ScimFilterParser {
 
     public static Specification<ScimGroup> parseGroupFilter(String filter, UUID workspaceId) {
         if (filter == null || filter.isBlank()) {
-            return (root, query, cb) -> cb.equal(root.get("workspace").get("id"), workspaceId);
+            return (root, query, cb) -> cb.equal(root.get(ATTR_WORKSPACE).get(ATTR_ID), workspaceId);
         }
         try {
             List<String> tokens = tokenize(filter);
             int[] pos = {0};
             Specification<ScimGroup> spec = parseOrExpression(tokens, pos, false);
-            Specification<ScimGroup> wsSpec = (root, query, cb) -> cb.equal(root.get("workspace").get("id"), workspaceId);
+            Specification<ScimGroup> wsSpec = (root, query, cb) -> cb.equal(root.get(ATTR_WORKSPACE).get(ATTR_ID), workspaceId);
             return wsSpec.and(spec);
         } catch (ScimException e) {
             throw e;
@@ -253,8 +273,8 @@ public class ScimFilterParser {
         if (attrPath.startsWith("meta.")) {
             String sub = attrPath.substring(5);
             return switch (sub) {
-                case "created" -> root.get("createdAt");
-                case "lastModified" -> root.get("lastModified");
+                case META_ATTR_CREATED -> root.get(ATTR_CREATED_AT);
+                case META_ATTR_LAST_MODIFIED -> root.get(ATTR_LAST_MODIFIED);
                 default -> throw new ScimException(400, "invalidFilter", "Unknown meta attribute: " + sub);
             };
         }
@@ -288,17 +308,17 @@ public class ScimFilterParser {
 
         // Direct attributes
         return switch (attrPath) {
-            case "id" -> root.get("id");
-            case "userName" -> root.get("userName");
-            case "externalId" -> root.get("externalId");
-            case "displayName" -> root.get("displayName");
-            case "nickName" -> root.get("nickName");
-            case "title" -> root.get("title");
-            case "userType" -> root.get("userType");
+            case ATTR_ID -> root.get(ATTR_ID);
+            case ATTR_USER_NAME -> root.get(ATTR_USER_NAME);
+            case ATTR_EXTERNAL_ID -> root.get(ATTR_EXTERNAL_ID);
+            case ATTR_DISPLAY_NAME -> root.get(ATTR_DISPLAY_NAME);
+            case ATTR_NICK_NAME -> root.get(ATTR_NICK_NAME);
+            case ATTR_TITLE -> root.get(ATTR_TITLE);
+            case ATTR_USER_TYPE -> root.get(ATTR_USER_TYPE);
             case "profileUrl" -> root.get("profileUrl");
-            case "preferredLanguage" -> root.get("preferredLanguage");
-            case "locale" -> root.get("locale");
-            case "timezone" -> root.get("timezone");
+            case ATTR_PREFERRED_LANGUAGE -> root.get(ATTR_PREFERRED_LANGUAGE);
+            case ATTR_LOCALE -> root.get(ATTR_LOCALE);
+            case ATTR_TIMEZONE -> root.get(ATTR_TIMEZONE);
             case "active" -> root.get("active");
             default -> throw new ScimException(400, "invalidFilter", "Unknown attribute: " + attrPath);
         };
@@ -308,16 +328,16 @@ public class ScimFilterParser {
         if (attrPath.startsWith("meta.")) {
             String sub = attrPath.substring(5);
             return switch (sub) {
-                case "created" -> root.get("createdAt");
-                case "lastModified" -> root.get("lastModified");
+                case META_ATTR_CREATED -> root.get(ATTR_CREATED_AT);
+                case META_ATTR_LAST_MODIFIED -> root.get(ATTR_LAST_MODIFIED);
                 default -> throw new ScimException(400, "invalidFilter", "Unknown meta attribute: " + sub);
             };
         }
 
         return switch (attrPath) {
-            case "id" -> root.get("id");
-            case "displayName" -> root.get("displayName");
-            case "externalId" -> root.get("externalId");
+            case ATTR_ID -> root.get(ATTR_ID);
+            case ATTR_DISPLAY_NAME -> root.get(ATTR_DISPLAY_NAME);
+            case ATTR_EXTERNAL_ID -> root.get(ATTR_EXTERNAL_ID);
             default -> throw new ScimException(400, "invalidFilter", "Unknown attribute: " + attrPath);
         };
     }
@@ -340,8 +360,8 @@ public class ScimFilterParser {
 
     private static boolean isCaseInsensitiveAttribute(String attrPath) {
         // Per RFC 7643, userName, emails.value, etc. are case-insensitive
-        return Set.of("userName", "displayName", "nickName", "title", "userType",
-                "preferredLanguage", "locale", "timezone", "externalId",
+        return Set.of(ATTR_USER_NAME, ATTR_DISPLAY_NAME, ATTR_NICK_NAME, ATTR_TITLE, ATTR_USER_TYPE,
+            ATTR_PREFERRED_LANGUAGE, ATTR_LOCALE, ATTR_TIMEZONE, ATTR_EXTERNAL_ID,
                 "name.familyName", "name.givenName", "name.formatted",
                 "name.middleName").contains(attrPath);
     }
@@ -349,30 +369,30 @@ public class ScimFilterParser {
     // ── SORTING ───────────────────────────────────────────
 
     public static String resolveUserSortAttribute(String sortBy) {
-        if (sortBy == null) return "userName";
+        if (sortBy == null) return ATTR_USER_NAME;
         return switch (sortBy) {
-            case "userName" -> "userName";
+            case ATTR_USER_NAME -> ATTR_USER_NAME;
             case "name.familyName" -> "nameFamilyName";
             case "name.givenName" -> "nameGivenName";
-            case "displayName" -> "displayName";
-            case "title" -> "title";
-            case "externalId" -> "externalId";
-            case "meta.created" -> "createdAt";
-            case "meta.lastModified" -> "lastModified";
-            case "id" -> "id";
-            default -> "userName";
+            case ATTR_DISPLAY_NAME -> ATTR_DISPLAY_NAME;
+            case ATTR_TITLE -> ATTR_TITLE;
+            case ATTR_EXTERNAL_ID -> ATTR_EXTERNAL_ID;
+            case "meta.created" -> ATTR_CREATED_AT;
+            case "meta.lastModified" -> ATTR_LAST_MODIFIED;
+            case ATTR_ID -> ATTR_ID;
+            default -> ATTR_USER_NAME;
         };
     }
 
     public static String resolveGroupSortAttribute(String sortBy) {
-        if (sortBy == null) return "displayName";
+        if (sortBy == null) return ATTR_DISPLAY_NAME;
         return switch (sortBy) {
-            case "displayName" -> "displayName";
-            case "externalId" -> "externalId";
-            case "meta.created" -> "createdAt";
-            case "meta.lastModified" -> "lastModified";
-            case "id" -> "id";
-            default -> "displayName";
+            case ATTR_DISPLAY_NAME -> ATTR_DISPLAY_NAME;
+            case ATTR_EXTERNAL_ID -> ATTR_EXTERNAL_ID;
+            case "meta.created" -> ATTR_CREATED_AT;
+            case "meta.lastModified" -> ATTR_LAST_MODIFIED;
+            case ATTR_ID -> ATTR_ID;
+            default -> ATTR_DISPLAY_NAME;
         };
     }
 }

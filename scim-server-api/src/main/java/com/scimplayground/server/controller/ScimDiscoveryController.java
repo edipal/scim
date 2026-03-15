@@ -22,6 +22,7 @@ import java.util.*;
 public class ScimDiscoveryController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
+    private static final String KEY_SCHEMAS = "schemas";
 
     // ─── ServiceProviderConfig ──────────────────────────────────────────
 
@@ -47,7 +48,7 @@ public class ScimDiscoveryController {
             @PathVariable(name = "compat", required = false) String compat) {
         List<Map<String, Object>> schemas = ScimSchemaDefinitions.allSchemas();
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
+        response.put(KEY_SCHEMAS, List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
         response.put("totalResults", schemas.size());
         response.put("itemsPerPage", schemas.size());
         response.put("startIndex", 1);
@@ -75,6 +76,7 @@ public class ScimDiscoveryController {
     @RequestMapping(value = {"/Schemas", "/Schemas/{schemaId}"}, method = {RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     public ResponseEntity<Map<String, Object>> schemasMethodNotAllowed(
+            @PathVariable(name = "schemaId", required = false) String schemaId,
             @PathVariable(name = "compat", required = false) String compat) {
         return methodNotAllowed();
     }
@@ -88,7 +90,7 @@ public class ScimDiscoveryController {
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
         List<Map<String, Object>> types = ScimSchemaDefinitions.resourceTypes(baseUrl);
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
+        response.put(KEY_SCHEMAS, List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
         response.put("totalResults", types.size());
         response.put("itemsPerPage", types.size());
         response.put("startIndex", 1);
@@ -115,6 +117,7 @@ public class ScimDiscoveryController {
     @RequestMapping(value = {"/ResourceTypes", "/ResourceTypes/{resourceTypeId}"}, method = {RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     public ResponseEntity<Map<String, Object>> resourceTypesMethodNotAllowed(
+            @PathVariable(name = "resourceTypeId", required = false) String resourceTypeId,
             @PathVariable(name = "compat", required = false) String compat) {
         return methodNotAllowed();
     }
@@ -123,7 +126,7 @@ public class ScimDiscoveryController {
 
     private ResponseEntity<Map<String, Object>> methodNotAllowed() {
         Map<String, Object> error = new LinkedHashMap<>();
-        error.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:Error"));
+        error.put(KEY_SCHEMAS, List.of("urn:ietf:params:scim:api:messages:2.0:Error"));
         error.put("status", "405");
         error.put("detail", "Method not allowed on discovery endpoint");
         return ResponseEntity.status(405)

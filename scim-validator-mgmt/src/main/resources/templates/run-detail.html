@@ -127,18 +127,18 @@
     </div>
 </div>
 <script>
-    document.querySelectorAll('.expand-link[data-target]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            var targetId = button.getAttribute('data-target');
+    document.querySelectorAll('.expand-link[data-target]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const targetId = button.dataset.target;
             if (!targetId) {
                 return;
             }
-            var detailsRow = document.getElementById(targetId);
+            const detailsRow = document.getElementById(targetId);
             if (!detailsRow) {
                 return;
             }
 
-            var isOpen = detailsRow.classList.toggle('is-open');
+            const isOpen = detailsRow.classList.toggle('is-open');
             button.textContent = isOpen ? 'Collapse' : 'Expand';
         });
     });

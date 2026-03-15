@@ -1,7 +1,7 @@
 const API = '/api/management';
 const CSRF_TOKEN = document.querySelector('meta[name="_csrf"]')?.content;
 const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
-const wsId = window.location.pathname.split('/').pop();
+const wsId = globalThis.location.pathname.split('/').pop();
 const state = {
     users: [],
     groups: [],
@@ -120,7 +120,7 @@ async function load() {
         return;
     }
 
-    const base = `${window.location.origin.replace(/:\d+$/, ':8080')}/ws/${wsId}/scim/v2`;
+    const base = `${globalThis.location.origin.replace(/:\d+$/, ':8080')}/ws/${wsId}/scim/v2`;
     document.getElementById('scimBaseUrl').textContent = base;
 
     loadTokens();
@@ -253,7 +253,7 @@ function parseMultiValuedFieldRaw(id, label, showToastOnError = true) {
             }
             return {value: item};
         });
-    } catch (e) {
+    } catch {
         if (showToastOnError) {
             toast(`${label} contains invalid JSON`);
         }
@@ -381,15 +381,15 @@ function removeMultiValuedItem(fieldId, index) {
 
 function updateMultiValuedItem(fieldId, index, key, value) {
     const items = getMultiValuedItems(fieldId, true);
-    if (items === null || !items[index]) {
+    if (items?.[index] == null) {
         return;
     }
     if (typeof value === 'string') {
         const trimmed = value.trim();
-        if (!trimmed) {
-            delete items[index][key];
-        } else {
+        if (trimmed) {
             items[index][key] = trimmed;
+        } else {
+            delete items[index][key];
         }
     } else {
         items[index][key] = value;
@@ -414,7 +414,7 @@ async function loadTokens() {
                 <div class="meta">${t.description || ''} &middot; Created ${new Date(t.createdAt).toLocaleString()}</div>
             </div>
             <div>
-                ${!t.revoked ? `<button class="btn btn-danger btn-sm" onclick="revokeToken('${t.id}','${esc(t.name)}')">Revoke</button>` : ''}
+                ${t.revoked ? '' : `<button class="btn btn-danger btn-sm" onclick="revokeToken('${t.id}','${esc(t.name)}')">Revoke</button>`}
             </div>
         </li>
     `).join('');
@@ -622,40 +622,40 @@ function showUserModal(userId) {
     const modal = document.getElementById('userModal');
     const title = document.getElementById('userModalTitle');
     const user = state.users.find(u => u.id === userId);
-    document.getElementById('userId').value = user ? user.id : '';
-    document.getElementById('userName').value = user ? user.userName : '';
-    document.getElementById('userDisplayName').value = user ? (user.displayName || '') : '';
-    document.getElementById('userExternalId').value = user ? (user.externalId || '') : '';
-    document.getElementById('userNameFormatted').value = user && user.name ? (user.name.formatted || '') : '';
-    document.getElementById('userNameFamily').value = user && user.name ? (user.name.familyName || '') : '';
-    document.getElementById('userNameGiven').value = user && user.name ? (user.name.givenName || '') : '';
-    document.getElementById('userNameMiddle').value = user && user.name ? (user.name.middleName || '') : '';
-    document.getElementById('userNameHonorificPrefix').value = user && user.name ? (user.name.honorificPrefix || '') : '';
-    document.getElementById('userNameHonorificSuffix').value = user && user.name ? (user.name.honorificSuffix || '') : '';
-    document.getElementById('userNickName').value = user ? (user.nickName || '') : '';
-    document.getElementById('userProfileUrl').value = user ? (user.profileUrl || '') : '';
-    document.getElementById('userTitle').value = user ? (user.title || '') : '';
-    document.getElementById('userType').value = user ? (user.userType || '') : '';
-    document.getElementById('userPreferredLanguage').value = user ? (user.preferredLanguage || '') : '';
-    document.getElementById('userLocale').value = user ? (user.locale || '') : '';
-    document.getElementById('userTimezone').value = user ? (user.timezone || '') : '';
+    document.getElementById('userId').value = user?.id || '';
+    document.getElementById('userName').value = user?.userName || '';
+    document.getElementById('userDisplayName').value = user?.displayName || '';
+    document.getElementById('userExternalId').value = user?.externalId || '';
+    document.getElementById('userNameFormatted').value = user?.name?.formatted || '';
+    document.getElementById('userNameFamily').value = user?.name?.familyName || '';
+    document.getElementById('userNameGiven').value = user?.name?.givenName || '';
+    document.getElementById('userNameMiddle').value = user?.name?.middleName || '';
+    document.getElementById('userNameHonorificPrefix').value = user?.name?.honorificPrefix || '';
+    document.getElementById('userNameHonorificSuffix').value = user?.name?.honorificSuffix || '';
+    document.getElementById('userNickName').value = user?.nickName || '';
+    document.getElementById('userProfileUrl').value = user?.profileUrl || '';
+    document.getElementById('userTitle').value = user?.title || '';
+    document.getElementById('userType').value = user?.userType || '';
+    document.getElementById('userPreferredLanguage').value = user?.preferredLanguage || '';
+    document.getElementById('userLocale').value = user?.locale || '';
+    document.getElementById('userTimezone').value = user?.timezone || '';
     document.getElementById('userPassword').value = '';
-    document.getElementById('userEnterpriseEmployeeNumber').value = user && user.enterprise ? (user.enterprise.employeeNumber || '') : '';
-    document.getElementById('userEnterpriseCostCenter').value = user && user.enterprise ? (user.enterprise.costCenter || '') : '';
-    document.getElementById('userEnterpriseOrganization').value = user && user.enterprise ? (user.enterprise.organization || '') : '';
-    document.getElementById('userEnterpriseDivision').value = user && user.enterprise ? (user.enterprise.division || '') : '';
-    document.getElementById('userEnterpriseDepartment').value = user && user.enterprise ? (user.enterprise.department || '') : '';
-    document.getElementById('userEnterpriseManagerValue').value = user && user.enterprise && user.enterprise.manager ? (user.enterprise.manager.value || '') : '';
-    document.getElementById('userEnterpriseManagerRef').value = user && user.enterprise && user.enterprise.manager ? (user.enterprise.manager.ref || '') : '';
-    document.getElementById('userEnterpriseManagerDisplay').value = user && user.enterprise && user.enterprise.manager ? (user.enterprise.manager.display || '') : '';
-    document.getElementById('userEmails').value = user && user.emails ? JSON.stringify(user.emails, null, 2) : '';
-    document.getElementById('userPhoneNumbers').value = user && user.phoneNumbers ? JSON.stringify(user.phoneNumbers, null, 2) : '';
-    document.getElementById('userAddresses').value = user && user.addresses ? JSON.stringify(user.addresses, null, 2) : '';
-    document.getElementById('userEntitlements').value = user && user.entitlements ? JSON.stringify(user.entitlements, null, 2) : '';
-    document.getElementById('userRoles').value = user && user.roles ? JSON.stringify(user.roles, null, 2) : '';
-    document.getElementById('userIms').value = user && user.ims ? JSON.stringify(user.ims, null, 2) : '';
-    document.getElementById('userPhotos').value = user && user.photos ? JSON.stringify(user.photos, null, 2) : '';
-    document.getElementById('userX509').value = user && user.x509Certificates ? JSON.stringify(user.x509Certificates, null, 2) : '';
+    document.getElementById('userEnterpriseEmployeeNumber').value = user?.enterprise?.employeeNumber || '';
+    document.getElementById('userEnterpriseCostCenter').value = user?.enterprise?.costCenter || '';
+    document.getElementById('userEnterpriseOrganization').value = user?.enterprise?.organization || '';
+    document.getElementById('userEnterpriseDivision').value = user?.enterprise?.division || '';
+    document.getElementById('userEnterpriseDepartment').value = user?.enterprise?.department || '';
+    document.getElementById('userEnterpriseManagerValue').value = user?.enterprise?.manager?.value || '';
+    document.getElementById('userEnterpriseManagerRef').value = user?.enterprise?.manager?.ref || '';
+    document.getElementById('userEnterpriseManagerDisplay').value = user?.enterprise?.manager?.display || '';
+    document.getElementById('userEmails').value = user?.emails ? JSON.stringify(user.emails, null, 2) : '';
+    document.getElementById('userPhoneNumbers').value = user?.phoneNumbers ? JSON.stringify(user.phoneNumbers, null, 2) : '';
+    document.getElementById('userAddresses').value = user?.addresses ? JSON.stringify(user.addresses, null, 2) : '';
+    document.getElementById('userEntitlements').value = user?.entitlements ? JSON.stringify(user.entitlements, null, 2) : '';
+    document.getElementById('userRoles').value = user?.roles ? JSON.stringify(user.roles, null, 2) : '';
+    document.getElementById('userIms').value = user?.ims ? JSON.stringify(user.ims, null, 2) : '';
+    document.getElementById('userPhotos').value = user?.photos ? JSON.stringify(user.photos, null, 2) : '';
+    document.getElementById('userX509').value = user?.x509Certificates ? JSON.stringify(user.x509Certificates, null, 2) : '';
     renderAllMultiValuedFields();
     document.getElementById('userActive').checked = user ? !!user.active : true;
     title.textContent = user ? 'Edit User' : 'Create User';
@@ -682,8 +682,8 @@ async function saveUser() {
     const ims = parseJsonField('userIms', 'IMs');
     const photos = parseJsonField('userPhotos', 'Photos');
     const x509Certificates = parseJsonField('userX509', 'X509 Certificates');
-    if (emails === false || phoneNumbers === false || addresses === false || entitlements === false
-        || roles === false || ims === false || photos === false || x509Certificates === false) {
+    if (![emails, phoneNumbers, addresses, entitlements, roles, ims, photos, x509Certificates]
+        .every((result) => result.valid)) {
         return;
     }
     const payload = {
@@ -713,14 +713,14 @@ async function saveUser() {
         enterpriseManagerValue: document.getElementById('userEnterpriseManagerValue').value,
         enterpriseManagerRef: document.getElementById('userEnterpriseManagerRef').value,
         enterpriseManagerDisplay: document.getElementById('userEnterpriseManagerDisplay').value,
-        emails,
-        phoneNumbers,
-        addresses,
-        entitlements,
-        roles,
-        ims,
-        photos,
-        x509Certificates
+        emails: emails.value,
+        phoneNumbers: phoneNumbers.value,
+        addresses: addresses.value,
+        entitlements: entitlements.value,
+        roles: roles.value,
+        ims: ims.value,
+        photos: photos.value,
+        x509Certificates: x509Certificates.value
     };
     const url = userId
         ? `${API}/workspaces/${wsId}/users/${userId}`
@@ -983,7 +983,7 @@ function addSelectedMember(type) {
     const select = type === 'User'
         ? document.getElementById('groupUserLookup')
         : document.getElementById('groupGroupLookup');
-    if (!select || !select.value) {
+    if (!select?.value) {
         toast(`Select a ${type.toLowerCase()} first`);
         return;
     }
@@ -1167,7 +1167,7 @@ function formatJsonForDisplay(raw) {
     try {
         const parsed = JSON.parse(raw);
         return JSON.stringify(parsed, null, 2);
-    } catch (e) {
+    } catch {
         return raw;
     }
 }
@@ -1215,19 +1215,24 @@ document.addEventListener('keydown', (event) => {
 function parseJsonField(id, label) {
     const raw = document.getElementById(id).value.trim();
     if (!raw) {
-        return null;
+        return {valid: true, value: null};
     }
     try {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) {
             toast(`${label} must be a JSON array`);
-            return false;
+            return {valid: false, value: null};
         }
-        return parsed;
-    } catch (e) {
+        return {valid: true, value: parsed};
+    } catch {
         toast(`${label} contains invalid JSON`);
-        return false;
+        return {valid: false, value: null};
     }
 }
 
-load();
+try {
+    await load();
+} catch (err) {
+    console.error('Initialization error:', err);
+    toast('Failed to initialize workspace');
+}

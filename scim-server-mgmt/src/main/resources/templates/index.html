@@ -160,13 +160,13 @@
 </div>
 
 <div class="blocking-overlay" id="workspaceDeleteOverlay" aria-hidden="true">
-    <div class="blocking-overlay-card" role="status" aria-live="polite" aria-busy="true">
+    <output class="blocking-overlay-card" aria-live="polite" aria-busy="true">
         <div class="blocking-overlay-spinner"></div>
         <div>
             <div class="blocking-overlay-title">Deleting workspace</div>
             <div class="blocking-overlay-copy">The UI is locked until the delete operation completes.</div>
         </div>
-    </div>
+    </output>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -212,7 +212,7 @@ async function loadWorkspaces() {
             </li>
         `).join('');
         await Promise.all(data.map(ws => hydrateWorkspaceSize(ws.id)));
-    } catch (e) {
+    } catch {
         document.getElementById('workspaceList').innerHTML = '<li class="empty-state">Failed to load workspaces.</li>';
     }
 }
@@ -224,7 +224,7 @@ async function hydrateWorkspaceSize(workspaceId) {
         if (size) {
             size.textContent = `Total size ${formatBytes(stats.storage?.estimatedRowBytes)}`;
         }
-    } catch (e) {
+    } catch {
         const size = document.getElementById(`ws-size-${workspaceId}`);
         if (size) {
             size.textContent = 'Total size unavailable';
@@ -251,7 +251,7 @@ async function showWorkspaceStats(workspaceId, workspaceName) {
         document.getElementById('statsModalTitle').textContent = `Workspace Stats: ${workspaceName}`;
         renderWorkspaceStats(stats, 'stats');
         document.getElementById('statsModal').classList.add('active');
-    } catch (e) {
+    } catch {
         toast('Failed to load workspace stats');
     }
 }
@@ -368,7 +368,14 @@ function formatBytes(value) {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-loadWorkspaces();
+(async () => {
+    try {
+        await loadWorkspaces();
+    } catch (err) {
+        console.error('Initialization error:', err);
+        toast('Failed to load workspaces');
+    }
+})();
 </script>
 </body>
 </html>
