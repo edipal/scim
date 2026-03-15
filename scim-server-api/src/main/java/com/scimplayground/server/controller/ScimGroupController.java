@@ -3,7 +3,6 @@ package com.scimplayground.server.controller;
 import com.scimplayground.server.model.ScimGroup;
 import com.scimplayground.server.scim.error.ScimException;
 import com.scimplayground.server.scim.mapper.ScimGroupMapper;
-import com.scimplayground.server.security.WorkspaceContext;
 import com.scimplayground.server.service.ScimGroupService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
@@ -20,11 +19,10 @@ import java.util.*;
 @RestController
 @RequestMapping({"/ws/{workspaceId}/scim/v2/Groups", "/ws/{workspaceId}/scim/v2/{compat}/Groups"})
 @Transactional
-public class ScimGroupController {
+public class ScimGroupController extends ScimBaseController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
     private static final String RESOURCE_GROUP = "Group";
-    private static final String KEY_SCHEMAS = "schemas";
 
     private final ScimGroupService groupService;
 
@@ -203,71 +201,4 @@ public class ScimGroupController {
         return ResponseEntity.noContent().build();
     }
 
-    // ─── Helpers ────────────────────────────────────────────────────────
-
-    private UUID resolveWorkspaceId() {
-        var ws = WorkspaceContext.getWorkspace();
-        if (ws == null) throw new ScimException(401, null, "Unauthorized");
-        return ws.getId();
-    }
-
-    private UUID parseUUID(String value, String resourceType) {
-        try {
-            return UUID.fromString(value);
-        } catch (IllegalArgumentException e) {
-            throw new ScimException(404, null, resourceType + " not found: " + value);
-        }
-    }
-
-    private String buildBaseUrl(HttpServletRequest request, String workspaceId, String compat) {
-        String forwardedProto = request.getHeader("X-Forwarded-Proto");
-        String forwardedHost = request.getHeader("X-Forwarded-Host");
-        String forwardedPort = request.getHeader("X-Forwarded-Port");
-
-        String scheme = forwardedProto != null ? forwardedProto.split(",")[0].trim() : request.getScheme();
-        String host = forwardedHost != null ? forwardedHost.split(",")[0].trim() : request.getServerName();
-
-        int port = request.getServerPort();
-        if (forwardedPort != null) {
-            try {
-                port = Integer.parseInt(forwardedPort.split(",")[0].trim());
-            } catch (NumberFormatException ignored) {
-                // Fall back to server port when forwarded port is invalid.
-            }
-        }
-
-        String portStr = (port == 80 || port == 443 || host.contains(":")) ? "" : ":" + port;
-        String base = scheme + "://" + host + portStr + "/ws/" + workspaceId + "/scim/v2";
-        if (compat != null && !compat.isBlank()) {
-            return base + "/" + compat;
-        }
-        return base;
-    }
-
-    private void applyAttributeProjection(Map<String, Object> resource,
-                                           String attributes, String excludedAttributes) {
-        if (attributes != null && !attributes.isBlank()) {
-            Set<String> requested = parseAttrList(attributes);
-            requested.add(KEY_SCHEMAS);
-            requested.add("id");
-            requested.add("meta");
-            resource.keySet().retainAll(requested);
-        } else if (excludedAttributes != null && !excludedAttributes.isBlank()) {
-            Set<String> excluded = parseAttrList(excludedAttributes);
-            excluded.remove(KEY_SCHEMAS);
-            excluded.remove("id");
-            resource.keySet().removeAll(excluded);
-        }
-    }
-
-    private Set<String> parseAttrList(String attrList) {
-        Set<String> result = new LinkedHashSet<>();
-        for (String attr : attrList.split(",")) {
-            String trimmed = attr.trim();
-            if (!trimmed.isEmpty()) {
-                result.add(trimmed);
-            }
-        }
-        return result;
-    }
 }

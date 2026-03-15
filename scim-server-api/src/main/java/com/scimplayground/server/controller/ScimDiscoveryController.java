@@ -19,10 +19,9 @@ import java.util.*;
  */
 @RestController
 @RequestMapping({"/ws/{workspaceId}/scim/v2", "/ws/{workspaceId}/scim/v2/{compat}"})
-public class ScimDiscoveryController {
+public class ScimDiscoveryController extends ScimBaseController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
-    private static final String KEY_SCHEMAS = "schemas";
 
     // ─── ServiceProviderConfig ──────────────────────────────────────────
 
@@ -134,28 +133,4 @@ public class ScimDiscoveryController {
                 .body(error);
     }
 
-    private String buildBaseUrl(HttpServletRequest request, String workspaceId, String compat) {
-        String forwardedProto = request.getHeader("X-Forwarded-Proto");
-        String forwardedHost = request.getHeader("X-Forwarded-Host");
-        String forwardedPort = request.getHeader("X-Forwarded-Port");
-
-        String scheme = forwardedProto != null ? forwardedProto.split(",")[0].trim() : request.getScheme();
-        String host = forwardedHost != null ? forwardedHost.split(",")[0].trim() : request.getServerName();
-
-        int port = request.getServerPort();
-        if (forwardedPort != null) {
-            try {
-                port = Integer.parseInt(forwardedPort.split(",")[0].trim());
-            } catch (NumberFormatException ignored) {
-                // Fall back to server port when forwarded port is invalid.
-            }
-        }
-
-        String portStr = (port == 80 || port == 443 || host.contains(":")) ? "" : ":" + port;
-        String base = scheme + "://" + host + portStr + "/ws/" + workspaceId + "/scim/v2";
-        if (compat != null && !compat.isBlank()) {
-            return base + "/" + compat;
-        }
-        return base;
-    }
 }

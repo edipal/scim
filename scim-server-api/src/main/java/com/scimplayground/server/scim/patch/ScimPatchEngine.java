@@ -459,14 +459,14 @@ public class ScimPatchEngine {
         }
 
         switch (attr) {
-            case ATTR_EMAILS -> addItems(items, user.getEmails(), item -> buildEmail(user, item));
-            case ATTR_PHONE_NUMBERS -> addItems(items, user.getPhoneNumbers(), item -> buildPhone(user, item));
-            case ATTR_ADDRESSES -> addItems(items, user.getAddresses(), item -> buildAddress(user, item));
-            case ATTR_IMS -> addItems(items, user.getIms(), item -> buildIm(user, item));
-            case ATTR_PHOTOS -> addItems(items, user.getPhotos(), item -> buildPhoto(user, item));
-            case ATTR_ROLES -> addItems(items, user.getRoles(), item -> buildRole(user, item));
-            case ATTR_ENTITLEMENTS -> addItems(items, user.getEntitlements(), item -> buildEntitlement(user, item));
-            case ATTR_X509 -> addItems(items, user.getX509Certificates(), item -> buildCertificate(user, item));
+            case ATTR_EMAILS -> addItems(items, user.getEmails(), item -> ScimUserMapper.buildEmail(user, item));
+            case ATTR_PHONE_NUMBERS -> addItems(items, user.getPhoneNumbers(), item -> ScimUserMapper.buildPhone(user, item));
+            case ATTR_ADDRESSES -> addItems(items, user.getAddresses(), item -> ScimUserMapper.buildAddress(user, item));
+            case ATTR_IMS -> addItems(items, user.getIms(), item -> ScimUserMapper.buildIm(user, item));
+            case ATTR_PHOTOS -> addItems(items, user.getPhotos(), item -> ScimUserMapper.buildPhoto(user, item));
+            case ATTR_ROLES -> addItems(items, user.getRoles(), item -> ScimUserMapper.buildRole(user, item));
+            case ATTR_ENTITLEMENTS -> addItems(items, user.getEntitlements(), item -> ScimUserMapper.buildEntitlement(user, item));
+            case ATTR_X509 -> addItems(items, user.getX509Certificates(), item -> ScimUserMapper.buildCertificate(user, item));
             default -> throw new ScimException(400, "noTarget", "Cannot add to attribute: " + attr);
         }
     }
@@ -628,91 +628,6 @@ public class ScimPatchEngine {
         for (Map<String, Object> item : items) {
             target.add(mapper.apply(item));
         }
-    }
-
-    private static ScimUserEmail buildEmail(ScimUser user, Map<String, Object> item) {
-        ScimUserEmail email = new ScimUserEmail();
-        email.setUser(user);
-        email.setValue((String) item.get(KEY_VALUE));
-        email.setType(normalizeCanonical((String) item.get(KEY_TYPE), EMAIL_TYPES, "emails.type"));
-        email.setDisplay((String) item.get(KEY_DISPLAY));
-        email.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
-        return email;
-    }
-
-    private static ScimUserPhoneNumber buildPhone(ScimUser user, Map<String, Object> item) {
-        ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
-        phone.setUser(user);
-        phone.setValue((String) item.get(KEY_VALUE));
-        phone.setType(normalizeCanonical((String) item.get(KEY_TYPE), PHONE_TYPES, "phoneNumbers.type"));
-        phone.setDisplay((String) item.get(KEY_DISPLAY));
-        phone.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
-        return phone;
-    }
-
-    private static ScimUserAddress buildAddress(ScimUser user, Map<String, Object> item) {
-        ScimUserAddress address = new ScimUserAddress();
-        address.setUser(user);
-        address.setFormatted((String) item.get(KEY_FORMATTED));
-        address.setStreetAddress((String) item.get("streetAddress"));
-        address.setLocality((String) item.get("locality"));
-        address.setRegion((String) item.get("region"));
-        address.setPostalCode((String) item.get("postalCode"));
-        address.setCountry((String) item.get("country"));
-        address.setType(normalizeCanonical((String) item.get(KEY_TYPE), ADDRESS_TYPES, "addresses.type"));
-        address.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
-        return address;
-    }
-
-    private static ScimUserIm buildIm(ScimUser user, Map<String, Object> item) {
-        ScimUserIm im = new ScimUserIm();
-        im.setUser(user);
-        im.setValue((String) item.get(KEY_VALUE));
-        im.setType(normalizeCanonical((String) item.get(KEY_TYPE), IM_TYPES, "ims.type"));
-        im.setDisplay((String) item.get(KEY_DISPLAY));
-        im.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
-        return im;
-    }
-
-    private static ScimUserPhoto buildPhoto(ScimUser user, Map<String, Object> item) {
-        ScimUserPhoto photo = new ScimUserPhoto();
-        photo.setUser(user);
-        photo.setValue((String) item.get(KEY_VALUE));
-        photo.setType(normalizeCanonical((String) item.get(KEY_TYPE), PHOTO_TYPES, "photos.type"));
-        photo.setDisplay((String) item.get(KEY_DISPLAY));
-        photo.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
-        return photo;
-    }
-
-    private static ScimUserRole buildRole(ScimUser user, Map<String, Object> item) {
-        ScimUserRole role = new ScimUserRole();
-        role.setUser(user);
-        role.setValue((String) item.get(KEY_VALUE));
-        role.setType((String) item.get(KEY_TYPE));
-        role.setDisplay((String) item.get(KEY_DISPLAY));
-        role.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
-        return role;
-    }
-
-    private static ScimUserEntitlement buildEntitlement(ScimUser user, Map<String, Object> item) {
-        ScimUserEntitlement entitlement = new ScimUserEntitlement();
-        entitlement.setUser(user);
-        entitlement.setValue((String) item.get(KEY_VALUE));
-        entitlement.setType((String) item.get(KEY_TYPE));
-        entitlement.setDisplay((String) item.get(KEY_DISPLAY));
-        entitlement.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
-        return entitlement;
-    }
-
-    private static ScimUserX509Certificate buildCertificate(ScimUser user, Map<String, Object> item) {
-        ScimUserX509Certificate certificate = new ScimUserX509Certificate();
-        certificate.setUser(user);
-        certificate.setValue((String) item.get(KEY_VALUE));
-        certificate.setType((String) item.get(KEY_TYPE));
-        certificate.setDisplay((String) item.get(KEY_DISPLAY));
-        certificate.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
-        validateBinary(certificate.getValue(), "x509Certificates.value");
-        return certificate;
     }
 
     private static FilterClause parseEqFilter(String filter) {

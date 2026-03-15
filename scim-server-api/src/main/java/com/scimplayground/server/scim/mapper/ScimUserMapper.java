@@ -318,7 +318,7 @@ public class ScimUserMapper {
         }
     }
 
-    private static ScimUserEmail buildEmail(ScimUser user, Map<String, Object> item) {
+    public static ScimUserEmail buildEmail(ScimUser user, Map<String, Object> item) {
         ScimUserEmail email = new ScimUserEmail();
         email.setUser(user);
         email.setValue((String) item.get(KEY_VALUE));
@@ -328,7 +328,7 @@ public class ScimUserMapper {
         return email;
     }
 
-    private static ScimUserPhoneNumber buildPhone(ScimUser user, Map<String, Object> item) {
+    public static ScimUserPhoneNumber buildPhone(ScimUser user, Map<String, Object> item) {
         ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
         phone.setUser(user);
         phone.setValue((String) item.get(KEY_VALUE));
@@ -338,7 +338,7 @@ public class ScimUserMapper {
         return phone;
     }
 
-    private static ScimUserAddress buildAddress(ScimUser user, Map<String, Object> item) {
+    public static ScimUserAddress buildAddress(ScimUser user, Map<String, Object> item) {
         ScimUserAddress address = new ScimUserAddress();
         address.setUser(user);
         address.setFormatted((String) item.get(KEY_FORMATTED));
@@ -352,7 +352,7 @@ public class ScimUserMapper {
         return address;
     }
 
-    private static ScimUserIm buildIm(ScimUser user, Map<String, Object> item) {
+    public static ScimUserIm buildIm(ScimUser user, Map<String, Object> item) {
         ScimUserIm im = new ScimUserIm();
         im.setUser(user);
         im.setValue((String) item.get(KEY_VALUE));
@@ -362,7 +362,7 @@ public class ScimUserMapper {
         return im;
     }
 
-    private static ScimUserPhoto buildPhoto(ScimUser user, Map<String, Object> item) {
+    public static ScimUserPhoto buildPhoto(ScimUser user, Map<String, Object> item) {
         ScimUserPhoto photo = new ScimUserPhoto();
         photo.setUser(user);
         photo.setValue((String) item.get(KEY_VALUE));
@@ -372,7 +372,7 @@ public class ScimUserMapper {
         return photo;
     }
 
-    private static ScimUserEntitlement buildEntitlement(ScimUser user, Map<String, Object> item) {
+    public static ScimUserEntitlement buildEntitlement(ScimUser user, Map<String, Object> item) {
         ScimUserEntitlement entitlement = new ScimUserEntitlement();
         entitlement.setUser(user);
         entitlement.setValue((String) item.get(KEY_VALUE));
@@ -382,7 +382,7 @@ public class ScimUserMapper {
         return entitlement;
     }
 
-    private static ScimUserRole buildRole(ScimUser user, Map<String, Object> item) {
+    public static ScimUserRole buildRole(ScimUser user, Map<String, Object> item) {
         ScimUserRole role = new ScimUserRole();
         role.setUser(user);
         role.setValue((String) item.get(KEY_VALUE));
@@ -392,7 +392,7 @@ public class ScimUserMapper {
         return role;
     }
 
-    private static ScimUserX509Certificate buildCertificate(ScimUser user, Map<String, Object> item) {
+    public static ScimUserX509Certificate buildCertificate(ScimUser user, Map<String, Object> item) {
         ScimUserX509Certificate certificate = new ScimUserX509Certificate();
         certificate.setUser(user);
         certificate.setValue((String) item.get(KEY_VALUE));
