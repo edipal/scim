@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -116,10 +115,9 @@ public class ScimUserService {
         }
 
         // Check uniqueness if userName changed
-        if (!existing.getUserName().equalsIgnoreCase(newUserName)) {
-            if (userRepository.existsByUserNameIgnoreCaseAndWorkspaceId(newUserName, workspaceId)) {
-                throw new ScimException(409, "uniqueness", "User with userName '" + newUserName + "' already exists");
-            }
+        if (!existing.getUserName().equalsIgnoreCase(newUserName)
+                && userRepository.existsByUserNameIgnoreCaseAndWorkspaceId(newUserName, workspaceId)) {
+            throw new ScimException(409, "uniqueness", "User with userName '" + newUserName + "' already exists");
         }
 
         // PUT = full replacement
@@ -156,6 +154,6 @@ public class ScimUserService {
                     g.put("type", "direct");
                     return g;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 }

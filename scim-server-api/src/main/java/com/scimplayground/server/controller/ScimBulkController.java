@@ -24,6 +24,12 @@ public class ScimBulkController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
     private static final int MAX_OPERATIONS = 1000;
+    private static final String KEY_OPERATIONS = "Operations";
+    private static final String KEY_STATUS = "status";
+    private static final String KEY_RESPONSE = "response";
+    private static final String KEY_LOCATION = "location";
+    private static final String RESOURCE_USERS = "Users";
+    private static final String RESOURCE_GROUPS = "Groups";
 
     private final ScimUserService userService;
     private final ScimGroupService groupService;
@@ -44,7 +50,7 @@ public class ScimBulkController {
         UUID wsId = resolveWorkspaceId();
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
-        List<Map<String, Object>> operations = (List<Map<String, Object>>) body.get("Operations");
+        List<Map<String, Object>> operations = (List<Map<String, Object>>) body.get(KEY_OPERATIONS);
         if (operations == null) {
             throw new ScimException(400, "invalidValue", "Bulk request must contain Operations");
         }
@@ -66,7 +72,7 @@ public class ScimBulkController {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:BulkResponse"));
-        response.put("Operations", results);
+        response.put(KEY_OPERATIONS, results);
 
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
@@ -110,16 +116,16 @@ public class ScimBulkController {
                     result.putAll(handleDelete(path, wsId));
                     break;
                 default:
-                    result.put("status", "400");
-                    result.put("response", buildError("400", "invalidValue", "Unsupported method: " + method));
+                    result.put(KEY_STATUS, "400");
+                    result.put(KEY_RESPONSE, buildError("400", "invalidValue", "Unsupported method: " + method));
             }
         } catch (ScimException e) {
-            result.put("status", String.valueOf(e.getHttpStatus()));
-            result.put("response", buildError(
+            result.put(KEY_STATUS, String.valueOf(e.getHttpStatus()));
+            result.put(KEY_RESPONSE, buildError(
                     String.valueOf(e.getHttpStatus()), e.getScimType(), e.getMessage()));
         } catch (Exception e) {
-            result.put("status", "500");
-            result.put("response", buildError("500", null, e.getMessage()));
+            result.put(KEY_STATUS, "500");
+            result.put(KEY_RESPONSE, buildError("500", null, e.getMessage()));
         }
 
         return result;
@@ -128,17 +134,17 @@ public class ScimBulkController {
     private Map<String, Object> handlePost(String path, Map<String, Object> data, UUID wsId,
                                             String baseUrl, String bulkId, Map<String, String> bulkIdMap) {
         Map<String, Object> result = new LinkedHashMap<>();
-        if (path.startsWith("/Users")) {
+        if (path.startsWith("/" + RESOURCE_USERS)) {
             ScimUser user = userService.createUser(wsId, data);
-            result.put("status", "201");
-            result.put("location", baseUrl + "/Users/" + user.getId());
+            result.put(KEY_STATUS, "201");
+            result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_USERS, user.getId()));
             if (bulkId != null) {
                 bulkIdMap.put(bulkId, user.getId().toString());
             }
-        } else if (path.startsWith("/Groups")) {
+        } else if (path.startsWith("/" + RESOURCE_GROUPS)) {
             ScimGroup group = groupService.createGroup(wsId, data);
-            result.put("status", "201");
-            result.put("location", baseUrl + "/Groups/" + group.getId());
+            result.put(KEY_STATUS, "201");
+            result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_GROUPS, group.getId()));
             if (bulkId != null) {
                 bulkIdMap.put(bulkId, group.getId().toString());
             }
@@ -154,14 +160,14 @@ public class ScimBulkController {
         String resourceType = parts[0];
         UUID resourceId = UUID.fromString(parts[1]);
 
-        if ("Users".equals(resourceType)) {
+        if (RESOURCE_USERS.equals(resourceType)) {
             ScimUser user = userService.replaceUser(wsId, resourceId, data);
-            result.put("status", "200");
-            result.put("location", baseUrl + "/Users/" + user.getId());
-        } else if ("Groups".equals(resourceType)) {
+            result.put(KEY_STATUS, "200");
+            result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_USERS, user.getId()));
+        } else if (RESOURCE_GROUPS.equals(resourceType)) {
             ScimGroup group = groupService.replaceGroup(wsId, resourceId, data);
-            result.put("status", "200");
-            result.put("location", baseUrl + "/Groups/" + group.getId());
+            result.put(KEY_STATUS, "200");
+            result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_GROUPS, group.getId()));
         }
         return result;
     }
@@ -173,17 +179,17 @@ public class ScimBulkController {
         String resourceType = parts[0];
         UUID resourceId = UUID.fromString(parts[1]);
 
-        List<Map<String, Object>> operations = (List<Map<String, Object>>) data.get("Operations");
+        List<Map<String, Object>> operations = (List<Map<String, Object>>) data.get(KEY_OPERATIONS);
         if (operations == null) operations = List.of();
 
-        if ("Users".equals(resourceType)) {
+        if (RESOURCE_USERS.equals(resourceType)) {
             ScimUser user = userService.patchUser(wsId, resourceId, operations);
-            result.put("status", "200");
-            result.put("location", baseUrl + "/Users/" + user.getId());
-        } else if ("Groups".equals(resourceType)) {
+            result.put(KEY_STATUS, "200");
+            result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_USERS, user.getId()));
+        } else if (RESOURCE_GROUPS.equals(resourceType)) {
             ScimGroup group = groupService.patchGroup(wsId, resourceId, operations);
-            result.put("status", "200");
-            result.put("location", baseUrl + "/Groups/" + group.getId());
+            result.put(KEY_STATUS, "200");
+            result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_GROUPS, group.getId()));
         }
         return result;
     }
@@ -194,12 +200,12 @@ public class ScimBulkController {
         String resourceType = parts[0];
         UUID resourceId = UUID.fromString(parts[1]);
 
-        if ("Users".equals(resourceType)) {
+        if (RESOURCE_USERS.equals(resourceType)) {
             userService.deleteUser(wsId, resourceId);
-        } else if ("Groups".equals(resourceType)) {
+        } else if (RESOURCE_GROUPS.equals(resourceType)) {
             groupService.deleteGroup(wsId, resourceId);
         }
-        result.put("status", "204");
+        result.put(KEY_STATUS, "204");
         return result;
     }
 
@@ -220,40 +226,47 @@ public class ScimBulkController {
         return path;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> resolveBulkIdInData(Map<String, Object> data, Map<String, String> bulkIdMap) {
-        Map<String, Object> resolved = new LinkedHashMap<>(data);
-        for (Map.Entry<String, Object> entry : resolved.entrySet()) {
-            if (entry.getValue() instanceof String) {
-                String val = (String) entry.getValue();
-                if (val.startsWith("bulkId:")) {
-                    String ref = val.substring(7);
-                    if (bulkIdMap.containsKey(ref)) {
-                        entry.setValue(bulkIdMap.get(ref));
-                    }
-                }
-            } else if (entry.getValue() instanceof Map) {
-                entry.setValue(resolveBulkIdInData((Map<String, Object>) entry.getValue(), bulkIdMap));
-            } else if (entry.getValue() instanceof List) {
-                List<Object> list = (List<Object>) entry.getValue();
-                List<Object> resolvedList = new ArrayList<>();
-                for (Object item : list) {
-                    if (item instanceof Map) {
-                        resolvedList.add(resolveBulkIdInData((Map<String, Object>) item, bulkIdMap));
-                    } else {
-                        resolvedList.add(item);
-                    }
-                }
-                entry.setValue(resolvedList);
-            }
+        Map<String, Object> resolved = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            resolved.put(entry.getKey(), resolveValue(entry.getValue(), bulkIdMap));
         }
         return resolved;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object resolveValue(Object value, Map<String, String> bulkIdMap) {
+        if (value instanceof String s) {
+            return resolveString(s, bulkIdMap);
+        } else if (value instanceof Map) {
+            return resolveBulkIdInData((Map<String, Object>) value, bulkIdMap);
+        } else if (value instanceof List) {
+            return resolveList((List<Object>) value, bulkIdMap);
+        } else {
+            return value;
+        }
+    }
+
+    private String resolveString(String s, Map<String, String> bulkIdMap) {
+        if (s.startsWith("bulkId:")) {
+            String ref = s.substring(7);
+            return bulkIdMap.getOrDefault(ref, s);
+        }
+        return s;
+    }
+
+    private List<Object> resolveList(List<Object> list, Map<String, String> bulkIdMap) {
+        List<Object> resolvedList = new ArrayList<>(list.size());
+        for (Object item : list) {
+            resolvedList.add(resolveValue(item, bulkIdMap));
+        }
+        return resolvedList;
     }
 
     private Map<String, Object> buildError(String status, String scimType, String detail) {
         Map<String, Object> error = new LinkedHashMap<>();
         error.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:Error"));
-        error.put("status", status);
+        error.put(KEY_STATUS, status);
         if (scimType != null) error.put("scimType", scimType);
         if (detail != null) error.put("detail", detail);
         return error;
@@ -275,5 +288,9 @@ public class ScimBulkController {
             return base + "/" + compat;
         }
         return base;
+    }
+
+    private String buildResourceLocation(String baseUrl, String resourceType, UUID resourceId) {
+        return baseUrl + "/" + resourceType + "/" + resourceId;
     }
 }

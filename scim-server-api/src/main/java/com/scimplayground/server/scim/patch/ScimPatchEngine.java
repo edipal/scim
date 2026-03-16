@@ -5,9 +5,10 @@ import com.scimplayground.server.scim.error.ScimException;
 import com.scimplayground.server.scim.mapper.ScimUserMapper;
 
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.function.Consumer;
 
 /**
  * SCIM PATCH operation engine per RFC 7644 §3.5.2.
@@ -15,9 +16,32 @@ import java.util.regex.Pattern;
  */
 public class ScimPatchEngine {
 
+    private ScimPatchEngine() {
+        /* Utility class */
+    }
+
     private static final String ENTERPRISE_PREFIX = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
     // Pattern: attrName[filterExpr].subAttr
     private static final Pattern FILTERED_PATH = Pattern.compile("^(\\w+)\\[(.+)](?:\\.(\\w+))?$");
+
+    // Multi-valued attribute keys
+    private static final String KEY_VALUE = "value";
+    private static final String KEY_DISPLAY = "display";
+    private static final String KEY_PRIMARY = "primary";
+    private static final String KEY_TYPE = "type";
+    private static final String KEY_DISPLAY_NAME = "displayName";
+    private static final String KEY_FORMATTED = "formatted";
+    private static final String VALUE_OTHER = "other";
+
+    // Multi-valued collection names
+    private static final String ATTR_EMAILS = "emails";
+    private static final String ATTR_PHONE_NUMBERS = "phoneNumbers";
+    private static final String ATTR_ADDRESSES = "addresses";
+    private static final String ATTR_ENTITLEMENTS = "entitlements";
+    private static final String ATTR_ROLES = "roles";
+    private static final String ATTR_IMS = "ims";
+    private static final String ATTR_PHOTOS = "photos";
+    private static final String ATTR_X509 = "x509Certificates";
 
     // Read-only attributes that cannot be modified via PATCH
     private static final Set<String> READ_ONLY_ATTRS = Set.of(
@@ -25,11 +49,11 @@ public class ScimPatchEngine {
             "meta.resourceType", "meta.version", "groups"
     );
 
-        private static final Set<String> EMAIL_TYPES = Set.of("work", "home", "other");
-        private static final Set<String> PHONE_TYPES = Set.of("work", "home", "mobile", "fax", "pager", "other");
+        private static final Set<String> EMAIL_TYPES = Set.of("work", "home", VALUE_OTHER);
+        private static final Set<String> PHONE_TYPES = Set.of("work", "home", "mobile", "fax", "pager", VALUE_OTHER);
         private static final Set<String> IM_TYPES = Set.of("aim", "gtalk", "icq", "xmpp", "skype", "qq", "msn", "yahoo");
         private static final Set<String> PHOTO_TYPES = Set.of("photo", "thumbnail");
-        private static final Set<String> ADDRESS_TYPES = Set.of("work", "home", "other");
+        private static final Set<String> ADDRESS_TYPES = Set.of("work", "home", VALUE_OTHER);
 
     public static void applyPatchOperations(ScimUser user, List<Map<String, Object>> operations) {
         if (operations == null || operations.isEmpty()) {
@@ -39,7 +63,7 @@ public class ScimPatchEngine {
         for (Map<String, Object> op : operations) {
             String opType = ((String) op.get("op")).toLowerCase();
             String path = (String) op.get("path");
-            Object value = op.get("value");
+            Object value = op.get(KEY_VALUE);
 
             // Validate read-only
             if (path != null && READ_ONLY_ATTRS.contains(path)) {
@@ -176,174 +200,65 @@ public class ScimPatchEngine {
     // ── FILTERED OPERATIONS ─────────────────────────────────
 
     private static void applyFilteredAdd(ScimUser user, String attr, String filter, String subAttr, Object value) {
-        // Find matching items
-        if ("emails".equals(attr)) {
-            applyFilteredOnCollection(user.getEmails(), filter,
-                    email -> matchesFilter(email, filter),
-                    email -> setEmailSubAttribute(email, subAttr, value));
-        } else if ("phoneNumbers".equals(attr)) {
-            applyFilteredOnCollection(user.getPhoneNumbers(), filter,
-                    phone -> matchesPhoneFilter(phone, filter),
-                    phone -> setPhoneSubAttribute(phone, subAttr, value));
-        } else if ("addresses".equals(attr)) {
-            applyFilteredOnCollection(user.getAddresses(), filter,
-                    addr -> matchesAddressFilter(addr, filter),
-                    addr -> setAddressSubAttribute(addr, subAttr, value));
-        } else if ("ims".equals(attr)) {
-            applyFilteredOnCollection(user.getIms(), filter,
-                    im -> matchesImFilter(im, filter),
-                    im -> setImSubAttribute(im, subAttr, value));
-        } else if ("photos".equals(attr)) {
-            applyFilteredOnCollection(user.getPhotos(), filter,
-                    photo -> matchesPhotoFilter(photo, filter),
-                    photo -> setPhotoSubAttribute(photo, subAttr, value));
-        } else if ("roles".equals(attr)) {
-            applyFilteredOnCollection(user.getRoles(), filter,
-                    role -> matchesRoleFilter(role, filter),
-                    role -> setRoleSubAttribute(role, subAttr, value));
-        } else if ("entitlements".equals(attr)) {
-            applyFilteredOnCollection(user.getEntitlements(), filter,
-                    ent -> matchesEntitlementFilter(ent, filter),
-                    ent -> setEntitlementSubAttribute(ent, subAttr, value));
-        } else if ("x509Certificates".equals(attr)) {
-            applyFilteredOnCollection(user.getX509Certificates(), filter,
-                    cert -> matchesCertFilter(cert, filter),
-                    cert -> setCertSubAttribute(cert, subAttr, value));
-        } else {
-            throw new ScimException(400, "noTarget", "Filtered path not supported for attribute: " + attr);
-        }
+        applyFilteredReplace(user, attr, filter, subAttr, value);
     }
 
     private static void applyFilteredReplace(ScimUser user, String attr, String filter,
                                               String subAttr, Object value) {
-        if ("emails".equals(attr)) {
-            boolean found = false;
-            for (ScimUserEmail email : user.getEmails()) {
-                if (matchesFilter(email, filter)) {
-                    if (subAttr != null) {
-                        setEmailSubAttribute(email, subAttr, value);
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                throw new ScimException(400, "noTarget", "No emails match filter: " + filter);
-            }
-        } else if ("phoneNumbers".equals(attr)) {
-            boolean found = false;
-            for (ScimUserPhoneNumber phone : user.getPhoneNumbers()) {
-                if (matchesPhoneFilter(phone, filter)) {
-                    if (subAttr != null) {
-                        setPhoneSubAttribute(phone, subAttr, value);
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                throw new ScimException(400, "noTarget", "No phoneNumbers match filter: " + filter);
-            }
-        } else if ("addresses".equals(attr)) {
-            boolean found = false;
-            for (ScimUserAddress addr : user.getAddresses()) {
-                if (matchesAddressFilter(addr, filter)) {
-                    if (subAttr != null) {
-                        setAddressSubAttribute(addr, subAttr, value);
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                throw new ScimException(400, "noTarget", "No addresses match filter: " + filter);
-            }
-        } else if ("ims".equals(attr)) {
-            boolean found = false;
-            for (ScimUserIm im : user.getIms()) {
-                if (matchesImFilter(im, filter)) {
-                    if (subAttr != null) {
-                        setImSubAttribute(im, subAttr, value);
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                throw new ScimException(400, "noTarget", "No ims match filter: " + filter);
-            }
-        } else if ("photos".equals(attr)) {
-            boolean found = false;
-            for (ScimUserPhoto photo : user.getPhotos()) {
-                if (matchesPhotoFilter(photo, filter)) {
-                    if (subAttr != null) {
-                        setPhotoSubAttribute(photo, subAttr, value);
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                throw new ScimException(400, "noTarget", "No photos match filter: " + filter);
-            }
-        } else if ("roles".equals(attr)) {
-            boolean found = false;
-            for (ScimUserRole role : user.getRoles()) {
-                if (matchesRoleFilter(role, filter)) {
-                    if (subAttr != null) {
-                        setRoleSubAttribute(role, subAttr, value);
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                throw new ScimException(400, "noTarget", "No roles match filter: " + filter);
-            }
-        } else if ("entitlements".equals(attr)) {
-            boolean found = false;
-            for (ScimUserEntitlement ent : user.getEntitlements()) {
-                if (matchesEntitlementFilter(ent, filter)) {
-                    if (subAttr != null) {
-                        setEntitlementSubAttribute(ent, subAttr, value);
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                throw new ScimException(400, "noTarget", "No entitlements match filter: " + filter);
-            }
-        } else if ("x509Certificates".equals(attr)) {
-            boolean found = false;
-            for (ScimUserX509Certificate cert : user.getX509Certificates()) {
-                if (matchesCertFilter(cert, filter)) {
-                    if (subAttr != null) {
-                        setCertSubAttribute(cert, subAttr, value);
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                throw new ScimException(400, "noTarget", "No x509Certificates match filter: " + filter);
-            }
-        } else if ("members".equals(attr)) {
-            // Group members handled elsewhere
-            throw new ScimException(400, "noTarget", "Use group-specific PATCH for members");
-        } else {
-            throw new ScimException(400, "noTarget", "Filtered path not supported for attribute: " + attr);
+        switch (attr) {
+                case ATTR_EMAILS -> applyFilteredUpdate(user.getEmails(), filter,
+                    email -> matchesFilter(email, filter),
+                    email -> setEmailSubAttribute(email, subAttr, value),
+                    ATTR_EMAILS);
+            case ATTR_PHONE_NUMBERS -> applyFilteredUpdate(user.getPhoneNumbers(), filter,
+                    phone -> matchesPhoneFilter(phone, filter),
+                    phone -> setPhoneSubAttribute(phone, subAttr, value),
+                    ATTR_PHONE_NUMBERS);
+            case ATTR_ADDRESSES -> applyFilteredUpdate(user.getAddresses(), filter,
+                    address -> matchesAddressFilter(address, filter),
+                    address -> setAddressSubAttribute(address, subAttr, value),
+                    ATTR_ADDRESSES);
+            case ATTR_IMS -> applyFilteredUpdate(user.getIms(), filter,
+                    im -> matchesImFilter(im, filter),
+                    im -> setImSubAttribute(im, subAttr, value),
+                    ATTR_IMS);
+            case ATTR_PHOTOS -> applyFilteredUpdate(user.getPhotos(), filter,
+                    photo -> matchesPhotoFilter(photo, filter),
+                    photo -> setPhotoSubAttribute(photo, subAttr, value),
+                    ATTR_PHOTOS);
+            case ATTR_ROLES -> applyFilteredUpdate(user.getRoles(), filter,
+                    role -> matchesRoleFilter(role, filter),
+                    role -> setRoleSubAttribute(role, subAttr, value),
+                    ATTR_ROLES);
+            case ATTR_ENTITLEMENTS -> applyFilteredUpdate(user.getEntitlements(), filter,
+                    entitlement -> matchesEntitlementFilter(entitlement, filter),
+                    entitlement -> setEntitlementSubAttribute(entitlement, subAttr, value),
+                    ATTR_ENTITLEMENTS);
+            case ATTR_X509 -> applyFilteredUpdate(user.getX509Certificates(), filter,
+                    cert -> matchesCertFilter(cert, filter),
+                    cert -> setCertSubAttribute(cert, subAttr, value),
+                    ATTR_X509);
+            case "members" -> throw new ScimException(400, "noTarget", "Use group-specific PATCH for members");
+            default -> throw new ScimException(400, "noTarget", "Filtered path not supported for attribute: " + attr);
         }
     }
 
     private static void applyFilteredRemove(ScimUser user, String attr, String filter) {
-        if ("emails".equals(attr)) {
+        if (ATTR_EMAILS.equals(attr)) {
             user.getEmails().removeIf(email -> matchesFilter(email, filter));
-        } else if ("phoneNumbers".equals(attr)) {
+        } else if (ATTR_PHONE_NUMBERS.equals(attr)) {
             user.getPhoneNumbers().removeIf(phone -> matchesPhoneFilter(phone, filter));
-        } else if ("addresses".equals(attr)) {
+        } else if (ATTR_ADDRESSES.equals(attr)) {
             user.getAddresses().removeIf(addr -> matchesAddressFilter(addr, filter));
-        } else if ("roles".equals(attr)) {
+        } else if (ATTR_ROLES.equals(attr)) {
             user.getRoles().removeIf(role -> matchesRoleFilter(role, filter));
-        } else if ("entitlements".equals(attr)) {
+        } else if (ATTR_ENTITLEMENTS.equals(attr)) {
             user.getEntitlements().removeIf(ent -> matchesEntitlementFilter(ent, filter));
-        } else if ("ims".equals(attr)) {
+        } else if (ATTR_IMS.equals(attr)) {
             user.getIms().removeIf(im -> matchesImFilter(im, filter));
-        } else if ("photos".equals(attr)) {
+        } else if (ATTR_PHOTOS.equals(attr)) {
             user.getPhotos().removeIf(photo -> matchesPhotoFilter(photo, filter));
-        } else if ("x509Certificates".equals(attr)) {
+        } else if (ATTR_X509.equals(attr)) {
             user.getX509Certificates().removeIf(cert -> matchesCertFilter(cert, filter));
         } else {
             throw new ScimException(400, "noTarget", "Filtered remove not supported for: " + attr);
@@ -354,73 +269,69 @@ public class ScimPatchEngine {
 
     private static boolean matchesFilter(ScimUserEmail email, String filter) {
         return matchesGenericFilter(filter,
-                Map.of("value", email.getValue() != null ? email.getValue() : "",
-                       "type", email.getType() != null ? email.getType() : "",
-                       "primary", String.valueOf(email.isPrimaryFlag())));
+                Map.of(KEY_VALUE, email.getValue() != null ? email.getValue() : "",
+                       KEY_TYPE, email.getType() != null ? email.getType() : "",
+                       KEY_PRIMARY, String.valueOf(email.isPrimaryFlag())));
     }
 
     private static boolean matchesPhoneFilter(ScimUserPhoneNumber phone, String filter) {
         return matchesGenericFilter(filter,
-                Map.of("value", phone.getValue() != null ? phone.getValue() : "",
-                       "type", phone.getType() != null ? phone.getType() : "",
-                       "primary", String.valueOf(phone.isPrimaryFlag())));
+                Map.of(KEY_VALUE, phone.getValue() != null ? phone.getValue() : "",
+                       KEY_TYPE, phone.getType() != null ? phone.getType() : "",
+                       KEY_PRIMARY, String.valueOf(phone.isPrimaryFlag())));
     }
 
     private static boolean matchesAddressFilter(ScimUserAddress addr, String filter) {
         return matchesGenericFilter(filter,
-                Map.of("type", addr.getType() != null ? addr.getType() : "",
-                       "primary", String.valueOf(addr.isPrimaryFlag())));
+                Map.of(KEY_TYPE, addr.getType() != null ? addr.getType() : "",
+                       KEY_PRIMARY, String.valueOf(addr.isPrimaryFlag())));
     }
 
     private static boolean matchesRoleFilter(ScimUserRole role, String filter) {
         return matchesGenericFilter(filter,
-              Map.of("value", role.getValue() != null ? role.getValue() : "",
-                  "type", role.getType() != null ? role.getType() : "",
-                  "primary", String.valueOf(role.isPrimaryFlag())));
+              Map.of(KEY_VALUE, role.getValue() != null ? role.getValue() : "",
+                  KEY_TYPE, role.getType() != null ? role.getType() : "",
+                  KEY_PRIMARY, String.valueOf(role.isPrimaryFlag())));
     }
 
     private static boolean matchesEntitlementFilter(ScimUserEntitlement ent, String filter) {
         return matchesGenericFilter(filter,
-              Map.of("value", ent.getValue() != null ? ent.getValue() : "",
-                  "type", ent.getType() != null ? ent.getType() : "",
-                  "primary", String.valueOf(ent.isPrimaryFlag())));
+              Map.of(KEY_VALUE, ent.getValue() != null ? ent.getValue() : "",
+                  KEY_TYPE, ent.getType() != null ? ent.getType() : "",
+                  KEY_PRIMARY, String.valueOf(ent.isPrimaryFlag())));
     }
 
     private static boolean matchesImFilter(ScimUserIm im, String filter) {
         return matchesGenericFilter(filter,
-              Map.of("value", im.getValue() != null ? im.getValue() : "",
-                  "type", im.getType() != null ? im.getType() : "",
-                  "primary", String.valueOf(im.isPrimaryFlag())));
+              Map.of(KEY_VALUE, im.getValue() != null ? im.getValue() : "",
+                  KEY_TYPE, im.getType() != null ? im.getType() : "",
+                  KEY_PRIMARY, String.valueOf(im.isPrimaryFlag())));
     }
 
     private static boolean matchesPhotoFilter(ScimUserPhoto photo, String filter) {
         return matchesGenericFilter(filter,
-              Map.of("value", photo.getValue() != null ? photo.getValue() : "",
-                  "type", photo.getType() != null ? photo.getType() : "",
-                  "primary", String.valueOf(photo.isPrimaryFlag())));
+              Map.of(KEY_VALUE, photo.getValue() != null ? photo.getValue() : "",
+                  KEY_TYPE, photo.getType() != null ? photo.getType() : "",
+                  KEY_PRIMARY, String.valueOf(photo.isPrimaryFlag())));
     }
 
     private static boolean matchesCertFilter(ScimUserX509Certificate cert, String filter) {
         return matchesGenericFilter(filter,
-              Map.of("value", cert.getValue() != null ? cert.getValue() : "",
-                  "type", cert.getType() != null ? cert.getType() : "",
-                  "primary", String.valueOf(cert.isPrimaryFlag())));
+              Map.of(KEY_VALUE, cert.getValue() != null ? cert.getValue() : "",
+                  KEY_TYPE, cert.getType() != null ? cert.getType() : "",
+                  KEY_PRIMARY, String.valueOf(cert.isPrimaryFlag())));
     }
 
     /**
      * Simple filter matching: supports "attr eq \"value\"" syntax.
      */
     private static boolean matchesGenericFilter(String filter, Map<String, String> attributes) {
-        // Parse simple "attr eq \"value\"" filters
-        Pattern p = Pattern.compile("(\\w+)\\s+eq\\s+(\"([^\"]+)\"|(true|false))", Pattern.CASE_INSENSITIVE);
-        Matcher m = p.matcher(filter);
-        if (m.find()) {
-            String attr = m.group(1);
-            String value = m.group(3) != null ? m.group(3) : m.group(4);
-            String actual = attributes.get(attr);
-            return value.equalsIgnoreCase(actual);
+        FilterClause clause = parseEqFilter(filter);
+        if (clause == null) {
+            return false;
         }
-        return false;
+        String actual = attributes.get(clause.attribute());
+        return actual != null && clause.value().equalsIgnoreCase(actual);
     }
 
     // ── ATTRIBUTE SETTERS ───────────────────────────────────
@@ -429,7 +340,7 @@ public class ScimPatchEngine {
         switch (attr) {
             case "userName" -> user.setUserName(toString(value));
             case "externalId" -> user.setExternalId(toString(value));
-            case "displayName" -> user.setDisplayName(toString(value));
+            case KEY_DISPLAY_NAME -> user.setDisplayName(toString(value));
             case "nickName" -> user.setNickName(toString(value));
             case "profileUrl" -> {
                 String ref = toString(value);
@@ -453,7 +364,7 @@ public class ScimPatchEngine {
 
         if ("name".equals(parent)) {
             switch (sub) {
-                case "formatted" -> user.setNameFormatted(toString(value));
+                case KEY_FORMATTED -> user.setNameFormatted(toString(value));
                 case "familyName" -> user.setNameFamilyName(toString(value));
                 case "givenName" -> user.setNameGivenName(toString(value));
                 case "middleName" -> user.setNameMiddleName(toString(value));
@@ -486,8 +397,8 @@ public class ScimPatchEngine {
             return;
         }
 
-        if (value instanceof String) {
-            String managerValue = ((String) value).trim();
+        if (value instanceof String strValue) {
+            String managerValue = strValue.trim();
             if (managerValue.isEmpty()) {
                 user.setEnterpriseManagerValue(null);
                 user.setEnterpriseManagerRef(null);
@@ -498,15 +409,16 @@ public class ScimPatchEngine {
             return;
         }
 
-        if (value instanceof Map) {
-            Map<String, Object> mgr = (Map<String, Object>) value;
-            user.setEnterpriseManagerValue(toString(mgr.get("value")));
+        if (value instanceof Map<?, ?> rawMap) {
+            Map<String, Object> mgr = new LinkedHashMap<>();
+            rawMap.forEach((key, mapValue) -> mgr.put(String.valueOf(key), mapValue));
+            user.setEnterpriseManagerValue(toString(mgr.get(KEY_VALUE)));
             String ref = toString(mgr.get("$ref"));
             if (ref != null) {
                 validateReference(ref, "enterprise.manager.$ref");
             }
             user.setEnterpriseManagerRef(ref);
-            user.setEnterpriseManagerDisplay(toString(mgr.get("displayName")));
+            user.setEnterpriseManagerDisplay(toString(mgr.get(KEY_DISPLAY_NAME)));
             return;
         }
 
@@ -523,15 +435,11 @@ public class ScimPatchEngine {
             if (key.startsWith(ENTERPRISE_PREFIX + ":")) {
                 String entAttr = key.substring(ENTERPRISE_PREFIX.length() + 1);
                 setEnterpriseAttribute(user, entAttr, val);
-                continue;
-            }
-
-            if (key.contains(".")) {
+            } else if (key.contains(".")) {
                 setSubAttribute(user, key, val);
-                continue;
+            } else {
+                normalized.put(key, val);
             }
-
-            normalized.put(key, val);
         }
 
         if (!normalized.isEmpty()) {
@@ -551,100 +459,14 @@ public class ScimPatchEngine {
         }
 
         switch (attr) {
-            case "emails" -> {
-                for (Map<String, Object> em : items) {
-                    ScimUserEmail email = new ScimUserEmail();
-                    email.setUser(user);
-                    email.setValue((String) em.get("value"));
-                    email.setType(normalizeCanonical((String) em.get("type"), EMAIL_TYPES, "emails.type"));
-                    email.setDisplay((String) em.get("display"));
-                    email.setPrimaryFlag(toBoolean(em.get("primary")));
-                    user.getEmails().add(email);
-                }
-            }
-            case "phoneNumbers" -> {
-                for (Map<String, Object> ph : items) {
-                    ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
-                    phone.setUser(user);
-                    phone.setValue((String) ph.get("value"));
-                    phone.setType(normalizeCanonical((String) ph.get("type"), PHONE_TYPES, "phoneNumbers.type"));
-                    phone.setDisplay((String) ph.get("display"));
-                    phone.setPrimaryFlag(toBoolean(ph.get("primary")));
-                    user.getPhoneNumbers().add(phone);
-                }
-            }
-            case "addresses" -> {
-                for (Map<String, Object> addr : items) {
-                    ScimUserAddress address = new ScimUserAddress();
-                    address.setUser(user);
-                    address.setFormatted((String) addr.get("formatted"));
-                    address.setStreetAddress((String) addr.get("streetAddress"));
-                    address.setLocality((String) addr.get("locality"));
-                    address.setRegion((String) addr.get("region"));
-                    address.setPostalCode((String) addr.get("postalCode"));
-                    address.setCountry((String) addr.get("country"));
-                    address.setType(normalizeCanonical((String) addr.get("type"), ADDRESS_TYPES, "addresses.type"));
-                    address.setPrimaryFlag(toBoolean(addr.get("primary")));
-                    user.getAddresses().add(address);
-                }
-            }
-            case "ims" -> {
-                for (Map<String, Object> im : items) {
-                    ScimUserIm imEntity = new ScimUserIm();
-                    imEntity.setUser(user);
-                    imEntity.setValue((String) im.get("value"));
-                    imEntity.setType(normalizeCanonical((String) im.get("type"), IM_TYPES, "ims.type"));
-                    imEntity.setDisplay((String) im.get("display"));
-                    imEntity.setPrimaryFlag(toBoolean(im.get("primary")));
-                    user.getIms().add(imEntity);
-                }
-            }
-            case "photos" -> {
-                for (Map<String, Object> ph : items) {
-                    ScimUserPhoto photo = new ScimUserPhoto();
-                    photo.setUser(user);
-                    String photoValue = (String) ph.get("value");
-                    photo.setValue(photoValue);
-                    photo.setType(normalizeCanonical((String) ph.get("type"), PHOTO_TYPES, "photos.type"));
-                    photo.setDisplay((String) ph.get("display"));
-                    photo.setPrimaryFlag(toBoolean(ph.get("primary")));
-                    user.getPhotos().add(photo);
-                }
-            }
-            case "roles" -> {
-                for (Map<String, Object> r : items) {
-                    ScimUserRole role = new ScimUserRole();
-                    role.setUser(user);
-                    role.setValue((String) r.get("value"));
-                    role.setType((String) r.get("type"));
-                    role.setDisplay((String) r.get("display"));
-                    role.setPrimaryFlag(toBoolean(r.get("primary")));
-                    user.getRoles().add(role);
-                }
-            }
-            case "entitlements" -> {
-                for (Map<String, Object> e : items) {
-                    ScimUserEntitlement ent = new ScimUserEntitlement();
-                    ent.setUser(user);
-                    ent.setValue((String) e.get("value"));
-                    ent.setType((String) e.get("type"));
-                    ent.setDisplay((String) e.get("display"));
-                    ent.setPrimaryFlag(toBoolean(e.get("primary")));
-                    user.getEntitlements().add(ent);
-                }
-            }
-            case "x509Certificates" -> {
-                for (Map<String, Object> c : items) {
-                    ScimUserX509Certificate cert = new ScimUserX509Certificate();
-                    cert.setUser(user);
-                    cert.setValue((String) c.get("value"));
-                    cert.setType((String) c.get("type"));
-                    cert.setDisplay((String) c.get("display"));
-                    cert.setPrimaryFlag(toBoolean(c.get("primary")));
-                    validateBinary(cert.getValue(), "x509Certificates.value");
-                    user.getX509Certificates().add(cert);
-                }
-            }
+            case ATTR_EMAILS -> addItems(items, user.getEmails(), item -> ScimUserMapper.buildEmail(user, item));
+            case ATTR_PHONE_NUMBERS -> addItems(items, user.getPhoneNumbers(), item -> ScimUserMapper.buildPhone(user, item));
+            case ATTR_ADDRESSES -> addItems(items, user.getAddresses(), item -> ScimUserMapper.buildAddress(user, item));
+            case ATTR_IMS -> addItems(items, user.getIms(), item -> ScimUserMapper.buildIm(user, item));
+            case ATTR_PHOTOS -> addItems(items, user.getPhotos(), item -> ScimUserMapper.buildPhoto(user, item));
+            case ATTR_ROLES -> addItems(items, user.getRoles(), item -> ScimUserMapper.buildRole(user, item));
+            case ATTR_ENTITLEMENTS -> addItems(items, user.getEntitlements(), item -> ScimUserMapper.buildEntitlement(user, item));
+            case ATTR_X509 -> addItems(items, user.getX509Certificates(), item -> ScimUserMapper.buildCertificate(user, item));
             default -> throw new ScimException(400, "noTarget", "Cannot add to attribute: " + attr);
         }
     }
@@ -657,7 +479,7 @@ public class ScimPatchEngine {
     private static void clearAttribute(ScimUser user, String attr) {
         switch (attr) {
             case "externalId" -> user.setExternalId(null);
-            case "displayName" -> user.setDisplayName(null);
+            case KEY_DISPLAY_NAME -> user.setDisplayName(null);
             case "nickName" -> user.setNickName(null);
             case "profileUrl" -> user.setProfileUrl(null);
             case "title" -> user.setTitle(null);
@@ -673,14 +495,14 @@ public class ScimPatchEngine {
                 user.setNameHonorificPrefix(null);
                 user.setNameHonorificSuffix(null);
             }
-            case "emails" -> user.getEmails().clear();
-            case "phoneNumbers" -> user.getPhoneNumbers().clear();
-            case "addresses" -> user.getAddresses().clear();
-            case "ims" -> user.getIms().clear();
-            case "photos" -> user.getPhotos().clear();
-            case "entitlements" -> user.getEntitlements().clear();
-            case "roles" -> user.getRoles().clear();
-            case "x509Certificates" -> user.getX509Certificates().clear();
+            case ATTR_EMAILS -> user.getEmails().clear();
+            case ATTR_PHONE_NUMBERS -> user.getPhoneNumbers().clear();
+            case ATTR_ADDRESSES -> user.getAddresses().clear();
+            case ATTR_IMS -> user.getIms().clear();
+            case ATTR_PHOTOS -> user.getPhotos().clear();
+            case ATTR_ENTITLEMENTS -> user.getEntitlements().clear();
+            case ATTR_ROLES -> user.getRoles().clear();
+            case ATTR_X509 -> user.getX509Certificates().clear();
             default -> throw new ScimException(400, "noTarget", "Cannot remove attribute: " + attr);
         }
     }
@@ -688,10 +510,10 @@ public class ScimPatchEngine {
     private static void setEmailSubAttribute(ScimUserEmail email, String subAttr, Object value) {
         if (subAttr == null) return;
         switch (subAttr) {
-            case "value" -> email.setValue(toString(value));
-            case "type" -> email.setType(normalizeCanonical(toString(value), EMAIL_TYPES, "emails.type"));
-            case "display" -> email.setDisplay(toString(value));
-            case "primary" -> email.setPrimaryFlag(toBoolean(value));
+            case KEY_VALUE -> email.setValue(toString(value));
+            case KEY_TYPE -> email.setType(normalizeCanonical(toString(value), EMAIL_TYPES, "emails.type"));
+            case KEY_DISPLAY -> email.setDisplay(toString(value));
+            case KEY_PRIMARY -> email.setPrimaryFlag(toBoolean(value));
             default -> throw new ScimException(400, "noTarget", "Unknown email sub-attribute: " + subAttr);
         }
     }
@@ -699,10 +521,10 @@ public class ScimPatchEngine {
     private static void setPhoneSubAttribute(ScimUserPhoneNumber phone, String subAttr, Object value) {
         if (subAttr == null) return;
         switch (subAttr) {
-            case "value" -> phone.setValue(toString(value));
-            case "type" -> phone.setType(normalizeCanonical(toString(value), PHONE_TYPES, "phoneNumbers.type"));
-            case "display" -> phone.setDisplay(toString(value));
-            case "primary" -> phone.setPrimaryFlag(toBoolean(value));
+            case KEY_VALUE -> phone.setValue(toString(value));
+            case KEY_TYPE -> phone.setType(normalizeCanonical(toString(value), PHONE_TYPES, "phoneNumbers.type"));
+            case KEY_DISPLAY -> phone.setDisplay(toString(value));
+            case KEY_PRIMARY -> phone.setPrimaryFlag(toBoolean(value));
             default -> throw new ScimException(400, "noTarget", "Unknown phone sub-attribute: " + subAttr);
         }
     }
@@ -710,14 +532,14 @@ public class ScimPatchEngine {
     private static void setAddressSubAttribute(ScimUserAddress address, String subAttr, Object value) {
         if (subAttr == null) return;
         switch (subAttr) {
-            case "formatted" -> address.setFormatted(toString(value));
+            case KEY_FORMATTED -> address.setFormatted(toString(value));
             case "streetAddress" -> address.setStreetAddress(toString(value));
             case "locality" -> address.setLocality(toString(value));
             case "region" -> address.setRegion(toString(value));
             case "postalCode" -> address.setPostalCode(toString(value));
             case "country" -> address.setCountry(toString(value));
-            case "type" -> address.setType(normalizeCanonical(toString(value), ADDRESS_TYPES, "addresses.type"));
-            case "primary" -> address.setPrimaryFlag(toBoolean(value));
+            case KEY_TYPE -> address.setType(normalizeCanonical(toString(value), ADDRESS_TYPES, "addresses.type"));
+            case KEY_PRIMARY -> address.setPrimaryFlag(toBoolean(value));
             default -> throw new ScimException(400, "noTarget", "Unknown address sub-attribute: " + subAttr);
         }
     }
@@ -725,10 +547,10 @@ public class ScimPatchEngine {
     private static void setImSubAttribute(ScimUserIm im, String subAttr, Object value) {
         if (subAttr == null) return;
         switch (subAttr) {
-            case "value" -> im.setValue(toString(value));
-            case "type" -> im.setType(normalizeCanonical(toString(value), IM_TYPES, "ims.type"));
-            case "display" -> im.setDisplay(toString(value));
-            case "primary" -> im.setPrimaryFlag(toBoolean(value));
+            case KEY_VALUE -> im.setValue(toString(value));
+            case KEY_TYPE -> im.setType(normalizeCanonical(toString(value), IM_TYPES, "ims.type"));
+            case KEY_DISPLAY -> im.setDisplay(toString(value));
+            case KEY_PRIMARY -> im.setPrimaryFlag(toBoolean(value));
             default -> throw new ScimException(400, "noTarget", "Unknown ims sub-attribute: " + subAttr);
         }
     }
@@ -736,13 +558,13 @@ public class ScimPatchEngine {
     private static void setPhotoSubAttribute(ScimUserPhoto photo, String subAttr, Object value) {
         if (subAttr == null) return;
         switch (subAttr) {
-            case "value" -> {
+            case KEY_VALUE -> {
                 String ref = toString(value);
                 photo.setValue(ref);
             }
-            case "type" -> photo.setType(normalizeCanonical(toString(value), PHOTO_TYPES, "photos.type"));
-            case "display" -> photo.setDisplay(toString(value));
-            case "primary" -> photo.setPrimaryFlag(toBoolean(value));
+            case KEY_TYPE -> photo.setType(normalizeCanonical(toString(value), PHOTO_TYPES, "photos.type"));
+            case KEY_DISPLAY -> photo.setDisplay(toString(value));
+            case KEY_PRIMARY -> photo.setPrimaryFlag(toBoolean(value));
             default -> throw new ScimException(400, "noTarget", "Unknown photos sub-attribute: " + subAttr);
         }
     }
@@ -750,10 +572,10 @@ public class ScimPatchEngine {
     private static void setRoleSubAttribute(ScimUserRole role, String subAttr, Object value) {
         if (subAttr == null) return;
         switch (subAttr) {
-            case "value" -> role.setValue(toString(value));
-            case "type" -> role.setType(toString(value));
-            case "display" -> role.setDisplay(toString(value));
-            case "primary" -> role.setPrimaryFlag(toBoolean(value));
+            case KEY_VALUE -> role.setValue(toString(value));
+            case KEY_TYPE -> role.setType(toString(value));
+            case KEY_DISPLAY -> role.setDisplay(toString(value));
+            case KEY_PRIMARY -> role.setPrimaryFlag(toBoolean(value));
             default -> throw new ScimException(400, "noTarget", "Unknown role sub-attribute: " + subAttr);
         }
     }
@@ -761,10 +583,10 @@ public class ScimPatchEngine {
     private static void setEntitlementSubAttribute(ScimUserEntitlement ent, String subAttr, Object value) {
         if (subAttr == null) return;
         switch (subAttr) {
-            case "value" -> ent.setValue(toString(value));
-            case "type" -> ent.setType(toString(value));
-            case "display" -> ent.setDisplay(toString(value));
-            case "primary" -> ent.setPrimaryFlag(toBoolean(value));
+            case KEY_VALUE -> ent.setValue(toString(value));
+            case KEY_TYPE -> ent.setType(toString(value));
+            case KEY_DISPLAY -> ent.setDisplay(toString(value));
+            case KEY_PRIMARY -> ent.setPrimaryFlag(toBoolean(value));
             default -> throw new ScimException(400, "noTarget", "Unknown entitlements sub-attribute: " + subAttr);
         }
     }
@@ -772,38 +594,73 @@ public class ScimPatchEngine {
     private static void setCertSubAttribute(ScimUserX509Certificate cert, String subAttr, Object value) {
         if (subAttr == null) return;
         switch (subAttr) {
-            case "value" -> {
+            case KEY_VALUE -> {
                 String binary = toString(value);
                 validateBinary(binary, "x509Certificates.value");
                 cert.setValue(binary);
             }
-            case "type" -> cert.setType(toString(value));
-            case "display" -> cert.setDisplay(toString(value));
-            case "primary" -> cert.setPrimaryFlag(toBoolean(value));
+            case KEY_TYPE -> cert.setType(toString(value));
+            case KEY_DISPLAY -> cert.setDisplay(toString(value));
+            case KEY_PRIMARY -> cert.setPrimaryFlag(toBoolean(value));
             default -> throw new ScimException(400, "noTarget", "Unknown x509Certificates sub-attribute: " + subAttr);
         }
     }
 
-    private static <T> void applyFilteredOnCollection(List<T> collection, String filter,
-                                                        Function<T, Boolean> matcher,
-                                                        java.util.function.Consumer<T> action) {
+    private static <T> void applyFilteredUpdate(List<T> collection, String filter,
+                                                Predicate<T> matcher,
+                                                Consumer<T> action,
+                                                String attributeName) {
         boolean found = false;
         for (T item : collection) {
-            if (matcher.apply(item)) {
-                action.accept(item);
-                found = true;
+            if (!matcher.test(item)) {
+                continue;
             }
+            action.accept(item);
+            found = true;
         }
         if (!found) {
-            throw new ScimException(400, "noTarget", "No items match filter: " + filter);
+            throw new ScimException(400, "noTarget", "No " + attributeName + " match filter: " + filter);
         }
+    }
+
+    private static <T> void addItems(List<Map<String, Object>> items, List<T> target,
+                                     java.util.function.Function<Map<String, Object>, T> mapper) {
+        for (Map<String, Object> item : items) {
+            target.add(mapper.apply(item));
+        }
+    }
+
+    private static FilterClause parseEqFilter(String filter) {
+        if (filter == null) {
+            return null;
+        }
+        String trimmed = filter.trim();
+        int eqIndex = trimmed.toLowerCase(Locale.ROOT).indexOf(" eq ");
+        if (eqIndex <= 0) {
+            return null;
+        }
+        String attribute = trimmed.substring(0, eqIndex).trim();
+        String rawValue = trimmed.substring(eqIndex + 4).trim();
+        if (attribute.isEmpty() || rawValue.isEmpty()) {
+            return null;
+        }
+        if (rawValue.startsWith("\"") && rawValue.endsWith("\"") && rawValue.length() >= 2) {
+            return new FilterClause(attribute, rawValue.substring(1, rawValue.length() - 1));
+        }
+        if ("true".equalsIgnoreCase(rawValue) || "false".equalsIgnoreCase(rawValue)) {
+            return new FilterClause(attribute, rawValue);
+        }
+        return null;
+    }
+
+    private record FilterClause(String attribute, String value) {
     }
 
     // ── MULTI-VALUED CHECK ──────────────────────────────────
 
     private static boolean isMultiValuedAttribute(String attr) {
-        return Set.of("emails", "phoneNumbers", "addresses", "ims", "photos",
-                "entitlements", "roles", "x509Certificates").contains(attr);
+        return Set.of(ATTR_EMAILS, ATTR_PHONE_NUMBERS, ATTR_ADDRESSES, ATTR_IMS, ATTR_PHOTOS,
+                ATTR_ENTITLEMENTS, ATTR_ROLES, ATTR_X509).contains(attr);
     }
 
     // ── TYPE HELPERS ────────────────────────────────────────
@@ -843,8 +700,8 @@ public class ScimPatchEngine {
     }
 
     private static boolean toBoolean(Object value) {
-        if (value instanceof Boolean) return (Boolean) value;
-        if (value instanceof String) return Boolean.parseBoolean((String) value);
+        if (value instanceof Boolean b) return b;
+        if (value instanceof String s) return Boolean.parseBoolean(s);
         return false;
     }
 }

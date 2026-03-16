@@ -29,7 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 
 /**
  * Management API for workspaces and tokens.
@@ -38,6 +38,18 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/management")
 public class ManagementController {
+
+    private static final String KEY_USER_NAME = "userName";
+    private static final String KEY_DISPLAY_NAME = "displayName";
+    private static final String KEY_EXTERNAL_ID = "externalId";
+    private static final String KEY_NAME = "name";
+    private static final String KEY_DESCRIPTION = "description";
+    private static final String KEY_VALUE = "value";
+    private static final String KEY_TYPE = "type";
+    private static final String KEY_DISPLAY = "display";
+    private static final String KEY_CREATED_AT = "createdAt";
+    private static final String KEY_LAST_MODIFIED = "lastModified";
+    private static final String KEY_TOTAL = "total";
 
     private final WorkspaceService workspaceService;
     private final ScimAdminService scimAdminService;
@@ -62,11 +74,11 @@ public class ManagementController {
     @PostMapping("/workspaces")
     public ResponseEntity<Map<String, Object>> createWorkspace(@RequestBody Map<String, String> body,
                                                                Authentication authentication) {
-        String name = body.get("name");
+        String name = body.get(KEY_NAME);
         if (name == null || name.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "name is required"));
         }
-        String description = body.get("description");
+        String description = body.get(KEY_DESCRIPTION);
         Workspace ws = workspaceService.createWorkspace(name, description, actorUsername(authentication));
         return ResponseEntity.status(201).body(workspaceToMap(ws));
     }
@@ -76,7 +88,7 @@ public class ManagementController {
         List<Workspace> workspaces = workspaceService.listWorkspaces(actorUsername(authentication), isAdmin(authentication));
         return ResponseEntity.ok(workspaces.stream()
                 .map(this::workspaceToMap)
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     @GetMapping("/workspaces/{workspaceId}")
@@ -118,7 +130,7 @@ public class ManagementController {
         UUID wsId = resolveWorkspaceIdWithAccess(workspaceId, authentication);
         int safeSize = Math.max(1, Math.min(size, 200));
         int safePage = Math.max(1, page);
-        PageRequest pageRequest = PageRequest.of(safePage - 1, safeSize, Sort.by("createdAt").descending());
+        PageRequest pageRequest = PageRequest.of(safePage - 1, safeSize, Sort.by(KEY_CREATED_AT).descending());
         Page<ScimRequestLog> logs = logRepository.findByWorkspace_IdOrderByCreatedAtDesc(wsId, pageRequest);
         return ResponseEntity.ok(pagedResponse(logs.map(this::logToMap), safePage, safeSize));
     }
@@ -140,8 +152,8 @@ public class ManagementController {
             @RequestBody(required = false) Map<String, String> body,
             Authentication authentication) {
         UUID wsId = UUID.fromString(workspaceId);
-        String name = body != null ? body.get("name") : null;
-        String description = body != null ? body.get("description") : null;
+        String name = body != null ? body.get(KEY_NAME) : null;
+        String description = body != null ? body.get(KEY_DESCRIPTION) : null;
         String rawToken = workspaceService.generateToken(
             wsId,
             name,
@@ -161,7 +173,7 @@ public class ManagementController {
         List<WorkspaceToken> tokens = workspaceService.listTokens(wsId, actorUsername(authentication), isAdmin(authentication));
         return ResponseEntity.ok(tokens.stream()
                 .map(this::tokenToMap)
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     @DeleteMapping("/workspaces/{workspaceId}/tokens/{tokenId}")
@@ -233,7 +245,7 @@ public class ManagementController {
         UUID wsId = resolveWorkspaceIdWithAccess(workspaceId, authentication);
         int safeSize = Math.max(1, Math.min(size, 200));
         int safePage = Math.max(1, page);
-        PageRequest pageRequest = PageRequest.of(safePage - 1, safeSize, Sort.by("userName").ascending());
+        PageRequest pageRequest = PageRequest.of(safePage - 1, safeSize, Sort.by(KEY_USER_NAME).ascending());
         Page<ScimUser> users = scimAdminService.listUsersPage(wsId, q, pageRequest, actorUsername(authentication), isAdmin(authentication));
         return ResponseEntity.ok(pagedResponse(users.map(this::userToMap), safePage, safeSize));
     }
@@ -247,11 +259,11 @@ public class ManagementController {
             Authentication authentication) {
         UUID wsId = resolveWorkspaceIdWithAccess(workspaceId, authentication);
         int safeSize = Math.max(1, Math.min(size, 200));
-        PageRequest pageRequest = PageRequest.of(0, safeSize, Sort.by("userName").ascending());
+        PageRequest pageRequest = PageRequest.of(0, safeSize, Sort.by(KEY_USER_NAME).ascending());
         Page<ScimUser> users = scimAdminService.listUsersPage(wsId, q, pageRequest, actorUsername(authentication), isAdmin(authentication));
         return ResponseEntity.ok(users.stream()
                 .map(this::userLookupToMap)
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     @DeleteMapping("/workspaces/{workspaceId}/users")
@@ -311,7 +323,7 @@ public class ManagementController {
         UUID wsId = resolveWorkspaceIdWithAccess(workspaceId, authentication);
         int safeSize = Math.max(1, Math.min(size, 200));
         int safePage = Math.max(1, page);
-        PageRequest pageRequest = PageRequest.of(safePage - 1, safeSize, Sort.by("displayName").ascending());
+        PageRequest pageRequest = PageRequest.of(safePage - 1, safeSize, Sort.by(KEY_DISPLAY_NAME).ascending());
         Page<ScimGroup> groups = scimAdminService.listGroupsPage(wsId, q, pageRequest, actorUsername(authentication), isAdmin(authentication));
         return ResponseEntity.ok(pagedResponse(groups.map(this::groupToMap), safePage, safeSize));
     }
@@ -325,11 +337,11 @@ public class ManagementController {
             Authentication authentication) {
         UUID wsId = resolveWorkspaceIdWithAccess(workspaceId, authentication);
         int safeSize = Math.max(1, Math.min(size, 200));
-        PageRequest pageRequest = PageRequest.of(0, safeSize, Sort.by("displayName").ascending());
+        PageRequest pageRequest = PageRequest.of(0, safeSize, Sort.by(KEY_DISPLAY_NAME).ascending());
         Page<ScimGroup> groups = scimAdminService.listGroupsPage(wsId, q, pageRequest, actorUsername(authentication), isAdmin(authentication));
         return ResponseEntity.ok(groups.stream()
                 .map(this::groupLookupToMap)
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     @DeleteMapping("/workspaces/{workspaceId}/groups")
@@ -381,8 +393,8 @@ public class ManagementController {
     private Map<String, Object> workspaceToMap(Workspace ws) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", ws.getId().toString());
-        map.put("name", ws.getName());
-        map.put("description", ws.getDescription());
+        map.put(KEY_NAME, ws.getName());
+        map.put(KEY_DESCRIPTION, ws.getDescription());
         map.put("createdByUsername", ws.getCreatedByUsername());
         String ownerName = ws.getCreatedByUsername() != null
                 ? mgmtUserRepository.findById(ws.getCreatedByUsername())
@@ -390,7 +402,7 @@ public class ManagementController {
                         .orElse(null)
                 : null;
         map.put("createdByDisplayName", ownerName);
-        map.put("createdAt", ws.getCreatedAt() != null ? ws.getCreatedAt().toString() : null);
+        map.put(KEY_CREATED_AT, ws.getCreatedAt() != null ? ws.getCreatedAt().toString() : null);
         map.put("updatedAt", ws.getUpdatedAt() != null ? ws.getUpdatedAt().toString() : null);
         return map;
     }
@@ -405,7 +417,7 @@ public class ManagementController {
         Map<String, Object> map = new LinkedHashMap<>();
 
         Map<String, Object> objects = new LinkedHashMap<>();
-        objects.put("total", stats.objectCount());
+        objects.put(KEY_TOTAL, stats.objectCount());
         objects.put("users", stats.userCount());
         objects.put("groups", stats.groupCount());
         objects.put("tokens", stats.tokenCount());
@@ -424,7 +436,7 @@ public class ManagementController {
         objects.put("userAttributes", userAttributes);
 
         Map<String, Object> relations = new LinkedHashMap<>();
-        relations.put("total", stats.relationCount());
+        relations.put(KEY_TOTAL, stats.relationCount());
         relations.put("groupMemberships", stats.groupMembershipCount());
 
         Map<String, Object> storage = new LinkedHashMap<>();
@@ -454,20 +466,20 @@ public class ManagementController {
     private Map<String, Object> tokenToMap(WorkspaceToken token) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", token.getId().toString());
-        map.put("name", token.getName());
-        map.put("description", token.getDescription());
+        map.put(KEY_NAME, token.getName());
+        map.put(KEY_DESCRIPTION, token.getDescription());
         map.put("revoked", token.isRevoked());
-        map.put("createdAt", token.getCreatedAt() != null ? token.getCreatedAt().toString() : null);
+        map.put(KEY_CREATED_AT, token.getCreatedAt() != null ? token.getCreatedAt().toString() : null);
         return map;
     }
 
     private Map<String, Object> userToMap(ScimUser user) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", user.getId().toString());
-        map.put("userName", user.getUserName());
-        map.put("displayName", user.getDisplayName());
-        map.put("externalId", user.getExternalId());
-        map.put("name", userNameToMap(user));
+        map.put(KEY_USER_NAME, user.getUserName());
+        map.put(KEY_DISPLAY_NAME, user.getDisplayName());
+        map.put(KEY_EXTERNAL_ID, user.getExternalId());
+        map.put(KEY_NAME, userNameToMap(user));
         map.put("nickName", user.getNickName());
         map.put("profileUrl", user.getProfileUrl());
         map.put("title", user.getTitle());
@@ -478,31 +490,31 @@ public class ManagementController {
         map.put("enterprise", enterpriseToMap(user));
         map.put("emails", user.getEmails().stream()
             .map(email -> multiValueToMap(email.getValue(), email.getType(), email.getDisplay(), email.isPrimaryFlag()))
-            .collect(Collectors.toList()));
+            .toList());
         map.put("phoneNumbers", user.getPhoneNumbers().stream()
             .map(phone -> multiValueToMap(phone.getValue(), phone.getType(), phone.getDisplay(), phone.isPrimaryFlag()))
-            .collect(Collectors.toList()));
+            .toList());
         map.put("addresses", user.getAddresses().stream()
             .map(this::addressToMap)
-            .collect(Collectors.toList()));
+            .toList());
         map.put("entitlements", user.getEntitlements().stream()
             .map(entitlement -> multiValueToMap(entitlement.getValue(), entitlement.getType(), entitlement.getDisplay(), entitlement.isPrimaryFlag()))
-            .collect(Collectors.toList()));
+            .toList());
         map.put("roles", user.getRoles().stream()
             .map(role -> multiValueToMap(role.getValue(), role.getType(), role.getDisplay(), role.isPrimaryFlag()))
-            .collect(Collectors.toList()));
+            .toList());
         map.put("ims", user.getIms().stream()
             .map(im -> multiValueToMap(im.getValue(), im.getType(), im.getDisplay(), im.isPrimaryFlag()))
-            .collect(Collectors.toList()));
+            .toList());
         map.put("photos", user.getPhotos().stream()
             .map(photo -> multiValueToMap(photo.getValue(), photo.getType(), photo.getDisplay(), photo.isPrimaryFlag()))
-            .collect(Collectors.toList()));
+            .toList());
         map.put("x509Certificates", user.getX509Certificates().stream()
             .map(cert -> multiValueToMap(cert.getValue(), cert.getType(), cert.getDisplay(), cert.isPrimaryFlag()))
-            .collect(Collectors.toList()));
+            .toList());
         map.put("active", user.isActive());
-        map.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
-        map.put("lastModified", user.getLastModified() != null ? user.getLastModified().toString() : null);
+        map.put(KEY_CREATED_AT, user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
+        map.put(KEY_LAST_MODIFIED, user.getLastModified() != null ? user.getLastModified().toString() : null);
         map.put("meta", metaToMap(user.getCreatedAt(), user.getLastModified(), user.getVersion()));
         return map;
     }
@@ -510,27 +522,27 @@ public class ManagementController {
     private Map<String, Object> userLookupToMap(ScimUser user) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", user.getId().toString());
-        map.put("userName", user.getUserName());
-        map.put("displayName", user.getDisplayName());
+        map.put(KEY_USER_NAME, user.getUserName());
+        map.put(KEY_DISPLAY_NAME, user.getDisplayName());
         return map;
     }
 
     private Map<String, Object> groupToMap(ScimGroup group) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", group.getId().toString());
-        map.put("displayName", group.getDisplayName());
-        map.put("externalId", group.getExternalId());
+        map.put(KEY_DISPLAY_NAME, group.getDisplayName());
+        map.put(KEY_EXTERNAL_ID, group.getExternalId());
         map.put("members", group.getMembers().stream()
             .map(member -> {
                 Map<String, Object> memberMap = new LinkedHashMap<>();
-                memberMap.put("value", member.getMemberValue() != null ? member.getMemberValue().toString() : null);
-                memberMap.put("type", member.getMemberType());
-                memberMap.put("display", member.getDisplay());
+                memberMap.put(KEY_VALUE, member.getMemberValue() != null ? member.getMemberValue().toString() : null);
+                memberMap.put(KEY_TYPE, member.getMemberType());
+                memberMap.put(KEY_DISPLAY, member.getDisplay());
                 return memberMap;
             })
-            .collect(Collectors.toList()));
-        map.put("createdAt", group.getCreatedAt() != null ? group.getCreatedAt().toString() : null);
-        map.put("lastModified", group.getLastModified() != null ? group.getLastModified().toString() : null);
+            .toList());
+        map.put(KEY_CREATED_AT, group.getCreatedAt() != null ? group.getCreatedAt().toString() : null);
+        map.put(KEY_LAST_MODIFIED, group.getLastModified() != null ? group.getLastModified().toString() : null);
         map.put("meta", metaToMap(group.getCreatedAt(), group.getLastModified(), group.getVersion()));
         return map;
     }
@@ -538,8 +550,8 @@ public class ManagementController {
     private Map<String, Object> groupLookupToMap(ScimGroup group) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", group.getId().toString());
-        map.put("displayName", group.getDisplayName());
-        map.put("externalId", group.getExternalId());
+        map.put(KEY_DISPLAY_NAME, group.getDisplayName());
+        map.put(KEY_EXTERNAL_ID, group.getExternalId());
         return map;
     }
 
@@ -554,7 +566,7 @@ public class ManagementController {
         map.put("status", log.getStatus());
         map.put("requestBody", log.getRequestBody());
         map.put("responseBody", log.getResponseBody());
-        map.put("createdAt", log.getCreatedAt() != null ? log.getCreatedAt().toString() : null);
+        map.put(KEY_CREATED_AT, log.getCreatedAt() != null ? log.getCreatedAt().toString() : null);
         return map;
     }
 
@@ -563,7 +575,7 @@ public class ManagementController {
         map.put("items", page.getContent());
         map.put("page", pageNumber);
         map.put("size", size);
-        map.put("total", page.getTotalElements());
+        map.put(KEY_TOTAL, page.getTotalElements());
         map.put("totalPages", page.getTotalPages());
         return map;
     }
@@ -575,7 +587,7 @@ public class ManagementController {
                 && user.getNameMiddleName() == null
                 && user.getNameHonorificPrefix() == null
                 && user.getNameHonorificSuffix() == null) {
-            return null;
+            return Map.of();
         }
         Map<String, Object> name = new LinkedHashMap<>();
         name.put("formatted", user.getNameFormatted());
@@ -596,7 +608,7 @@ public class ManagementController {
                 && user.getEnterpriseManagerValue() == null
                 && user.getEnterpriseManagerRef() == null
                 && user.getEnterpriseManagerDisplay() == null) {
-            return null;
+            return Map.of();
         }
         Map<String, Object> enterprise = new LinkedHashMap<>();
         enterprise.put("employeeNumber", user.getEnterpriseEmployeeNumber());
@@ -605,9 +617,9 @@ public class ManagementController {
         enterprise.put("division", user.getEnterpriseDivision());
         enterprise.put("department", user.getEnterpriseDepartment());
         Map<String, Object> manager = new LinkedHashMap<>();
-        manager.put("value", user.getEnterpriseManagerValue());
+        manager.put(KEY_VALUE, user.getEnterpriseManagerValue());
         manager.put("ref", user.getEnterpriseManagerRef());
-        manager.put("display", user.getEnterpriseManagerDisplay());
+        manager.put(KEY_DISPLAY, user.getEnterpriseManagerDisplay());
         enterprise.put("manager", manager);
         return enterprise;
     }
@@ -620,24 +632,24 @@ public class ManagementController {
         map.put("region", address.getRegion());
         map.put("postalCode", address.getPostalCode());
         map.put("country", address.getCountry());
-        map.put("type", address.getType());
+        map.put(KEY_TYPE, address.getType());
         map.put("primary", address.isPrimaryFlag());
         return map;
     }
 
     private Map<String, Object> multiValueToMap(String value, String type, String display, boolean primary) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("value", value);
-        map.put("type", type);
-        map.put("display", display);
+        map.put(KEY_VALUE, value);
+        map.put(KEY_TYPE, type);
+        map.put(KEY_DISPLAY, display);
         map.put("primary", primary);
         return map;
     }
 
     private Map<String, Object> metaToMap(java.time.Instant createdAt, java.time.Instant lastModified, Long version) {
         Map<String, Object> meta = new LinkedHashMap<>();
-        meta.put("createdAt", createdAt != null ? createdAt.toString() : null);
-        meta.put("lastModified", lastModified != null ? lastModified.toString() : null);
+        meta.put(KEY_CREATED_AT, createdAt != null ? createdAt.toString() : null);
+        meta.put(KEY_LAST_MODIFIED, lastModified != null ? lastModified.toString() : null);
         meta.put("version", version);
         return meta;
     }

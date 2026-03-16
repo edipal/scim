@@ -4,12 +4,14 @@ import com.scimplayground.server.model.ScimGroup;
 import com.scimplayground.server.model.ScimGroupMembership;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Converts between ScimGroup entity and SCIM JSON Map representation.
  */
 public class ScimGroupMapper {
+
+    private ScimGroupMapper() {
+    }
 
     public static final String GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group";
 
@@ -28,7 +30,7 @@ public class ScimGroupMapper {
         if (group.getMembers() != null && !group.getMembers().isEmpty()) {
             List<Map<String, Object>> members = group.getMembers().stream()
                     .map(m -> memberToMap(m, baseUrl))
-                    .collect(Collectors.toList());
+                    .toList();
             result.put("members", members);
         }
 

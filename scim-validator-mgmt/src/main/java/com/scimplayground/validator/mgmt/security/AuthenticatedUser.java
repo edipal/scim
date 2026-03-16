@@ -13,35 +13,38 @@ public final class AuthenticatedUser {
         if (authentication == null) {
             throw new IllegalStateException("Missing authentication");
         }
-
         Object principal = authentication.getPrincipal();
         if (principal instanceof OidcUser oidcUser) {
-            String preferredUsername = oidcUser.getPreferredUsername();
-            if (preferredUsername != null && !preferredUsername.isBlank()) {
-                return preferredUsername;
-            }
-
-            String upn = oidcUser.getClaimAsString("upn");
-            if (upn != null && !upn.isBlank()) {
-                return upn;
-            }
-
-            String email = oidcUser.getEmail();
-            if (email != null && !email.isBlank()) {
-                return email;
-            }
-
-            String sub = oidcUser.getSubject();
-            if (sub != null && !sub.isBlank()) {
-                return sub;
+            String resolved = resolveOidcUsername(oidcUser);
+            if (resolved != null) {
+                return resolved;
             }
         }
-
         String fallback = authentication.getName();
         if (fallback == null || fallback.isBlank()) {
             throw new IllegalStateException("Unable to resolve authenticated username");
         }
         return fallback;
+    }
+
+    private static String resolveOidcUsername(OidcUser oidcUser) {
+        String preferredUsername = oidcUser.getPreferredUsername();
+        if (preferredUsername != null && !preferredUsername.isBlank()) {
+            return preferredUsername;
+        }
+        String upn = oidcUser.getClaimAsString("upn");
+        if (upn != null && !upn.isBlank()) {
+            return upn;
+        }
+        String email = oidcUser.getEmail();
+        if (email != null && !email.isBlank()) {
+            return email;
+        }
+        String sub = oidcUser.getSubject();
+        if (sub != null && !sub.isBlank()) {
+            return sub;
+        }
+        return null;
     }
 
     public static String userId(Authentication authentication) {

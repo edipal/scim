@@ -22,6 +22,8 @@ import java.util.UUID;
 @Controller
 public class ValidationUiController {
 
+    private static final String ATTR_CURRENT_USER = "currentUser";
+
     private final ValidationRunService validationRunService;
     private final MgmtUserRepository mgmtUserRepository;
 
@@ -37,7 +39,7 @@ public class ValidationUiController {
             model.addAttribute("runForm", new ValidationRunForm("", "", ""));
         }
         model.addAttribute("runs", validationRunService.listRuns(actorUserId(authentication), actorUsername(authentication), isAdmin(authentication)));
-        model.addAttribute("currentUser", resolveDisplayName(authentication));
+        model.addAttribute(ATTR_CURRENT_USER, resolveDisplayName(authentication));
         return "index";
     }
 
@@ -48,7 +50,7 @@ public class ValidationUiController {
                           Authentication authentication) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("runs", validationRunService.listRuns(actorUserId(authentication), actorUsername(authentication), isAdmin(authentication)));
-            model.addAttribute("currentUser", resolveDisplayName(authentication));
+            model.addAttribute(ATTR_CURRENT_USER, resolveDisplayName(authentication));
             return "index";
         }
 
@@ -63,7 +65,7 @@ public class ValidationUiController {
     public String detail(@PathVariable UUID runId, Model model, Authentication authentication) {
         model.addAttribute("run", validationRunService.getRun(runId, actorUserId(authentication), actorUsername(authentication), isAdmin(authentication)));
         model.addAttribute("tests", validationRunService.getTestResults(runId, actorUserId(authentication), actorUsername(authentication), isAdmin(authentication)));
-        model.addAttribute("currentUser", resolveDisplayName(authentication));
+        model.addAttribute(ATTR_CURRENT_USER, resolveDisplayName(authentication));
         return "run-detail";
     }
 

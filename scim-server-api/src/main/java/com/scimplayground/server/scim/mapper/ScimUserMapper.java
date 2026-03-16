@@ -4,7 +4,6 @@ import com.scimplayground.server.model.*;
 import com.scimplayground.server.scim.error.ScimException;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Converts between JPA entities and SCIM JSON Maps.
@@ -12,14 +11,45 @@ import java.util.stream.Collectors;
  */
 public class ScimUserMapper {
 
+    private ScimUserMapper() {
+    }
+
     public static final String USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User";
     public static final String ENTERPRISE_SCHEMA = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+    private static final String VALUE_OTHER = "other";
 
-    private static final Set<String> EMAIL_TYPES = Set.of("work", "home", "other");
-    private static final Set<String> PHONE_TYPES = Set.of("work", "home", "mobile", "fax", "pager", "other");
+    private static final Set<String> EMAIL_TYPES = Set.of("work", "home", VALUE_OTHER);
+    private static final Set<String> PHONE_TYPES = Set.of("work", "home", "mobile", "fax", "pager", VALUE_OTHER);
     private static final Set<String> IM_TYPES = Set.of("aim", "gtalk", "icq", "xmpp", "skype", "qq", "msn", "yahoo");
     private static final Set<String> PHOTO_TYPES = Set.of("photo", "thumbnail");
-    private static final Set<String> ADDRESS_TYPES = Set.of("work", "home", "other");
+    private static final Set<String> ADDRESS_TYPES = Set.of("work", "home", VALUE_OTHER);
+
+    // Common SCIM attribute keys
+    private static final String KEY_SCHEMAS = "schemas";
+    private static final String KEY_EXTERNAL_ID = "externalId";
+    private static final String KEY_USER_NAME = "userName";
+    private static final String KEY_DISPLAY_NAME = "displayName";
+    private static final String KEY_NICK_NAME = "nickName";
+    private static final String KEY_PROFILE_URL = "profileUrl";
+    private static final String KEY_TITLE = "title";
+    private static final String KEY_USER_TYPE = "userType";
+    private static final String KEY_PREFERRED_LANGUAGE = "preferredLanguage";
+    private static final String KEY_LOCALE = "locale";
+    private static final String KEY_TIMEZONE = "timezone";
+    private static final String KEY_ACTIVE = "active";
+    private static final String KEY_EMAILS = "emails";
+    private static final String KEY_PHONE_NUMBERS = "phoneNumbers";
+    private static final String KEY_PHOTOS = "photos";
+    private static final String KEY_ADDRESSES = "addresses";
+    private static final String KEY_ENTITLEMENTS = "entitlements";
+    private static final String KEY_ROLES = "roles";
+    private static final String KEY_X509_CERTIFICATES = "x509Certificates";
+    private static final String KEY_MANAGER = "manager";
+    private static final String KEY_VALUE = "value";
+    private static final String KEY_TYPE = "type";
+    private static final String KEY_PRIMARY = "primary";
+    private static final String KEY_DISPLAY = "display";
+    private static final String KEY_FORMATTED = "formatted";
 
     /**
      * Convert ScimUser entity to SCIM JSON response map.
@@ -28,88 +58,85 @@ public class ScimUserMapper {
                                                        List<Map<String, Object>> groups) {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        // Determine schemas
+        addSchemasAndIdentifiers(user, result);
+        addCoreAttributes(user, result);
+        addMultiValuedAttributes(user, result);
+        addComputedGroups(result, groups);
+        addEnterpriseExtension(user, result);
+        addMeta(user, baseUrl, result);
+
+        return result;
+    }
+
+    private static void addSchemasAndIdentifiers(ScimUser user, Map<String, Object> result) {
         List<String> schemas = new ArrayList<>();
         schemas.add(USER_SCHEMA);
         if (hasEnterpriseData(user)) {
             schemas.add(ENTERPRISE_SCHEMA);
         }
-        result.put("schemas", schemas);
+        result.put(KEY_SCHEMAS, schemas);
         result.put("id", user.getId().toString());
-
         if (user.getExternalId() != null) {
-            result.put("externalId", user.getExternalId());
+            result.put(KEY_EXTERNAL_ID, user.getExternalId());
         }
+        result.put(KEY_USER_NAME, user.getUserName());
+    }
 
-        result.put("userName", user.getUserName());
-
-        // Name complex attribute
+    private static void addCoreAttributes(ScimUser user, Map<String, Object> result) {
         Map<String, Object> name = buildNameMap(user);
         if (!name.isEmpty()) {
             result.put("name", name);
         }
 
-        if (user.getDisplayName() != null) result.put("displayName", user.getDisplayName());
-        if (user.getNickName() != null) result.put("nickName", user.getNickName());
-        if (user.getProfileUrl() != null) result.put("profileUrl", user.getProfileUrl());
-        if (user.getTitle() != null) result.put("title", user.getTitle());
-        if (user.getUserType() != null) result.put("userType", user.getUserType());
-        if (user.getPreferredLanguage() != null) result.put("preferredLanguage", user.getPreferredLanguage());
-        if (user.getLocale() != null) result.put("locale", user.getLocale());
-        if (user.getTimezone() != null) result.put("timezone", user.getTimezone());
+        putIfNotNull(result, KEY_DISPLAY_NAME, user.getDisplayName());
+        putIfNotNull(result, KEY_NICK_NAME, user.getNickName());
+        putIfNotNull(result, KEY_PROFILE_URL, user.getProfileUrl());
+        putIfNotNull(result, KEY_TITLE, user.getTitle());
+        putIfNotNull(result, KEY_USER_TYPE, user.getUserType());
+        putIfNotNull(result, KEY_PREFERRED_LANGUAGE, user.getPreferredLanguage());
+        putIfNotNull(result, KEY_LOCALE, user.getLocale());
+        putIfNotNull(result, KEY_TIMEZONE, user.getTimezone());
+        result.put(KEY_ACTIVE, user.isActive());
+    }
 
-        result.put("active", user.isActive());
+    private static void addMultiValuedAttributes(ScimUser user, Map<String, Object> result) {
+        putCollection(result, KEY_EMAILS, user.getEmails(), ScimUserMapper::emailToMap);
+        putCollection(result, KEY_PHONE_NUMBERS, user.getPhoneNumbers(), ScimUserMapper::phoneToMap);
+        putCollection(result, "ims", user.getIms(), ScimUserMapper::imToMap);
+        putCollection(result, KEY_PHOTOS, user.getPhotos(), ScimUserMapper::photoToMap);
+        putCollection(result, KEY_ADDRESSES, user.getAddresses(), ScimUserMapper::addressToMap);
+        putCollection(result, KEY_ENTITLEMENTS, user.getEntitlements(), ScimUserMapper::entitlementToMap);
+        putCollection(result, KEY_ROLES, user.getRoles(), ScimUserMapper::roleToMap);
+        putCollection(result, KEY_X509_CERTIFICATES, user.getX509Certificates(), ScimUserMapper::certToMap);
+    }
 
-        // Multi-valued attributes
-        if (user.getEmails() != null && !user.getEmails().isEmpty()) {
-            result.put("emails", user.getEmails().stream().map(ScimUserMapper::emailToMap).collect(Collectors.toList()));
-        }
-        if (user.getPhoneNumbers() != null && !user.getPhoneNumbers().isEmpty()) {
-            result.put("phoneNumbers", user.getPhoneNumbers().stream().map(ScimUserMapper::phoneToMap).collect(Collectors.toList()));
-        }
-        if (user.getIms() != null && !user.getIms().isEmpty()) {
-            result.put("ims", user.getIms().stream().map(ScimUserMapper::imToMap).collect(Collectors.toList()));
-        }
-        if (user.getPhotos() != null && !user.getPhotos().isEmpty()) {
-            result.put("photos", user.getPhotos().stream().map(ScimUserMapper::photoToMap).collect(Collectors.toList()));
-        }
-        if (user.getAddresses() != null && !user.getAddresses().isEmpty()) {
-            result.put("addresses", user.getAddresses().stream().map(ScimUserMapper::addressToMap).collect(Collectors.toList()));
-        }
-        if (user.getEntitlements() != null && !user.getEntitlements().isEmpty()) {
-            result.put("entitlements", user.getEntitlements().stream().map(ScimUserMapper::entitlementToMap).collect(Collectors.toList()));
-        }
-        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
-            result.put("roles", user.getRoles().stream().map(ScimUserMapper::roleToMap).collect(Collectors.toList()));
-        }
-        if (user.getX509Certificates() != null && !user.getX509Certificates().isEmpty()) {
-            result.put("x509Certificates", user.getX509Certificates().stream().map(ScimUserMapper::certToMap).collect(Collectors.toList()));
-        }
-
-        // Groups (read-only, computed)
+    private static void addComputedGroups(Map<String, Object> result, List<Map<String, Object>> groups) {
         if (groups != null && !groups.isEmpty()) {
             result.put("groups", groups);
         }
+    }
 
-        // Enterprise extension
-        if (hasEnterpriseData(user)) {
-            Map<String, Object> ent = new LinkedHashMap<>();
-            if (user.getEnterpriseEmployeeNumber() != null) ent.put("employeeNumber", user.getEnterpriseEmployeeNumber());
-            if (user.getEnterpriseCostCenter() != null) ent.put("costCenter", user.getEnterpriseCostCenter());
-            if (user.getEnterpriseOrganization() != null) ent.put("organization", user.getEnterpriseOrganization());
-            if (user.getEnterpriseDivision() != null) ent.put("division", user.getEnterpriseDivision());
-            if (user.getEnterpriseDepartment() != null) ent.put("department", user.getEnterpriseDepartment());
-            if (user.getEnterpriseManagerValue() != null || user.getEnterpriseManagerRef() != null || user.getEnterpriseManagerDisplay() != null) {
-                Map<String, Object> manager = new LinkedHashMap<>();
-                if (user.getEnterpriseManagerValue() != null) manager.put("value", user.getEnterpriseManagerValue());
-                if (user.getEnterpriseManagerRef() != null) manager.put("$ref", user.getEnterpriseManagerRef());
-                if (user.getEnterpriseManagerDisplay() != null) manager.put("displayName", user.getEnterpriseManagerDisplay());
-                ent.put("manager", manager);
-            }
-            result.put(ENTERPRISE_SCHEMA, ent);
+    private static void addEnterpriseExtension(ScimUser user, Map<String, Object> result) {
+        if (!hasEnterpriseData(user)) {
+            return;
         }
 
-        // Meta
+        Map<String, Object> enterprise = new LinkedHashMap<>();
+        putIfNotNull(enterprise, "employeeNumber", user.getEnterpriseEmployeeNumber());
+        putIfNotNull(enterprise, "costCenter", user.getEnterpriseCostCenter());
+        putIfNotNull(enterprise, "organization", user.getEnterpriseOrganization());
+        putIfNotNull(enterprise, "division", user.getEnterpriseDivision());
+        putIfNotNull(enterprise, "department", user.getEnterpriseDepartment());
+
+        Map<String, Object> manager = buildManagerMap(user);
+        if (!manager.isEmpty()) {
+            enterprise.put(KEY_MANAGER, manager);
+        }
+
+        result.put(ENTERPRISE_SCHEMA, enterprise);
+    }
+
+    private static void addMeta(ScimUser user, String baseUrl, Map<String, Object> result) {
         Map<String, Object> meta = new LinkedHashMap<>();
         meta.put("resourceType", "User");
         meta.put("created", user.getCreatedAt().toString());
@@ -117,207 +144,23 @@ public class ScimUserMapper {
         meta.put("location", baseUrl + "/Users/" + user.getId());
         meta.put("version", "W/\"" + user.getVersion() + "\"");
         result.put("meta", meta);
-
-        return result;
     }
 
     /**
      * Apply SCIM JSON input to a ScimUser entity (for CREATE and PUT).
      */
-    @SuppressWarnings("unchecked")
     public static void applyFromScimInput(ScimUser user, Map<String, Object> input) {
-        if (input.containsKey("userName")) user.setUserName((String) input.get("userName"));
-        if (input.containsKey("externalId")) user.setExternalId((String) input.get("externalId"));
-        if (input.containsKey("displayName")) user.setDisplayName((String) input.get("displayName"));
-        if (input.containsKey("nickName")) user.setNickName((String) input.get("nickName"));
-        if (input.containsKey("profileUrl")) {
-            String profileUrl = (String) input.get("profileUrl");
-            user.setProfileUrl(profileUrl);
-        }
-        if (input.containsKey("title")) user.setTitle((String) input.get("title"));
-        if (input.containsKey("userType")) user.setUserType((String) input.get("userType"));
-        if (input.containsKey("preferredLanguage")) user.setPreferredLanguage((String) input.get("preferredLanguage"));
-        if (input.containsKey("locale")) user.setLocale((String) input.get("locale"));
-        if (input.containsKey("timezone")) user.setTimezone((String) input.get("timezone"));
-        if (input.containsKey("active")) user.setActive(toBoolean(input.get("active")));
-        if (input.containsKey("password")) user.setPassword((String) input.get("password"));
-
-        // Name complex attribute
-        if (input.containsKey("name")) {
-            Object nameObj = input.get("name");
-            if (nameObj instanceof Map) {
-                Map<String, Object> nameMap = (Map<String, Object>) nameObj;
-                user.setNameFormatted((String) nameMap.get("formatted"));
-                user.setNameFamilyName((String) nameMap.get("familyName"));
-                user.setNameGivenName((String) nameMap.get("givenName"));
-                user.setNameMiddleName((String) nameMap.get("middleName"));
-                user.setNameHonorificPrefix((String) nameMap.get("honorificPrefix"));
-                user.setNameHonorificSuffix((String) nameMap.get("honorificSuffix"));
-            }
-        }
-
-        // Emails
-        if (input.containsKey("emails")) {
-            user.getEmails().clear();
-            List<Map<String, Object>> emailsList = (List<Map<String, Object>>) input.get("emails");
-            if (emailsList != null) {
-                for (Map<String, Object> em : emailsList) {
-                    ScimUserEmail email = new ScimUserEmail();
-                    email.setUser(user);
-                    email.setValue((String) em.get("value"));
-                    email.setType(normalizeCanonical((String) em.get("type"), EMAIL_TYPES, "emails.type"));
-                    email.setDisplay((String) em.get("display"));
-                    email.setPrimaryFlag(toBoolean(em.get("primary")));
-                    user.getEmails().add(email);
-                }
-            }
-        }
-
-        // Phone numbers
-        if (input.containsKey("phoneNumbers")) {
-            user.getPhoneNumbers().clear();
-            List<Map<String, Object>> phoneList = (List<Map<String, Object>>) input.get("phoneNumbers");
-            if (phoneList != null) {
-                for (Map<String, Object> ph : phoneList) {
-                    ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
-                    phone.setUser(user);
-                    phone.setValue((String) ph.get("value"));
-                    phone.setType(normalizeCanonical((String) ph.get("type"), PHONE_TYPES, "phoneNumbers.type"));
-                    phone.setDisplay((String) ph.get("display"));
-                    phone.setPrimaryFlag(toBoolean(ph.get("primary")));
-                    user.getPhoneNumbers().add(phone);
-                }
-            }
-        }
-
-        // Addresses
-        if (input.containsKey("addresses")) {
-            user.getAddresses().clear();
-            List<Map<String, Object>> addrList = (List<Map<String, Object>>) input.get("addresses");
-            if (addrList != null) {
-                for (Map<String, Object> addr : addrList) {
-                    ScimUserAddress address = new ScimUserAddress();
-                    address.setUser(user);
-                    address.setFormatted((String) addr.get("formatted"));
-                    address.setStreetAddress((String) addr.get("streetAddress"));
-                    address.setLocality((String) addr.get("locality"));
-                    address.setRegion((String) addr.get("region"));
-                    address.setPostalCode((String) addr.get("postalCode"));
-                    address.setCountry((String) addr.get("country"));
-                    address.setType(normalizeCanonical((String) addr.get("type"), ADDRESS_TYPES, "addresses.type"));
-                    address.setPrimaryFlag(toBoolean(addr.get("primary")));
-                    user.getAddresses().add(address);
-                }
-            }
-        }
-
-        // IMs
-        if (input.containsKey("ims")) {
-            user.getIms().clear();
-            List<Map<String, Object>> imsList = (List<Map<String, Object>>) input.get("ims");
-            if (imsList != null) {
-                for (Map<String, Object> im : imsList) {
-                    ScimUserIm imEntity = new ScimUserIm();
-                    imEntity.setUser(user);
-                    imEntity.setValue((String) im.get("value"));
-                    imEntity.setType(normalizeCanonical((String) im.get("type"), IM_TYPES, "ims.type"));
-                    imEntity.setDisplay((String) im.get("display"));
-                    imEntity.setPrimaryFlag(toBoolean(im.get("primary")));
-                    user.getIms().add(imEntity);
-                }
-            }
-        }
-
-        // Photos
-        if (input.containsKey("photos")) {
-            user.getPhotos().clear();
-            List<Map<String, Object>> photoList = (List<Map<String, Object>>) input.get("photos");
-            if (photoList != null) {
-                for (Map<String, Object> ph : photoList) {
-                    ScimUserPhoto photo = new ScimUserPhoto();
-                    photo.setUser(user);
-                    String photoValue = (String) ph.get("value");
-                    photo.setValue(photoValue);
-                    photo.setType(normalizeCanonical((String) ph.get("type"), PHOTO_TYPES, "photos.type"));
-                    photo.setDisplay((String) ph.get("display"));
-                    photo.setPrimaryFlag(toBoolean(ph.get("primary")));
-                    user.getPhotos().add(photo);
-                }
-            }
-        }
-
-        // Entitlements
-        if (input.containsKey("entitlements")) {
-            user.getEntitlements().clear();
-            List<Map<String, Object>> entList = (List<Map<String, Object>>) input.get("entitlements");
-            if (entList != null) {
-                for (Map<String, Object> ent : entList) {
-                    ScimUserEntitlement entitlement = new ScimUserEntitlement();
-                    entitlement.setUser(user);
-                    entitlement.setValue((String) ent.get("value"));
-                    entitlement.setType((String) ent.get("type"));
-                    entitlement.setDisplay((String) ent.get("display"));
-                    entitlement.setPrimaryFlag(toBoolean(ent.get("primary")));
-                    user.getEntitlements().add(entitlement);
-                }
-            }
-        }
-
-        // Roles
-        if (input.containsKey("roles")) {
-            user.getRoles().clear();
-            List<Map<String, Object>> roleList = (List<Map<String, Object>>) input.get("roles");
-            if (roleList != null) {
-                for (Map<String, Object> role : roleList) {
-                    ScimUserRole roleEntity = new ScimUserRole();
-                    roleEntity.setUser(user);
-                    roleEntity.setValue((String) role.get("value"));
-                    roleEntity.setType((String) role.get("type"));
-                    roleEntity.setDisplay((String) role.get("display"));
-                    roleEntity.setPrimaryFlag(toBoolean(role.get("primary")));
-                    user.getRoles().add(roleEntity);
-                }
-            }
-        }
-
-        // X509 Certificates
-        if (input.containsKey("x509Certificates")) {
-            user.getX509Certificates().clear();
-            List<Map<String, Object>> certList = (List<Map<String, Object>>) input.get("x509Certificates");
-            if (certList != null) {
-                for (Map<String, Object> cert : certList) {
-                    ScimUserX509Certificate certEntity = new ScimUserX509Certificate();
-                    certEntity.setUser(user);
-                    certEntity.setValue((String) cert.get("value"));
-                    certEntity.setType((String) cert.get("type"));
-                    certEntity.setDisplay((String) cert.get("display"));
-                    certEntity.setPrimaryFlag(toBoolean(cert.get("primary")));
-                    validateBinary(certEntity.getValue(), "x509Certificates.value");
-                    user.getX509Certificates().add(certEntity);
-                }
-            }
-        }
-
-        // Enterprise extension
-        Map<String, Object> enterprise = (Map<String, Object>) input.get(ENTERPRISE_SCHEMA);
-        if (enterprise != null) {
-            user.setEnterpriseEmployeeNumber((String) enterprise.get("employeeNumber"));
-            user.setEnterpriseCostCenter((String) enterprise.get("costCenter"));
-            user.setEnterpriseOrganization((String) enterprise.get("organization"));
-            user.setEnterpriseDivision((String) enterprise.get("division"));
-            user.setEnterpriseDepartment((String) enterprise.get("department"));
-            if (enterprise.containsKey("manager")) {
-                Object mgrObj = enterprise.get("manager");
-                if (mgrObj instanceof Map) {
-                    Map<String, Object> mgr = (Map<String, Object>) mgrObj;
-                    user.setEnterpriseManagerValue((String) mgr.get("value"));
-                    user.setEnterpriseManagerRef((String) mgr.get("$ref"));
-                    user.setEnterpriseManagerDisplay((String) mgr.get("displayName"));
-                } else if (mgrObj instanceof String) {
-                    user.setEnterpriseManagerValue((String) mgrObj);
-                }
-            }
-        }
+        applySimpleAttributes(user, input);
+        applyNameAttribute(user, input.get("name"));
+        replaceCollection(user.getEmails(), input, KEY_EMAILS, item -> buildEmail(user, item));
+        replaceCollection(user.getPhoneNumbers(), input, KEY_PHONE_NUMBERS, item -> buildPhone(user, item));
+        replaceCollection(user.getAddresses(), input, KEY_ADDRESSES, item -> buildAddress(user, item));
+        replaceCollection(user.getIms(), input, "ims", item -> buildIm(user, item));
+        replaceCollection(user.getPhotos(), input, KEY_PHOTOS, item -> buildPhoto(user, item));
+        replaceCollection(user.getEntitlements(), input, KEY_ENTITLEMENTS, item -> buildEntitlement(user, item));
+        replaceCollection(user.getRoles(), input, KEY_ROLES, item -> buildRole(user, item));
+        replaceCollection(user.getX509Certificates(), input, KEY_X509_CERTIFICATES, item -> buildCertificate(user, item));
+        applyEnterpriseExtension(user, input);
     }
 
     /**
@@ -372,7 +215,7 @@ public class ScimUserMapper {
 
     private static Map<String, Object> buildNameMap(ScimUser user) {
         Map<String, Object> name = new LinkedHashMap<>();
-        if (user.getNameFormatted() != null) name.put("formatted", user.getNameFormatted());
+        if (user.getNameFormatted() != null) name.put(KEY_FORMATTED, user.getNameFormatted());
         if (user.getNameFamilyName() != null) name.put("familyName", user.getNameFamilyName());
         if (user.getNameGivenName() != null) name.put("givenName", user.getNameGivenName());
         if (user.getNameMiddleName() != null) name.put("middleName", user.getNameMiddleName());
@@ -381,79 +224,258 @@ public class ScimUserMapper {
         return name;
     }
 
+    private static Map<String, Object> buildManagerMap(ScimUser user) {
+        Map<String, Object> manager = new LinkedHashMap<>();
+        putIfNotNull(manager, KEY_VALUE, user.getEnterpriseManagerValue());
+        putIfNotNull(manager, "$ref", user.getEnterpriseManagerRef());
+        putIfNotNull(manager, KEY_DISPLAY_NAME, user.getEnterpriseManagerDisplay());
+        return manager;
+    }
+
+    private static void putIfNotNull(Map<String, Object> target, String key, Object value) {
+        if (value != null) {
+            target.put(key, value);
+        }
+    }
+
+    private static <T> void putCollection(Map<String, Object> target, String key, List<T> values,
+                                          java.util.function.Function<T, Map<String, Object>> mapper) {
+        if (values != null && !values.isEmpty()) {
+            target.put(key, values.stream().map(mapper).toList());
+        }
+    }
+
+    private static void applySimpleAttributes(ScimUser user, Map<String, Object> input) {
+        if (input.containsKey(KEY_USER_NAME)) user.setUserName((String) input.get(KEY_USER_NAME));
+        if (input.containsKey(KEY_EXTERNAL_ID)) user.setExternalId((String) input.get(KEY_EXTERNAL_ID));
+        if (input.containsKey(KEY_DISPLAY_NAME)) user.setDisplayName((String) input.get(KEY_DISPLAY_NAME));
+        if (input.containsKey(KEY_NICK_NAME)) user.setNickName((String) input.get(KEY_NICK_NAME));
+        if (input.containsKey(KEY_PROFILE_URL)) user.setProfileUrl((String) input.get(KEY_PROFILE_URL));
+        if (input.containsKey(KEY_TITLE)) user.setTitle((String) input.get(KEY_TITLE));
+        if (input.containsKey(KEY_USER_TYPE)) user.setUserType((String) input.get(KEY_USER_TYPE));
+        if (input.containsKey(KEY_PREFERRED_LANGUAGE)) user.setPreferredLanguage((String) input.get(KEY_PREFERRED_LANGUAGE));
+        if (input.containsKey(KEY_LOCALE)) user.setLocale((String) input.get(KEY_LOCALE));
+        if (input.containsKey(KEY_TIMEZONE)) user.setTimezone((String) input.get(KEY_TIMEZONE));
+        if (input.containsKey(KEY_ACTIVE)) user.setActive(toBoolean(input.get(KEY_ACTIVE)));
+        if (input.containsKey("password")) user.setPassword((String) input.get("password"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void applyNameAttribute(ScimUser user, Object nameObj) {
+        if (!(nameObj instanceof Map<?, ?> rawNameMap)) {
+            return;
+        }
+        Map<String, Object> nameMap = (Map<String, Object>) rawNameMap;
+        user.setNameFormatted((String) nameMap.get(KEY_FORMATTED));
+        user.setNameFamilyName((String) nameMap.get("familyName"));
+        user.setNameGivenName((String) nameMap.get("givenName"));
+        user.setNameMiddleName((String) nameMap.get("middleName"));
+        user.setNameHonorificPrefix((String) nameMap.get("honorificPrefix"));
+        user.setNameHonorificSuffix((String) nameMap.get("honorificSuffix"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> void replaceCollection(List<T> target, Map<String, Object> input, String key,
+                                              java.util.function.Function<Map<String, Object>, T> mapper) {
+        if (!input.containsKey(key)) {
+            return;
+        }
+        target.clear();
+        List<Map<String, Object>> items = (List<Map<String, Object>>) input.get(key);
+        if (items == null) {
+            return;
+        }
+        for (Map<String, Object> item : items) {
+            target.add(mapper.apply(item));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void applyEnterpriseExtension(ScimUser user, Map<String, Object> input) {
+        Map<String, Object> enterprise = (Map<String, Object>) input.get(ENTERPRISE_SCHEMA);
+        if (enterprise == null) {
+            return;
+        }
+        user.setEnterpriseEmployeeNumber((String) enterprise.get("employeeNumber"));
+        user.setEnterpriseCostCenter((String) enterprise.get("costCenter"));
+        user.setEnterpriseOrganization((String) enterprise.get("organization"));
+        user.setEnterpriseDivision((String) enterprise.get("division"));
+        user.setEnterpriseDepartment((String) enterprise.get("department"));
+        applyEnterpriseManager(user, enterprise.get(KEY_MANAGER));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void applyEnterpriseManager(ScimUser user, Object managerObj) {
+        if (managerObj instanceof Map<?, ?> rawManager) {
+            Map<String, Object> manager = (Map<String, Object>) rawManager;
+            user.setEnterpriseManagerValue((String) manager.get(KEY_VALUE));
+            user.setEnterpriseManagerRef((String) manager.get("$ref"));
+            user.setEnterpriseManagerDisplay((String) manager.get(KEY_DISPLAY_NAME));
+            return;
+        }
+        if (managerObj instanceof String managerValue) {
+            user.setEnterpriseManagerValue(managerValue);
+        }
+    }
+
+    public static ScimUserEmail buildEmail(ScimUser user, Map<String, Object> item) {
+        ScimUserEmail email = new ScimUserEmail();
+        email.setUser(user);
+        email.setValue((String) item.get(KEY_VALUE));
+        email.setType(normalizeCanonical((String) item.get(KEY_TYPE), EMAIL_TYPES, "emails.type"));
+        email.setDisplay((String) item.get(KEY_DISPLAY));
+        email.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
+        return email;
+    }
+
+    public static ScimUserPhoneNumber buildPhone(ScimUser user, Map<String, Object> item) {
+        ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
+        phone.setUser(user);
+        phone.setValue((String) item.get(KEY_VALUE));
+        phone.setType(normalizeCanonical((String) item.get(KEY_TYPE), PHONE_TYPES, "phoneNumbers.type"));
+        phone.setDisplay((String) item.get(KEY_DISPLAY));
+        phone.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
+        return phone;
+    }
+
+    public static ScimUserAddress buildAddress(ScimUser user, Map<String, Object> item) {
+        ScimUserAddress address = new ScimUserAddress();
+        address.setUser(user);
+        address.setFormatted((String) item.get(KEY_FORMATTED));
+        address.setStreetAddress((String) item.get("streetAddress"));
+        address.setLocality((String) item.get("locality"));
+        address.setRegion((String) item.get("region"));
+        address.setPostalCode((String) item.get("postalCode"));
+        address.setCountry((String) item.get("country"));
+        address.setType(normalizeCanonical((String) item.get(KEY_TYPE), ADDRESS_TYPES, "addresses.type"));
+        address.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
+        return address;
+    }
+
+    public static ScimUserIm buildIm(ScimUser user, Map<String, Object> item) {
+        ScimUserIm im = new ScimUserIm();
+        im.setUser(user);
+        im.setValue((String) item.get(KEY_VALUE));
+        im.setType(normalizeCanonical((String) item.get(KEY_TYPE), IM_TYPES, "ims.type"));
+        im.setDisplay((String) item.get(KEY_DISPLAY));
+        im.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
+        return im;
+    }
+
+    public static ScimUserPhoto buildPhoto(ScimUser user, Map<String, Object> item) {
+        ScimUserPhoto photo = new ScimUserPhoto();
+        photo.setUser(user);
+        photo.setValue((String) item.get(KEY_VALUE));
+        photo.setType(normalizeCanonical((String) item.get(KEY_TYPE), PHOTO_TYPES, "photos.type"));
+        photo.setDisplay((String) item.get(KEY_DISPLAY));
+        photo.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
+        return photo;
+    }
+
+    public static ScimUserEntitlement buildEntitlement(ScimUser user, Map<String, Object> item) {
+        ScimUserEntitlement entitlement = new ScimUserEntitlement();
+        entitlement.setUser(user);
+        entitlement.setValue((String) item.get(KEY_VALUE));
+        entitlement.setType((String) item.get(KEY_TYPE));
+        entitlement.setDisplay((String) item.get(KEY_DISPLAY));
+        entitlement.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
+        return entitlement;
+    }
+
+    public static ScimUserRole buildRole(ScimUser user, Map<String, Object> item) {
+        ScimUserRole role = new ScimUserRole();
+        role.setUser(user);
+        role.setValue((String) item.get(KEY_VALUE));
+        role.setType((String) item.get(KEY_TYPE));
+        role.setDisplay((String) item.get(KEY_DISPLAY));
+        role.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
+        return role;
+    }
+
+    public static ScimUserX509Certificate buildCertificate(ScimUser user, Map<String, Object> item) {
+        ScimUserX509Certificate certificate = new ScimUserX509Certificate();
+        certificate.setUser(user);
+        certificate.setValue((String) item.get(KEY_VALUE));
+        certificate.setType((String) item.get(KEY_TYPE));
+        certificate.setDisplay((String) item.get(KEY_DISPLAY));
+        certificate.setPrimaryFlag(toBoolean(item.get(KEY_PRIMARY)));
+        validateBinary(certificate.getValue(), "x509Certificates.value");
+        return certificate;
+    }
+
     private static Map<String, Object> emailToMap(ScimUserEmail e) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("value", e.getValue());
-        if (e.getType() != null) m.put("type", e.getType());
-        if (e.getDisplay() != null) m.put("display", e.getDisplay());
-        m.put("primary", e.isPrimaryFlag());
+        m.put(KEY_VALUE, e.getValue());
+        if (e.getType() != null) m.put(KEY_TYPE, e.getType());
+        if (e.getDisplay() != null) m.put(KEY_DISPLAY, e.getDisplay());
+        m.put(KEY_PRIMARY, e.isPrimaryFlag());
         return m;
     }
 
     private static Map<String, Object> phoneToMap(ScimUserPhoneNumber p) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("value", p.getValue());
-        if (p.getType() != null) m.put("type", p.getType());
-        if (p.getDisplay() != null) m.put("display", p.getDisplay());
-        m.put("primary", p.isPrimaryFlag());
+        m.put(KEY_VALUE, p.getValue());
+        if (p.getType() != null) m.put(KEY_TYPE, p.getType());
+        if (p.getDisplay() != null) m.put(KEY_DISPLAY, p.getDisplay());
+        m.put(KEY_PRIMARY, p.isPrimaryFlag());
         return m;
     }
 
     private static Map<String, Object> imToMap(ScimUserIm i) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("value", i.getValue());
-        if (i.getType() != null) m.put("type", i.getType());
-        if (i.getDisplay() != null) m.put("display", i.getDisplay());
-        m.put("primary", i.isPrimaryFlag());
+        m.put(KEY_VALUE, i.getValue());
+        if (i.getType() != null) m.put(KEY_TYPE, i.getType());
+        if (i.getDisplay() != null) m.put(KEY_DISPLAY, i.getDisplay());
+        m.put(KEY_PRIMARY, i.isPrimaryFlag());
         return m;
     }
 
     private static Map<String, Object> photoToMap(ScimUserPhoto p) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("value", p.getValue());
-        if (p.getType() != null) m.put("type", p.getType());
-        if (p.getDisplay() != null) m.put("display", p.getDisplay());
-        m.put("primary", p.isPrimaryFlag());
+        m.put(KEY_VALUE, p.getValue());
+        if (p.getType() != null) m.put(KEY_TYPE, p.getType());
+        if (p.getDisplay() != null) m.put(KEY_DISPLAY, p.getDisplay());
+        m.put(KEY_PRIMARY, p.isPrimaryFlag());
         return m;
     }
 
     private static Map<String, Object> addressToMap(ScimUserAddress a) {
         Map<String, Object> m = new LinkedHashMap<>();
-        if (a.getFormatted() != null) m.put("formatted", a.getFormatted());
+        if (a.getFormatted() != null) m.put(KEY_FORMATTED, a.getFormatted());
         if (a.getStreetAddress() != null) m.put("streetAddress", a.getStreetAddress());
         if (a.getLocality() != null) m.put("locality", a.getLocality());
         if (a.getRegion() != null) m.put("region", a.getRegion());
         if (a.getPostalCode() != null) m.put("postalCode", a.getPostalCode());
         if (a.getCountry() != null) m.put("country", a.getCountry());
-        if (a.getType() != null) m.put("type", a.getType());
-        m.put("primary", a.isPrimaryFlag());
+        if (a.getType() != null) m.put(KEY_TYPE, a.getType());
+        m.put(KEY_PRIMARY, a.isPrimaryFlag());
         return m;
     }
 
     private static Map<String, Object> entitlementToMap(ScimUserEntitlement e) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("value", e.getValue());
-        if (e.getType() != null) m.put("type", e.getType());
-        if (e.getDisplay() != null) m.put("display", e.getDisplay());
-        m.put("primary", e.isPrimaryFlag());
+        m.put(KEY_VALUE, e.getValue());
+        if (e.getType() != null) m.put(KEY_TYPE, e.getType());
+        if (e.getDisplay() != null) m.put(KEY_DISPLAY, e.getDisplay());
+        m.put(KEY_PRIMARY, e.isPrimaryFlag());
         return m;
     }
 
     private static Map<String, Object> roleToMap(ScimUserRole r) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("value", r.getValue());
-        if (r.getType() != null) m.put("type", r.getType());
-        if (r.getDisplay() != null) m.put("display", r.getDisplay());
-        m.put("primary", r.isPrimaryFlag());
+        m.put(KEY_VALUE, r.getValue());
+        if (r.getType() != null) m.put(KEY_TYPE, r.getType());
+        if (r.getDisplay() != null) m.put(KEY_DISPLAY, r.getDisplay());
+        m.put(KEY_PRIMARY, r.isPrimaryFlag());
         return m;
     }
 
     private static Map<String, Object> certToMap(ScimUserX509Certificate c) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("value", c.getValue());
-        if (c.getType() != null) m.put("type", c.getType());
-        if (c.getDisplay() != null) m.put("display", c.getDisplay());
-        m.put("primary", c.isPrimaryFlag());
+        m.put(KEY_VALUE, c.getValue());
+        if (c.getType() != null) m.put(KEY_TYPE, c.getType());
+        if (c.getDisplay() != null) m.put(KEY_DISPLAY, c.getDisplay());
+        m.put(KEY_PRIMARY, c.isPrimaryFlag());
         return m;
     }
 
@@ -476,8 +498,8 @@ public class ScimUserMapper {
     }
 
     private static boolean toBoolean(Object value) {
-        if (value instanceof Boolean) return (Boolean) value;
-        if (value instanceof String) return Boolean.parseBoolean((String) value);
+        if (value instanceof Boolean b) return b;
+        if (value instanceof String s) return Boolean.parseBoolean(s);
         return false;
     }
 }

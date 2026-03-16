@@ -1,12 +1,7 @@
 package com.scimplayground.mgmt.service;
 
-import com.scimplayground.server.model.ScimGroup;
-import com.scimplayground.server.model.ScimUser;
 import com.scimplayground.server.model.Workspace;
 import com.scimplayground.server.model.WorkspaceToken;
-import com.scimplayground.server.repository.ScimGroupMembershipRepository;
-import com.scimplayground.server.repository.ScimGroupRepository;
-import com.scimplayground.server.repository.ScimUserRepository;
 import com.scimplayground.server.repository.WorkspaceDataStats;
 import com.scimplayground.server.repository.WorkspaceRepository;
 import com.scimplayground.server.repository.WorkspaceStatsRepository;
@@ -27,23 +22,14 @@ public class WorkspaceService {
 
     private final WorkspaceRepository workspaceRepository;
     private final WorkspaceTokenRepository tokenRepository;
-    private final ScimUserRepository userRepository;
-    private final ScimGroupRepository groupRepository;
-    private final ScimGroupMembershipRepository membershipRepository;
     private final WorkspaceStatsRepository workspaceStatsRepository;
 
     public WorkspaceService(WorkspaceRepository workspaceRepository,
                              WorkspaceTokenRepository tokenRepository,
-                             ScimUserRepository userRepository,
-                             ScimGroupRepository groupRepository,
-                             ScimGroupMembershipRepository membershipRepository,
                              WorkspaceStatsRepository workspaceStatsRepository) {
         this.workspaceRepository = workspaceRepository;
         this.tokenRepository = tokenRepository;
-        this.userRepository = userRepository;
-        this.groupRepository = groupRepository;
-        this.membershipRepository = membershipRepository;
-        this.workspaceStatsRepository = workspaceStatsRepository;
+        this.workspaceStatsRepository = workspaceStatsRepository    ;
     }
 
     public Workspace createWorkspace(String name, String description, String createdByUsername) {

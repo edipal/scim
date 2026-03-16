@@ -43,6 +43,9 @@ import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 @Service
 public class ValidationRunService {
 
+    private static final String SCIM_BASE_URL_PROPERTY = "scim.baseUrl";
+    private static final String SCIM_AUTH_TOKEN_PROPERTY = "scim.authToken";
+
     private static final List<String> SPEC_CLASS_NAMES = List.of(
         "specs.A1_ServiceDiscoverySpec",
         "specs.A2_SchemaValidationSpec",
@@ -90,8 +93,8 @@ public class ValidationRunService {
         Map<String, String> previousProperties = captureExistingProperties();
 
         try {
-            System.setProperty("scim.baseUrl", form.baseUrl().trim());
-            System.setProperty("scim.authToken", form.authToken().trim());
+            System.setProperty(SCIM_BASE_URL_PROPERTY, form.baseUrl().trim());
+            System.setProperty(SCIM_AUTH_TOKEN_PROPERTY, form.authToken().trim());
 
             ScimRunContext.reset();
             ScimRunContext.setCaptureEnabled(true);
@@ -181,14 +184,14 @@ public class ValidationRunService {
 
     private static Map<String, String> captureExistingProperties() {
         Map<String, String> values = new HashMap<>();
-        values.put("scim.baseUrl", System.getProperty("scim.baseUrl"));
-        values.put("scim.authToken", System.getProperty("scim.authToken"));
+        values.put(SCIM_BASE_URL_PROPERTY, System.getProperty(SCIM_BASE_URL_PROPERTY));
+        values.put(SCIM_AUTH_TOKEN_PROPERTY, System.getProperty(SCIM_AUTH_TOKEN_PROPERTY));
         return values;
     }
 
     private static void restoreProperties(Map<String, String> previousProperties) {
-        restoreProperty("scim.baseUrl", previousProperties.get("scim.baseUrl"));
-        restoreProperty("scim.authToken", previousProperties.get("scim.authToken"));
+        restoreProperty(SCIM_BASE_URL_PROPERTY, previousProperties.get(SCIM_BASE_URL_PROPERTY));
+        restoreProperty(SCIM_AUTH_TOKEN_PROPERTY, previousProperties.get(SCIM_AUTH_TOKEN_PROPERTY));
     }
 
     private static void restoreProperty(String key, String value) {
@@ -246,13 +249,14 @@ public class ValidationRunService {
             testResult.setStartedAt(startedAt);
             testResult.setFinishedAt(finishedAt);
 
-            if (testIdentifier.getSource().isPresent() && testIdentifier.getSource().get() instanceof MethodSource methodSource) {
+            Object source = testIdentifier.getSource().orElse(null);
+            if (source instanceof MethodSource methodSource) {
                 testResult.setClassName(methodSource.getClassName());
                 testResult.setTestName(methodSource.getMethodName());
             }
 
-            if (testExecutionResult.getThrowable().isPresent()) {
-                Throwable throwable = testExecutionResult.getThrowable().get();
+            Throwable throwable = testExecutionResult.getThrowable().orElse(null);
+            if (throwable != null) {
                 testResult.setErrorMessage(throwable.getMessage());
                 testResult.setStackTrace(stackTrace(throwable));
             }

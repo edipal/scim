@@ -29,6 +29,35 @@
         .status-failed, .status-error { color: #b91c1c; font-weight: 700; }
         .error { color: #b91c1c; font-size: 12px; }
         a { color: #1d4ed8; text-decoration: none; }
+        #run-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #run-overlay.active { display: flex; }
+        .run-dialog {
+            background: #fff;
+            border-radius: 10px;
+            padding: 36px 48px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        }
+        .run-spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #e5e7eb;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .run-dialog p { font-size: 15px; font-weight: 600; color: #202124; margin: 0; }
+        .run-dialog small { font-size: 12px; color: #6b7280; }
     </style>
 </head>
 <body>
@@ -65,8 +94,16 @@
                 <input id="authToken" type="password" th:field="*{authToken}" placeholder="token">
                 <div class="error" th:if="${#fields.hasErrors('authToken')}" th:errors="*{authToken}"></div>
             </div>
-            <button type="submit">Run Validation Suite</button>
+            <button type="submit" id="run-btn">Run Validation Suite</button>
         </form>
+    </div>
+
+    <div id="run-overlay">
+        <div class="run-dialog">
+            <div class="run-spinner"></div>
+            <p>Running tests&hellip;</p>
+            <small>This may take a minute. Please wait.</small>
+        </div>
     </div>
 
     <div class="card">
@@ -107,5 +144,22 @@
         </table>
     </div>
 </div>
+<script>
+    (function () {
+        var form = document.querySelector('.card form');
+        var overlay = document.getElementById('run-overlay');
+        if (form && overlay) {
+            form.addEventListener('submit', function (e) {
+                // Basic client-side validation: only show overlay if required fields are filled
+                var name = form.querySelector('#name');
+                var baseUrl = form.querySelector('#baseUrl');
+                var token = form.querySelector('#authToken');
+                if (name && name.value.trim() && baseUrl && baseUrl.value.trim() && token && token.value.trim()) {
+                    overlay.classList.add('active');
+                }
+            });
+        }
+    })();
+</script>
 </body>
 </html>

@@ -16,7 +16,6 @@
         <module>scim-server-model</module>
         <module>scim-server-api</module>
         <module>scim-server-mgmt</module>
-        <module>scim-validator</module>
         <module>scim-validator-mgmt</module>
     </modules>
 

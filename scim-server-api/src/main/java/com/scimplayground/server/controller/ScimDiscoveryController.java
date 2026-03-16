@@ -19,7 +19,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping({"/ws/{workspaceId}/scim/v2", "/ws/{workspaceId}/scim/v2/{compat}"})
-public class ScimDiscoveryController {
+public class ScimDiscoveryController extends ScimBaseController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
 
@@ -47,7 +47,7 @@ public class ScimDiscoveryController {
             @PathVariable(name = "compat", required = false) String compat) {
         List<Map<String, Object>> schemas = ScimSchemaDefinitions.allSchemas();
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
+        response.put(KEY_SCHEMAS, List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
         response.put("totalResults", schemas.size());
         response.put("itemsPerPage", schemas.size());
         response.put("startIndex", 1);
@@ -75,6 +75,7 @@ public class ScimDiscoveryController {
     @RequestMapping(value = {"/Schemas", "/Schemas/{schemaId}"}, method = {RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     public ResponseEntity<Map<String, Object>> schemasMethodNotAllowed(
+            @PathVariable(name = "schemaId", required = false) String schemaId,
             @PathVariable(name = "compat", required = false) String compat) {
         return methodNotAllowed();
     }
@@ -88,7 +89,7 @@ public class ScimDiscoveryController {
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
         List<Map<String, Object>> types = ScimSchemaDefinitions.resourceTypes(baseUrl);
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
+        response.put(KEY_SCHEMAS, List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
         response.put("totalResults", types.size());
         response.put("itemsPerPage", types.size());
         response.put("startIndex", 1);
@@ -115,6 +116,7 @@ public class ScimDiscoveryController {
     @RequestMapping(value = {"/ResourceTypes", "/ResourceTypes/{resourceTypeId}"}, method = {RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     public ResponseEntity<Map<String, Object>> resourceTypesMethodNotAllowed(
+            @PathVariable(name = "resourceTypeId", required = false) String resourceTypeId,
             @PathVariable(name = "compat", required = false) String compat) {
         return methodNotAllowed();
     }
@@ -123,7 +125,7 @@ public class ScimDiscoveryController {
 
     private ResponseEntity<Map<String, Object>> methodNotAllowed() {
         Map<String, Object> error = new LinkedHashMap<>();
-        error.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:Error"));
+        error.put(KEY_SCHEMAS, List.of("urn:ietf:params:scim:api:messages:2.0:Error"));
         error.put("status", "405");
         error.put("detail", "Method not allowed on discovery endpoint");
         return ResponseEntity.status(405)
@@ -131,28 +133,4 @@ public class ScimDiscoveryController {
                 .body(error);
     }
 
-    private String buildBaseUrl(HttpServletRequest request, String workspaceId, String compat) {
-        String forwardedProto = request.getHeader("X-Forwarded-Proto");
-        String forwardedHost = request.getHeader("X-Forwarded-Host");
-        String forwardedPort = request.getHeader("X-Forwarded-Port");
-
-        String scheme = forwardedProto != null ? forwardedProto.split(",")[0].trim() : request.getScheme();
-        String host = forwardedHost != null ? forwardedHost.split(",")[0].trim() : request.getServerName();
-
-        int port = request.getServerPort();
-        if (forwardedPort != null) {
-            try {
-                port = Integer.parseInt(forwardedPort.split(",")[0].trim());
-            } catch (NumberFormatException ignored) {
-                // Fall back to server port when forwarded port is invalid.
-            }
-        }
-
-        String portStr = (port == 80 || port == 443 || host.contains(":")) ? "" : ":" + port;
-        String base = scheme + "://" + host + portStr + "/ws/" + workspaceId + "/scim/v2";
-        if (compat != null && !compat.isBlank()) {
-            return base + "/" + compat;
-        }
-        return base;
-    }
 }

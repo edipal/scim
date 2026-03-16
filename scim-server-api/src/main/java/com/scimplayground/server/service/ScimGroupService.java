@@ -10,10 +10,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @Transactional
 public class ScimGroupService {
+
+    private static final String KEY_DISPLAY_NAME = "displayName";
+    private static final String KEY_MEMBERS = "members";
+    private static final String KEY_VALUE = "value";
+    private static final String KEY_EXTERNAL_ID = "externalId";
+    private static final String RESOURCE_TYPE_GROUP = "Group";
+    private static final String RESOURCE_TYPE_USER = "User";
+        private static final Pattern MEMBER_VALUE_FILTER = Pattern.compile(
+            "value\\s+eq\\s+\"([^\"]+)\"",
+            Pattern.CASE_INSENSITIVE);
 
     private final ScimGroupRepository groupRepository;
     private final ScimGroupMembershipRepository membershipRepository;
@@ -32,13 +44,13 @@ public class ScimGroupService {
 
     @SuppressWarnings("unchecked")
     public ScimGroup createGroup(UUID workspaceId, Map<String, Object> input) {
-        String displayName = (String) input.get("displayName");
+        String displayName = (String) input.get(KEY_DISPLAY_NAME);
         if (displayName == null || displayName.isBlank()) {
-            throw new ScimException(400, "invalidValue", "displayName is required");
+            throw new ScimException(400, "invalidValue", KEY_DISPLAY_NAME + " is required");
         }
 
         if (groupRepository.findByDisplayNameAndWorkspaceId(displayName, workspaceId).isPresent()) {
-            throw new ScimException(409, "uniqueness", "Group with displayName '" + displayName + "' already exists");
+            throw new ScimException(409, "uniqueness", RESOURCE_TYPE_GROUP + " with " + KEY_DISPLAY_NAME + " '" + displayName + "' already exists");
         }
 
         Workspace ws = workspaceRepository.findById(workspaceId)
@@ -48,7 +60,7 @@ public class ScimGroupService {
         group.setWorkspace(ws);
         group.setDisplayName(displayName);
 
-        Object externalId = input.get("externalId");
+        Object externalId = input.get(KEY_EXTERNAL_ID);
         if (externalId != null) {
             group.setExternalId(externalId.toString());
         }
@@ -56,7 +68,7 @@ public class ScimGroupService {
         group = groupRepository.save(group);
 
         // Add members
-        List<Map<String, Object>> members = (List<Map<String, Object>>) input.get("members");
+        List<Map<String, Object>> members = (List<Map<String, Object>>) input.get(KEY_MEMBERS);
         if (members != null) {
             for (Map<String, Object> m : members) {
                 addMember(group, workspaceId, m);
@@ -116,28 +128,27 @@ public class ScimGroupService {
     public ScimGroup replaceGroup(UUID workspaceId, UUID groupId, Map<String, Object> input) {
         ScimGroup existing = getGroup(workspaceId, groupId);
 
-        String displayName = (String) input.get("displayName");
+        String displayName = (String) input.get(KEY_DISPLAY_NAME);
         if (displayName == null || displayName.isBlank()) {
-            throw new ScimException(400, "invalidValue", "displayName is required");
+            throw new ScimException(400, "invalidValue", KEY_DISPLAY_NAME + " is required");
         }
 
         // Check uniqueness if changed
-        if (!existing.getDisplayName().equals(displayName)) {
-            if (groupRepository.findByDisplayNameAndWorkspaceId(displayName, workspaceId).isPresent()) {
-                throw new ScimException(409, "uniqueness",
-                        "Group with displayName '" + displayName + "' already exists");
-            }
+        if (!existing.getDisplayName().equals(displayName)
+                && groupRepository.findByDisplayNameAndWorkspaceId(displayName, workspaceId).isPresent()) {
+            throw new ScimException(409, "uniqueness",
+                RESOURCE_TYPE_GROUP + " with " + KEY_DISPLAY_NAME + " '" + displayName + "' already exists");
         }
 
         existing.setDisplayName(displayName);
-        Object externalId = input.get("externalId");
+        Object externalId = input.get(KEY_EXTERNAL_ID);
         existing.setExternalId(externalId != null ? externalId.toString() : null);
 
         // Replace members entirely
         existing.getMembers().clear();
         groupRepository.saveAndFlush(existing);
 
-        List<Map<String, Object>> members = (List<Map<String, Object>>) input.get("members");
+        List<Map<String, Object>> members = (List<Map<String, Object>>) input.get(KEY_MEMBERS);
         if (members != null) {
             for (Map<String, Object> m : members) {
                 addMember(existing, workspaceId, m);
@@ -147,122 +158,157 @@ public class ScimGroupService {
         return groupRepository.save(existing);
     }
 
-    @SuppressWarnings("unchecked")
     public ScimGroup patchGroup(UUID workspaceId, UUID groupId, List<Map<String, Object>> operations) {
         ScimGroup group = getGroup(workspaceId, groupId);
 
         for (Map<String, Object> op : operations) {
-            String opType = ((String) op.get("op")).toLowerCase();
-            String path = (String) op.get("path");
-            Object value = op.get("value");
-
-            switch (opType) {
-                case "add":
-                    if ("members".equals(path) || path == null) {
-                        List<Map<String, Object>> membersToAdd;
-                        if (value instanceof List) {
-                            membersToAdd = (List<Map<String, Object>>) value;
-                        } else if (value instanceof Map) {
-                            // If value is the entire body with members
-                            Map<String, Object> valueMap = (Map<String, Object>) value;
-                            if (valueMap.containsKey("members")) {
-                                membersToAdd = (List<Map<String, Object>>) valueMap.get("members");
-                            } else {
-                                membersToAdd = List.of(valueMap);
-                            }
-                        } else {
-                            throw new ScimException(400, "invalidValue", "Invalid value for members add");
-                        }
-                        for (Map<String, Object> m : membersToAdd) {
-                            String memberValue = m.get("value") != null ? m.get("value").toString() : null;
-                            if (memberValue == null)
-                                continue;
-                            // Check if already a member
-                            boolean alreadyMember = group.getMembers().stream()
-                                    .anyMatch(existing -> existing.getMemberValue().toString().equals(memberValue));
-                            if (!alreadyMember) {
-                                addMember(group, workspaceId, m);
-                            }
-                        }
-                    } else if ("displayName".equals(path)) {
-                        if (value instanceof String) {
-                            group.setDisplayName((String) value);
-                        }
-                    }
-                    break;
-
-                case "replace":
-                    if ("members".equals(path)) {
-                        group.getMembers().clear();
-                        if (value instanceof List) {
-                            List<Map<String, Object>> newMembers = (List<Map<String, Object>>) value;
-                            for (Map<String, Object> m : newMembers) {
-                                addMember(group, workspaceId, m);
-                            }
-                        }
-                    } else if ("displayName".equals(path)) {
-                        if (value instanceof String) {
-                            String newName = (String) value;
-                            if (!group.getDisplayName().equals(newName)) {
-                                if (groupRepository.findByDisplayNameAndWorkspaceId(newName, workspaceId).isPresent()) {
-                                    throw new ScimException(409, "uniqueness",
-                                            "Group with displayName '" + newName + "' already exists");
-                                }
-                            }
-                            group.setDisplayName(newName);
-                        }
-                    } else if ("externalId".equals(path)) {
-                        group.setExternalId(value != null ? value.toString() : null);
-                    } else if (path == null && value instanceof Map) {
-                        // Replace attributes in body
-                        Map<String, Object> valueMap = (Map<String, Object>) value;
-                        if (valueMap.containsKey("displayName")) {
-                            group.setDisplayName((String) valueMap.get("displayName"));
-                        }
-                        if (valueMap.containsKey("externalId")) {
-                            Object ext = valueMap.get("externalId");
-                            group.setExternalId(ext != null ? ext.toString() : null);
-                        }
-                        if (valueMap.containsKey("members")) {
-                            group.getMembers().clear();
-                            List<Map<String, Object>> newMembers = (List<Map<String, Object>>) valueMap.get("members");
-                            for (Map<String, Object> m : newMembers) {
-                                addMember(group, workspaceId, m);
-                            }
-                        }
-                    }
-                    break;
-
-                case "remove":
-                    if ("members".equals(path)) {
-                        // Remove all members
-                        group.getMembers().clear();
-                    } else if (path != null && path.startsWith("members[")) {
-                        // Filtered remove, e.g., members[value eq "uuid"]
-                        String filterExpr = path.substring(8, path.length() - 1);
-                        String targetValue = extractFilterValue(filterExpr);
-                        if (targetValue != null) {
-                            group.getMembers().removeIf(m -> m.getMemberValue().toString().equals(targetValue));
-                        }
-                    } else if (value instanceof List) {
-                        // Remove specific members by value
-                        List<Map<String, Object>> membersToRemove = (List<Map<String, Object>>) value;
-                        for (Map<String, Object> m : membersToRemove) {
-                            String memberVal = m.get("value") != null ? m.get("value").toString() : null;
-                            if (memberVal != null) {
-                                group.getMembers()
-                                        .removeIf(existing -> existing.getMemberValue().toString().equals(memberVal));
-                            }
-                        }
-                    }
-                    break;
-
-                default:
-                    throw new ScimException(400, "invalidValue", "Unsupported PATCH op: " + opType);
-            }
+            applyPatchOperation(group, workspaceId, op);
         }
 
         return groupRepository.save(group);
+    }
+
+    private void applyPatchOperation(ScimGroup group, UUID workspaceId, Map<String, Object> op) {
+        String opType = String.valueOf(op.get("op")).toLowerCase(Locale.ROOT);
+        String path = (String) op.get("path");
+        Object value = op.get(KEY_VALUE);
+
+        switch (opType) {
+            case "add" -> applyAddOperation(group, workspaceId, path, value);
+            case "replace" -> applyReplaceOperation(group, workspaceId, path, value);
+            case "remove" -> applyRemoveOperation(group, path, value);
+            default -> throw new ScimException(400, "invalidValue", "Unsupported PATCH op: " + opType);
+        }
+    }
+
+    private void applyAddOperation(ScimGroup group, UUID workspaceId, String path, Object value) {
+        if (KEY_MEMBERS.equals(path) || path == null) {
+            addMissingMembers(group, workspaceId, extractMembersPayload(value, true, "Invalid value for members add"));
+            return;
+        }
+        if (KEY_DISPLAY_NAME.equals(path) && value instanceof String displayName) {
+            group.setDisplayName(displayName);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void applyReplaceOperation(ScimGroup group, UUID workspaceId, String path, Object value) {
+        if (KEY_MEMBERS.equals(path)) {
+            replaceMembers(group, workspaceId, extractMembersPayload(value, false, "Invalid value for members replace"));
+            return;
+        }
+        if (KEY_DISPLAY_NAME.equals(path) && value instanceof String displayName) {
+            updateDisplayName(group, workspaceId, displayName);
+            return;
+        }
+        if (KEY_EXTERNAL_ID.equals(path)) {
+            group.setExternalId(value != null ? value.toString() : null);
+            return;
+        }
+        if (path == null && value instanceof Map<?, ?> rawMap) {
+            applyReplaceValueMap(group, workspaceId, (Map<String, Object>) rawMap);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void applyRemoveOperation(ScimGroup group, String path, Object value) {
+        if (KEY_MEMBERS.equals(path)) {
+            group.getMembers().clear();
+            return;
+        }
+        if (path != null && path.startsWith("members[")) {
+            String filterExpr = path.substring(8, path.length() - 1);
+            String targetValue = extractFilterValue(filterExpr);
+            if (targetValue != null) {
+                group.getMembers().removeIf(member -> memberValueEquals(member, targetValue));
+            }
+            return;
+        }
+        if (value instanceof List<?> rawList) {
+            removeMembers(group, (List<Map<String, Object>>) rawList);
+        }
+    }
+
+    private void applyReplaceValueMap(ScimGroup group, UUID workspaceId, Map<String, Object> valueMap) {
+        if (valueMap.containsKey(KEY_DISPLAY_NAME)) {
+            updateDisplayName(group, workspaceId, (String) valueMap.get(KEY_DISPLAY_NAME));
+        }
+        if (valueMap.containsKey(KEY_EXTERNAL_ID)) {
+            Object externalId = valueMap.get(KEY_EXTERNAL_ID);
+            group.setExternalId(externalId != null ? externalId.toString() : null);
+        }
+        if (valueMap.containsKey(KEY_MEMBERS)) {
+            replaceMembers(group, workspaceId, castMembers(valueMap.get(KEY_MEMBERS)));
+        }
+    }
+
+    private void updateDisplayName(ScimGroup group, UUID workspaceId, String newName) {
+        if (!group.getDisplayName().equals(newName)
+                && groupRepository.findByDisplayNameAndWorkspaceId(newName, workspaceId).isPresent()) {
+            throw new ScimException(409, "uniqueness",
+                    RESOURCE_TYPE_GROUP + " with " + KEY_DISPLAY_NAME + " '" + newName + "' already exists");
+        }
+        group.setDisplayName(newName);
+    }
+
+    private void addMissingMembers(ScimGroup group, UUID workspaceId, List<Map<String, Object>> membersToAdd) {
+        for (Map<String, Object> member : membersToAdd) {
+            String memberValue = toString(member.get(KEY_VALUE));
+            if (memberValue == null || group.getMembers().stream().anyMatch(existing -> memberValueEquals(existing, memberValue))) {
+                continue;
+            }
+            addMember(group, workspaceId, member);
+        }
+    }
+
+    private void replaceMembers(ScimGroup group, UUID workspaceId, List<Map<String, Object>> newMembers) {
+        group.getMembers().clear();
+        for (Map<String, Object> member : newMembers) {
+            addMember(group, workspaceId, member);
+        }
+    }
+
+    private void removeMembers(ScimGroup group, List<Map<String, Object>> membersToRemove) {
+        for (Map<String, Object> member : membersToRemove) {
+            String memberValue = toString(member.get(KEY_VALUE));
+            if (memberValue != null) {
+                group.getMembers().removeIf(existing -> memberValueEquals(existing, memberValue));
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> extractMembersPayload(Object value, boolean allowEnvelope, String errorMessage) {
+        if (value instanceof List<?> rawList) {
+            return (List<Map<String, Object>>) rawList;
+        }
+        if (value instanceof Map<?, ?> rawMap) {
+            Map<String, Object> valueMap = (Map<String, Object>) rawMap;
+            if (allowEnvelope && valueMap.containsKey(KEY_MEMBERS)) {
+                return castMembers(valueMap.get(KEY_MEMBERS));
+            }
+            return List.of(valueMap);
+        }
+        throw new ScimException(400, "invalidValue", errorMessage);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> castMembers(Object value) {
+        if (value == null) {
+            return List.of();
+        }
+        if (value instanceof List<?> rawList) {
+            return (List<Map<String, Object>>) rawList;
+        }
+        throw new ScimException(400, "invalidValue", "Invalid members payload");
+    }
+
+    private boolean memberValueEquals(ScimGroupMembership membership, String memberValue) {
+        return membership.getMemberValue().toString().equals(memberValue);
+    }
+
+    private String toString(Object value) {
+        return value != null ? value.toString() : null;
     }
 
     public void deleteGroup(UUID workspaceId, UUID groupId) {
@@ -272,9 +318,9 @@ public class ScimGroupService {
     }
 
     private void addMember(ScimGroup group, UUID workspaceId, Map<String, Object> memberMap) {
-        String memberValue = memberMap.get("value") != null ? memberMap.get("value").toString() : null;
+        String memberValue = memberMap.get(KEY_VALUE) != null ? memberMap.get(KEY_VALUE).toString() : null;
         if (memberValue == null) {
-            throw new ScimException(400, "invalidValue", "Member value is required");
+            throw new ScimException(400, "invalidValue", "Member " + KEY_VALUE + " is required");
         }
 
         UUID memberId;
@@ -285,17 +331,17 @@ public class ScimGroupService {
         }
 
         // Determine member type
-        String memberType = memberMap.get("type") != null ? memberMap.get("type").toString() : "User";
-        if (!"User".equalsIgnoreCase(memberType) && !"Group".equalsIgnoreCase(memberType)) {
+        String memberType = memberMap.get("type") != null ? memberMap.get("type").toString() : RESOURCE_TYPE_USER;
+        if (!RESOURCE_TYPE_USER.equalsIgnoreCase(memberType) && !RESOURCE_TYPE_GROUP.equalsIgnoreCase(memberType)) {
             throw new ScimException(400, "invalidValue", "Invalid member type: " + memberType);
         }
-        memberType = "Group".equalsIgnoreCase(memberType) ? "Group" : "User";
+        memberType = RESOURCE_TYPE_GROUP.equalsIgnoreCase(memberType) ? RESOURCE_TYPE_GROUP : RESOURCE_TYPE_USER;
 
         // Verify the member exists
-        if ("User".equalsIgnoreCase(memberType)) {
+        if (RESOURCE_TYPE_USER.equalsIgnoreCase(memberType)) {
             userRepository.findByIdAndWorkspaceId(memberId, workspaceId)
                     .orElseThrow(() -> new ScimException(404, "invalidValue",
-                            "User not found: " + memberValue));
+                            RESOURCE_TYPE_USER + " not found: " + memberValue));
         }
 
         ScimGroupMembership membership = new ScimGroupMembership();
@@ -306,7 +352,7 @@ public class ScimGroupService {
         // Set display if provided
         if (memberMap.get("display") != null) {
             membership.setDisplay(memberMap.get("display").toString());
-        } else if ("User".equalsIgnoreCase(memberType)) {
+        } else if (RESOURCE_TYPE_USER.equalsIgnoreCase(memberType)) {
             userRepository.findByIdAndWorkspaceId(memberId, workspaceId)
                     .ifPresent(u -> membership.setDisplay(u.getDisplayName() != null
                             ? u.getDisplayName()
@@ -317,12 +363,9 @@ public class ScimGroupService {
     }
 
     private String extractFilterValue(String filterExpr) {
-        // Parse: value eq "uuid"
-        java.util.regex.Matcher m = java.util.regex.Pattern
-                .compile("value\\s+eq\\s+\"([^\"]+)\"", java.util.regex.Pattern.CASE_INSENSITIVE)
-                .matcher(filterExpr);
-        if (m.find()) {
-            return m.group(1);
+        Matcher matcher = MEMBER_VALUE_FILTER.matcher(filterExpr);
+        if (matcher.find()) {
+            return matcher.group(1);
         }
         return null;
     }

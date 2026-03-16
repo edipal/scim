@@ -1,5 +1,6 @@
 package com.scimplayground.server.scim.mapper;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +21,8 @@ import java.util.Map;
  */
 public final class MsScimUserMapper {
 
+    private static final String KEY_PRIMARY = "primary";
+
     private static final String[] PRIMARY_COLLECTIONS = {
         "entitlements", "roles", "x509Certificates"
     };
@@ -31,12 +34,8 @@ public final class MsScimUserMapper {
     }
 
     public static Map<String, Object> toMsCompat(Map<String, Object> scim) {
-        return toMsCompat(scim, false);
-    }
-
-    public static Map<String, Object> toMsCompat(Map<String, Object> scim, boolean listResponse) {
         if (scim == null) {
-            return null;
+            return Collections.emptyMap();
         }
         convertPrimaryToString(scim);
         addManagerAlias(scim);
@@ -52,9 +51,9 @@ public final class MsScimUserMapper {
             for (Object item : (List<Object>) val) {
                 if (!(item instanceof Map)) continue;
                 Map<String, Object> entry = (Map<String, Object>) item;
-                Object p = entry.get("primary");
-                if (Boolean.TRUE.equals(p))  entry.put("primary", "true");
-                if (Boolean.FALSE.equals(p)) entry.put("primary", "false");
+                Object p = entry.get(KEY_PRIMARY);
+                if (Boolean.TRUE.equals(p))  entry.put(KEY_PRIMARY, "true");
+                if (Boolean.FALSE.equals(p)) entry.put(KEY_PRIMARY, "false");
             }
         }
     }
