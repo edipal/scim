@@ -1230,9 +1230,11 @@ function parseJsonField(id, label) {
     }
 }
 
-try {
-    await load();
-} catch (err) {
-    console.error('Initialization error:', err);
-    toast('Failed to initialize workspace');
-}
+(async () => {
+    try {
+        await load();
+    } catch (err) {
+        console.error('Initialization error:', err);
+        toast('Failed to initialize workspace');
+    }
+})();

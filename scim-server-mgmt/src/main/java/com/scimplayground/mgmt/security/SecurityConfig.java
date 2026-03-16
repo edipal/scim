@@ -51,6 +51,10 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // CSRF token cookies intentionally omit HttpOnly so JavaScript can read and submit the token
+    // (Double Submit Cookie pattern). The session cookie remains HttpOnly. The Secure flag is
+    // set automatically by Spring Security based on request.isSecure(), so HTTPS-only in production.
+    @SuppressWarnings("java:S3330")
     private CookieCsrfTokenRepository csrfTokenRepository() {
         CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         repository.setCookieName("SCIM_SERVER_MGMT_XSRF");
