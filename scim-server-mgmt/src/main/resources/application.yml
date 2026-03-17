@@ -31,6 +31,11 @@ logging:
     "[org.springframework.security.web.csrf]": TRACE
     "[org.springframework.security.web.FilterChainProxy]": DEBUG
 
+app:
+  scim-api:
+    base:
+      url: ${APP_SCIM_API_BASE_URL:http://localhost:8080}
+
 server:
   servlet:
     session:
