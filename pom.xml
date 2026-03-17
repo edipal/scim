@@ -6,7 +6,7 @@
 
     <groupId>com.scimplayground</groupId>
     <artifactId>scim-playground</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>pom</packaging>
 
     <name>SCIM 2.0 Playground</name>
