@@ -1,6 +1,19 @@
 const API = '/api/management';
 const CSRF_TOKEN = document.querySelector('meta[name="_csrf"]')?.content;
 const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+
+function trimTrailingSlashes(value) {
+    if (value == null) return '';
+    let s = String(value).trim();
+    while (s.endsWith('/')) {
+        s = s.slice(0, -1);
+    }
+    return s;
+}
+
+const SCIM_API_BASE_URL = trimTrailingSlashes(
+    document.querySelector('meta[name="scim_api_base_url"]')?.content || 'http://localhost:8080'
+);
 const wsId = globalThis.location.pathname.split('/').pop();
 const state = {
     users: [],
@@ -120,7 +133,7 @@ async function load() {
         return;
     }
 
-    const base = `${globalThis.location.origin.replace(/:\d+$/, ':8080')}/ws/${wsId}/scim/v2`;
+    const base = `${SCIM_API_BASE_URL}/ws/${wsId}/scim/v2`;
     document.getElementById('scimBaseUrl').textContent = base;
 
     loadTokens();

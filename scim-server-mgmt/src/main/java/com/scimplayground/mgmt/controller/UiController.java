@@ -3,6 +3,7 @@ package com.scimplayground.mgmt.controller;
 import com.scimplayground.mgmt.model.MgmtUser;
 import com.scimplayground.mgmt.repository.MgmtUserRepository;
 import com.scimplayground.mgmt.security.AuthenticatedUser;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
@@ -17,9 +18,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class UiController {
 
     private final MgmtUserRepository mgmtUserRepository;
+    private final String scimApiBaseUrl;
 
-    public UiController(MgmtUserRepository mgmtUserRepository) {
+    public UiController(MgmtUserRepository mgmtUserRepository,
+                        @Value("${app.scim-api.base.url:http://localhost:8080}") String scimApiBaseUrl) {
         this.mgmtUserRepository = mgmtUserRepository;
+        this.scimApiBaseUrl = scimApiBaseUrl;
     }
 
     @GetMapping("/")
@@ -31,6 +35,7 @@ public class UiController {
     @GetMapping("/ui/workspaces/{workspaceId}")
     public String workspaceDetail(@PathVariable String workspaceId, Model model, Authentication authentication) {
         model.addAttribute("currentUser", resolveDisplayName(authentication));
+        model.addAttribute("scimApiBaseUrl", scimApiBaseUrl);
         return "workspace";
     }
 
