@@ -1,7 +1,19 @@
 const API = '/api/management';
 const CSRF_TOKEN = document.querySelector('meta[name="_csrf"]')?.content;
 const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
-const SCIM_API_BASE_URL = (document.querySelector('meta[name="scim_api_base_url"]')?.content || 'http://localhost:8080').replace(/\/+$/, '');
+
+function trimTrailingSlashes(value) {
+    if (value == null) return '';
+    let s = String(value).trim();
+    while (s.endsWith('/')) {
+        s = s.slice(0, -1);
+    }
+    return s;
+}
+
+const SCIM_API_BASE_URL = trimTrailingSlashes(
+    document.querySelector('meta[name="scim_api_base_url"]')?.content || 'http://localhost:8080'
+);
 const wsId = globalThis.location.pathname.split('/').pop();
 const state = {
     users: [],
