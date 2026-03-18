@@ -100,14 +100,21 @@ public class ScimGroupService {
                 : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, sortAttr);
 
-        List<ScimGroup> allMatching = groupRepository.findAll(spec, sort);
+        // Pagination (SCIM is 1-based, Spring Data Pageable is 0-based)
         int offset = Math.max(0, startIndex - 1);
+        int pageNumber = offset / count;
+        int skipWithinPage = offset % count;
+
+        Pageable pageable = PageRequest.of(pageNumber, count, sort);
+        Page<ScimGroup> resultPage = groupRepository.findAll(spec, pageable);
+
         List<ScimGroup> page;
-        if (offset >= allMatching.size()) {
-            page = Collections.emptyList();
+        if (skipWithinPage > 0 && !resultPage.getContent().isEmpty()) {
+            page = resultPage.getContent().subList(
+                    Math.min(skipWithinPage, resultPage.getContent().size()),
+                    resultPage.getContent().size());
         } else {
-            int end = Math.min(offset + count, allMatching.size());
-            page = allMatching.subList(offset, end);
+            page = resultPage.getContent();
         }
 
         return buildListResponse(page, totalResults, startIndex, page.size());
@@ -337,9 +344,10 @@ public class ScimGroupService {
         }
         memberType = RESOURCE_TYPE_GROUP.equalsIgnoreCase(memberType) ? RESOURCE_TYPE_GROUP : RESOURCE_TYPE_USER;
 
-        // Verify the member exists
+        // Verify the member exists and resolve display name in one query
+        ScimUser resolvedUser = null;
         if (RESOURCE_TYPE_USER.equalsIgnoreCase(memberType)) {
-            userRepository.findByIdAndWorkspaceId(memberId, workspaceId)
+            resolvedUser = userRepository.findByIdAndWorkspaceId(memberId, workspaceId)
                     .orElseThrow(() -> new ScimException(404, "invalidValue",
                             RESOURCE_TYPE_USER + " not found: " + memberValue));
         }
@@ -349,14 +357,13 @@ public class ScimGroupService {
         membership.setMemberValue(memberId);
         membership.setMemberType(memberType);
 
-        // Set display if provided
+        // Set display if provided, or derive from the resolved user
         if (memberMap.get("display") != null) {
             membership.setDisplay(memberMap.get("display").toString());
-        } else if (RESOURCE_TYPE_USER.equalsIgnoreCase(memberType)) {
-            userRepository.findByIdAndWorkspaceId(memberId, workspaceId)
-                    .ifPresent(u -> membership.setDisplay(u.getDisplayName() != null
-                            ? u.getDisplayName()
-                            : u.getUserName()));
+        } else if (resolvedUser != null) {
+            membership.setDisplay(resolvedUser.getDisplayName() != null
+                    ? resolvedUser.getDisplayName()
+                    : resolvedUser.getUserName());
         }
 
         group.getMembers().add(membership);

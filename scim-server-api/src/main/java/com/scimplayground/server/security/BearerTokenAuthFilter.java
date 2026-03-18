@@ -65,13 +65,6 @@ public class BearerTokenAuthFilter extends OncePerRequestFilter {
             workspaceId = wsByName.get().getId();
         }
 
-        // Validate workspace exists
-        Optional<Workspace> workspaceOpt = workspaceRepository.findById(workspaceId);
-        if (workspaceOpt.isEmpty()) {
-            sendScimError(response, 404, null, "Workspace not found");
-            return;
-        }
-
         // Extract Bearer token
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -85,7 +78,7 @@ public class BearerTokenAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Validate token (hashed-at-rest only).
+        // Validate token (hashed-at-rest only). JOIN FETCH loads workspace in one query.
         String tokenHash = TokenSecurityUtil.sha256Hex(token);
         Optional<WorkspaceToken> tokenOpt = tokenRepository.findByTokenHashAndNotRevoked(tokenHash);
         if (tokenOpt.isEmpty()) {
@@ -94,9 +87,10 @@ public class BearerTokenAuthFilter extends OncePerRequestFilter {
         }
 
         WorkspaceToken wsToken = tokenOpt.get();
+        Workspace tokenWorkspace = wsToken.getWorkspace();
 
         // Check token belongs to this workspace
-        if (!wsToken.getWorkspace().getId().equals(workspaceId)) {
+        if (!tokenWorkspace.getId().equals(workspaceId)) {
             sendScimError(response, 401, null, "Token does not belong to this workspace");
             return;
         }
@@ -107,8 +101,8 @@ public class BearerTokenAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Set workspace context
-        WorkspaceContext.set(workspaceOpt.get(), wsToken);
+        // Set workspace context (use workspace from token — already fetched via JOIN FETCH)
+        WorkspaceContext.set(tokenWorkspace, wsToken);
 
         try {
             filterChain.doFilter(request, response);

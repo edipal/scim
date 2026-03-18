@@ -71,17 +71,22 @@ public class ScimUserService {
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, sortAttr);
 
-        // Pagination (SCIM is 1-based, Spring is 0-based)
+        // Pagination (SCIM is 1-based, Spring Data Pageable is 0-based)
         int offset = Math.max(0, startIndex - 1);
+        int pageNumber = offset / count;
+        int skipWithinPage = offset % count;
 
-        // We need offset-based paging, not page-based
-        List<ScimUser> allMatching = userRepository.findAll(spec, sort);
+        Pageable pageable = PageRequest.of(pageNumber, count, sort);
+        Page<ScimUser> resultPage = userRepository.findAll(spec, pageable);
+
         List<ScimUser> page;
-        if (offset >= allMatching.size()) {
-            page = Collections.emptyList();
+        if (skipWithinPage > 0 && !resultPage.getContent().isEmpty()) {
+            // SCIM startIndex may not align with page boundaries; fetch the needed slice
+            page = resultPage.getContent().subList(
+                    Math.min(skipWithinPage, resultPage.getContent().size()),
+                    resultPage.getContent().size());
         } else {
-            int end = Math.min(offset + count, allMatching.size());
-            page = allMatching.subList(offset, end);
+            page = resultPage.getContent();
         }
 
         return buildListResponse(page, totalResults, startIndex, page.size());
@@ -155,5 +160,25 @@ public class ScimUserService {
                     return g;
                 })
                 .toList();
+    }
+
+    /**
+     * Batch-load groups for multiple users in a single query (avoids N+1).
+     */
+    public Map<UUID, List<Map<String, Object>>> getUserGroupsBatch(List<UUID> userIds, String baseUrl) {
+        if (userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<ScimGroupMembership> memberships = membershipRepository.findByMemberValueIn(userIds);
+        Map<UUID, List<Map<String, Object>>> result = new HashMap<>();
+        for (ScimGroupMembership m : memberships) {
+            Map<String, Object> g = new LinkedHashMap<>();
+            g.put("value", m.getGroup().getId().toString());
+            g.put("$ref", baseUrl + "/Groups/" + m.getGroup().getId());
+            g.put("display", m.getGroup().getDisplayName());
+            g.put("type", "direct");
+            result.computeIfAbsent(m.getMemberValue(), k -> new ArrayList<>()).add(g);
+        }
+        return result;
     }
 }
