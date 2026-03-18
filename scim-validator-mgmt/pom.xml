@@ -18,10 +18,12 @@
     <properties>
         <java.version>17</java.version>
         <spring-boot.version>3.5.11</spring-boot.version>
-        <groovy.version>5.0.4</groovy.version>
-        <spock.version>2.4-groovy-5.0</spock.version>
-        <rest-assured.version>6.0.0</rest-assured.version>
-        <javafaker.version>1.0.2</javafaker.version>
+        <groovy.version>4.0.24</groovy.version>
+        <spock.version>2.4-M4-groovy-4.0</spock.version>
+        <rest-assured.version>5.5.0</rest-assured.version>
+        <datafaker.version>2.4.3</datafaker.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <jackson.version>2.18.6</jackson.version>
     </properties>
 
     <dependencyManagement>
@@ -100,9 +102,19 @@
             <version>${rest-assured.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.javafaker</groupId>
-            <artifactId>javafaker</artifactId>
-            <version>${javafaker.version}</version>
+            <groupId>net.datafaker</groupId>
+            <artifactId>datafaker</artifactId>
+            <version>${datafaker.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
         </dependency>
 
         <dependency>

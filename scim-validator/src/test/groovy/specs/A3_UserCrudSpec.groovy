@@ -10,7 +10,7 @@ import spock.lang.Stepwise
  * Area 3 — User CRUD Lifecycle
  *
  * Full Create → Read → Update → Delete lifecycle for Users.
- * Uses JavaFaker for unique userName/email per run to avoid uniqueness conflicts.
+ * Uses DataFaker for unique userName/email per run to avoid uniqueness conflicts.
  *
  * RFC 7644 §3.1 (POST), §3.2 (GET), §3.3 (PUT), §3.6 (DELETE)
  */
