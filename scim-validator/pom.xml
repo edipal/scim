@@ -7,12 +7,12 @@
     <parent>
         <groupId>com.scimplayground</groupId>
         <artifactId>scim-playground</artifactId>
-        <version>1.0.2</version>
+        <version>1.0.3</version>
     </parent>
 
     <groupId>de.palsoftware.scim</groupId>
     <artifactId>scim-validator</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
 
     <name>SCIM 2.0 Compliance Test Suite</name>
