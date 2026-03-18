@@ -23,7 +23,9 @@
         <groovy.version>4.0.24</groovy.version>
         <spock.version>2.4-M4-groovy-4.0</spock.version>
         <rest-assured.version>5.5.0</rest-assured.version>
-        <javafaker.version>1.0.2</javafaker.version>
+        <datafaker.version>2.4.3</datafaker.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <jackson.version>2.18.6</jackson.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <skip.validator.tests>true</skip.validator.tests>
@@ -72,11 +74,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- JavaFaker for dynamic test data -->
+        <!-- DataFaker for dynamic test data -->
         <dependency>
-            <groupId>com.github.javafaker</groupId>
-            <artifactId>javafaker</artifactId>
-            <version>${javafaker.version}</version>
+            <groupId>net.datafaker</groupId>
+            <artifactId>datafaker</artifactId>
+            <version>${datafaker.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -84,7 +86,14 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.18.2</version>
+            <version>${jackson.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
             <scope>test</scope>
         </dependency>
 
