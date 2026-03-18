@@ -6,7 +6,10 @@ import org.hibernate.annotations.OnDeleteAction;
 import java.util.UUID;
 
 @Entity
-@Table(name = "scim_group_memberships")
+@Table(name = "scim_group_memberships", indexes = {
+    @Index(name = "idx_membership_member_value", columnList = "member_value"),
+    @Index(name = "idx_membership_group_id", columnList = "group_id")
+})
 public class ScimGroupMembership {
 
     @Id

@@ -13,6 +13,9 @@ public interface ScimGroupMembershipRepository extends JpaRepository<ScimGroupMe
 
     List<ScimGroupMembership> findByMemberValue(UUID memberValue);
 
+    @Query("SELECT m FROM ScimGroupMembership m JOIN FETCH m.group WHERE m.memberValue IN :memberValues")
+    List<ScimGroupMembership> findByMemberValueIn(@Param("memberValues") List<UUID> memberValues);
+
     @Modifying
     @Query("delete from ScimGroupMembership membership where membership.memberValue = :memberValue")
     long deleteByMemberValue(@Param("memberValue") UUID memberValue);

@@ -107,13 +107,10 @@ public class ScimAdminService {
 
     public void deleteAllUsers(UUID workspaceId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
-        List<ScimUser> users = userRepository.findByWorkspaceId(workspaceId);
-        if (!users.isEmpty()) {
-            List<UUID> userIds = users.stream()
-                    .map(ScimUser::getId)
-                    .toList();
+        List<UUID> userIds = userRepository.findIdsByWorkspaceId(workspaceId);
+        if (!userIds.isEmpty()) {
             membershipRepository.deleteByMemberValueIn(userIds);
-            userRepository.deleteAll(users);
+            userRepository.deleteAllByWorkspaceId(workspaceId);
         }
     }
 
@@ -181,14 +178,11 @@ public class ScimAdminService {
 
     public void deleteAllGroups(UUID workspaceId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
-        List<ScimGroup> groups = groupRepository.findByWorkspaceId(workspaceId);
-        if (!groups.isEmpty()) {
-            List<UUID> groupIds = groups.stream()
-                    .map(ScimGroup::getId)
-                    .toList();
+        List<UUID> groupIds = groupRepository.findIdsByWorkspaceId(workspaceId);
+        if (!groupIds.isEmpty()) {
             membershipRepository.deleteByMemberValueIn(groupIds);
             membershipRepository.deleteByGroupIdIn(groupIds);
-            groupRepository.deleteAll(groups);
+            groupRepository.deleteAllByWorkspaceId(workspaceId);
         }
     }
 

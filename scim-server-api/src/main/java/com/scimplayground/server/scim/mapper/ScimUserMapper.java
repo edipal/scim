@@ -18,6 +18,9 @@ public class ScimUserMapper {
     public static final String ENTERPRISE_SCHEMA = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
     private static final String VALUE_OTHER = "other";
 
+    private static final List<String> SCHEMAS_CORE = List.of(USER_SCHEMA);
+    private static final List<String> SCHEMAS_ENTERPRISE = List.of(USER_SCHEMA, ENTERPRISE_SCHEMA);
+
     private static final Set<String> EMAIL_TYPES = Set.of("work", "home", VALUE_OTHER);
     private static final Set<String> PHONE_TYPES = Set.of("work", "home", "mobile", "fax", "pager", VALUE_OTHER);
     private static final Set<String> IM_TYPES = Set.of("aim", "gtalk", "icq", "xmpp", "skype", "qq", "msn", "yahoo");
@@ -56,25 +59,24 @@ public class ScimUserMapper {
      */
     public static Map<String, Object> toScimResponse(ScimUser user, String baseUrl,
                                                        List<Map<String, Object>> groups) {
-        Map<String, Object> result = new LinkedHashMap<>();
+        boolean hasEnterprise = hasEnterpriseData(user);
+        Map<String, Object> result = new LinkedHashMap<>(hasEnterprise ? 20 : 16);
 
-        addSchemasAndIdentifiers(user, result);
+        addSchemasAndIdentifiers(user, result, hasEnterprise);
         addCoreAttributes(user, result);
         addMultiValuedAttributes(user, result);
         addComputedGroups(result, groups);
-        addEnterpriseExtension(user, result);
+        if (hasEnterprise) {
+            addEnterpriseExtension(user, result);
+        }
         addMeta(user, baseUrl, result);
 
         return result;
     }
 
-    private static void addSchemasAndIdentifiers(ScimUser user, Map<String, Object> result) {
-        List<String> schemas = new ArrayList<>();
-        schemas.add(USER_SCHEMA);
-        if (hasEnterpriseData(user)) {
-            schemas.add(ENTERPRISE_SCHEMA);
-        }
-        result.put(KEY_SCHEMAS, schemas);
+    private static void addSchemasAndIdentifiers(ScimUser user, Map<String, Object> result,
+                                                  boolean hasEnterprise) {
+        result.put(KEY_SCHEMAS, hasEnterprise ? SCHEMAS_ENTERPRISE : SCHEMAS_CORE);
         result.put("id", user.getId().toString());
         if (user.getExternalId() != null) {
             result.put(KEY_EXTERNAL_ID, user.getExternalId());
@@ -117,11 +119,7 @@ public class ScimUserMapper {
     }
 
     private static void addEnterpriseExtension(ScimUser user, Map<String, Object> result) {
-        if (!hasEnterpriseData(user)) {
-            return;
-        }
-
-        Map<String, Object> enterprise = new LinkedHashMap<>();
+        Map<String, Object> enterprise = new LinkedHashMap<>(8);
         putIfNotNull(enterprise, "employeeNumber", user.getEnterpriseEmployeeNumber());
         putIfNotNull(enterprise, "costCenter", user.getEnterpriseCostCenter());
         putIfNotNull(enterprise, "organization", user.getEnterpriseOrganization());
@@ -137,7 +135,7 @@ public class ScimUserMapper {
     }
 
     private static void addMeta(ScimUser user, String baseUrl, Map<String, Object> result) {
-        Map<String, Object> meta = new LinkedHashMap<>();
+        Map<String, Object> meta = new LinkedHashMap<>(6);
         meta.put("resourceType", "User");
         meta.put("created", user.getCreatedAt().toString());
         meta.put("lastModified", user.getLastModified().toString());
@@ -214,7 +212,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> buildNameMap(ScimUser user) {
-        Map<String, Object> name = new LinkedHashMap<>();
+        Map<String, Object> name = new LinkedHashMap<>(8);
         if (user.getNameFormatted() != null) name.put(KEY_FORMATTED, user.getNameFormatted());
         if (user.getNameFamilyName() != null) name.put("familyName", user.getNameFamilyName());
         if (user.getNameGivenName() != null) name.put("givenName", user.getNameGivenName());
@@ -225,7 +223,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> buildManagerMap(ScimUser user) {
-        Map<String, Object> manager = new LinkedHashMap<>();
+        Map<String, Object> manager = new LinkedHashMap<>(4);
         putIfNotNull(manager, KEY_VALUE, user.getEnterpriseManagerValue());
         putIfNotNull(manager, "$ref", user.getEnterpriseManagerRef());
         putIfNotNull(manager, KEY_DISPLAY_NAME, user.getEnterpriseManagerDisplay());
@@ -241,7 +239,11 @@ public class ScimUserMapper {
     private static <T> void putCollection(Map<String, Object> target, String key, List<T> values,
                                           java.util.function.Function<T, Map<String, Object>> mapper) {
         if (values != null && !values.isEmpty()) {
-            target.put(key, values.stream().map(mapper).toList());
+            List<Map<String, Object>> list = new ArrayList<>(values.size());
+            for (T v : values) {
+                list.add(mapper.apply(v));
+            }
+            target.put(key, list);
         }
     }
 
@@ -404,7 +406,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> emailToMap(ScimUserEmail e) {
-        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>(5);
         m.put(KEY_VALUE, e.getValue());
         if (e.getType() != null) m.put(KEY_TYPE, e.getType());
         if (e.getDisplay() != null) m.put(KEY_DISPLAY, e.getDisplay());
@@ -413,7 +415,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> phoneToMap(ScimUserPhoneNumber p) {
-        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>(5);
         m.put(KEY_VALUE, p.getValue());
         if (p.getType() != null) m.put(KEY_TYPE, p.getType());
         if (p.getDisplay() != null) m.put(KEY_DISPLAY, p.getDisplay());
@@ -422,7 +424,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> imToMap(ScimUserIm i) {
-        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>(5);
         m.put(KEY_VALUE, i.getValue());
         if (i.getType() != null) m.put(KEY_TYPE, i.getType());
         if (i.getDisplay() != null) m.put(KEY_DISPLAY, i.getDisplay());
@@ -431,7 +433,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> photoToMap(ScimUserPhoto p) {
-        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>(5);
         m.put(KEY_VALUE, p.getValue());
         if (p.getType() != null) m.put(KEY_TYPE, p.getType());
         if (p.getDisplay() != null) m.put(KEY_DISPLAY, p.getDisplay());
@@ -440,7 +442,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> addressToMap(ScimUserAddress a) {
-        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>(9);
         if (a.getFormatted() != null) m.put(KEY_FORMATTED, a.getFormatted());
         if (a.getStreetAddress() != null) m.put("streetAddress", a.getStreetAddress());
         if (a.getLocality() != null) m.put("locality", a.getLocality());
@@ -453,7 +455,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> entitlementToMap(ScimUserEntitlement e) {
-        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>(5);
         m.put(KEY_VALUE, e.getValue());
         if (e.getType() != null) m.put(KEY_TYPE, e.getType());
         if (e.getDisplay() != null) m.put(KEY_DISPLAY, e.getDisplay());
@@ -462,7 +464,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> roleToMap(ScimUserRole r) {
-        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>(5);
         m.put(KEY_VALUE, r.getValue());
         if (r.getType() != null) m.put(KEY_TYPE, r.getType());
         if (r.getDisplay() != null) m.put(KEY_DISPLAY, r.getDisplay());
@@ -471,7 +473,7 @@ public class ScimUserMapper {
     }
 
     private static Map<String, Object> certToMap(ScimUserX509Certificate c) {
-        Map<String, Object> m = new LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>(5);
         m.put(KEY_VALUE, c.getValue());
         if (c.getType() != null) m.put(KEY_TYPE, c.getType());
         if (c.getDisplay() != null) m.put(KEY_DISPLAY, c.getDisplay());

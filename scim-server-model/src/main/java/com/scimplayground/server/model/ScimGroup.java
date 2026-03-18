@@ -11,6 +11,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "scim_groups", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"workspace_id", "display_name"})
+}, indexes = {
+    @Index(name = "idx_group_workspace_id", columnList = "workspace_id"),
+    @Index(name = "idx_group_external_id", columnList = "external_id")
 })
 public class ScimGroup {
 

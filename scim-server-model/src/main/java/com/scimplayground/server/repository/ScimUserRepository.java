@@ -5,6 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,4 +28,11 @@ public interface ScimUserRepository extends JpaRepository<ScimUser, UUID>, JpaSp
     Page<ScimUser> findByWorkspaceIdAndUserNameContainingIgnoreCase(UUID workspaceId, String userName, Pageable pageable);
 
     long countByWorkspaceId(UUID workspaceId);
+
+    @Query("SELECT u.id FROM ScimUser u WHERE u.workspace.id = :workspaceId")
+    List<UUID> findIdsByWorkspaceId(@Param("workspaceId") UUID workspaceId);
+
+    @Modifying
+    @Query("DELETE FROM ScimUser u WHERE u.workspace.id = :workspaceId")
+    int deleteAllByWorkspaceId(@Param("workspaceId") UUID workspaceId);
 }

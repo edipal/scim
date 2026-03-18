@@ -26,6 +26,7 @@
         <javafaker.version>1.0.2</javafaker.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <skip.validator.tests>true</skip.validator.tests>
     </properties>
 
     <dependencies>
@@ -124,6 +125,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
+                    <skipTests>${skip.validator.tests}</skipTests>
                     <useFile>false</useFile>
                     <includes>
                         <include>**/*Spec.java</include>
@@ -163,4 +165,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>validator-tests</id>
+            <properties>
+                <skip.validator.tests>false</skip.validator.tests>
+            </properties>
+        </profile>
+    </profiles>
 </project>

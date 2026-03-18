@@ -121,9 +121,14 @@ public class ScimUserController extends ScimBaseController {
 
         // Convert ScimUser entities to SCIM response maps
         List<ScimUser> users = (List<ScimUser>) result.get("Resources");
+
+        // Batch-load groups for all users in one query (avoids N+1)
+        List<UUID> userIds = users.stream().map(ScimUser::getId).toList();
+        Map<UUID, List<Map<String, Object>>> groupsByUserId = userService.getUserGroupsBatch(userIds, baseUrl);
+
         List<Map<String, Object>> resources = users.stream()
                 .map(u -> {
-                    List<Map<String, Object>> groups = userService.getUserGroups(u.getId(), baseUrl);
+                    List<Map<String, Object>> groups = groupsByUserId.getOrDefault(u.getId(), Collections.emptyList());
                     Map<String, Object> scimResp = ScimUserMapper.toScimResponse(u, compatBaseUrl, groups);
                     scimResp = applyCompat(scimResp, compatMode);
                     applyAttributeProjection(scimResp, attributes, excludedAttributes);

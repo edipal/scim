@@ -345,7 +345,7 @@ public class ScimFilterParser {
     // ── TOKENIZER ─────────────────────────────────────────
 
     private static List<String> tokenize(String filter) {
-        List<String> tokens = new ArrayList<>();
+        List<String> tokens = new ArrayList<>(filter.length() / 4 + 4);
         Matcher matcher = TOKEN_PATTERN.matcher(filter);
         while (matcher.find()) {
             tokens.add(matcher.group());
@@ -358,12 +358,13 @@ public class ScimFilterParser {
 
     // ── CASE SENSITIVITY ──────────────────────────────────
 
-    private static boolean isCaseInsensitiveAttribute(String attrPath) {
-        // Per RFC 7643, userName, emails.value, etc. are case-insensitive
-        return Set.of(ATTR_USER_NAME, ATTR_DISPLAY_NAME, ATTR_NICK_NAME, ATTR_TITLE, ATTR_USER_TYPE,
+    private static final Set<String> CASE_INSENSITIVE_ATTRS = Set.of(
+            ATTR_USER_NAME, ATTR_DISPLAY_NAME, ATTR_NICK_NAME, ATTR_TITLE, ATTR_USER_TYPE,
             ATTR_PREFERRED_LANGUAGE, ATTR_LOCALE, ATTR_TIMEZONE, ATTR_EXTERNAL_ID,
-                "name.familyName", "name.givenName", "name.formatted",
-                "name.middleName").contains(attrPath);
+            "name.familyName", "name.givenName", "name.formatted", "name.middleName");
+
+    private static boolean isCaseInsensitiveAttribute(String attrPath) {
+        return CASE_INSENSITIVE_ATTRS.contains(attrPath);
     }
 
     // ── SORTING ───────────────────────────────────────────

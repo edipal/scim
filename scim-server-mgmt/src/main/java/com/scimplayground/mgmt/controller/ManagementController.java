@@ -9,11 +9,7 @@ import com.scimplayground.mgmt.security.AuthenticatedUser;
 import com.scimplayground.mgmt.service.ScimAdminService;
 import com.scimplayground.mgmt.service.WorkspaceDataGeneratorService;
 import com.scimplayground.mgmt.service.WorkspaceService;
-import com.scimplayground.server.model.ScimGroup;
-import com.scimplayground.server.model.ScimRequestLog;
-import com.scimplayground.server.model.ScimUser;
-import com.scimplayground.server.model.Workspace;
-import com.scimplayground.server.model.WorkspaceToken;
+import com.scimplayground.server.model.*;
 import com.scimplayground.server.repository.ScimRequestLogRepository;
 import com.scimplayground.server.repository.WorkspaceDataStats;
 import org.springframework.data.domain.Page;
@@ -25,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,8 +83,15 @@ public class ManagementController {
     @GetMapping("/workspaces")
     public ResponseEntity<List<Map<String, Object>>> listWorkspaces(Authentication authentication) {
         List<Workspace> workspaces = workspaceService.listWorkspaces(actorUsername(authentication), isAdmin(authentication));
+        List<String> ownerIds = workspaces.stream()
+                .map(Workspace::getCreatedByUsername)
+                .filter(u -> u != null)
+                .distinct()
+                .toList();
+        Map<String, String> ownerEmails = mgmtUserRepository.findAllById(ownerIds).stream()
+                .collect(java.util.stream.Collectors.toMap(MgmtUser::getId, MgmtUser::getEmail));
         return ResponseEntity.ok(workspaces.stream()
-                .map(this::workspaceToMap)
+                .map(ws -> workspaceToMap(ws, ownerEmails))
                 .toList());
     }
 
@@ -391,17 +395,28 @@ public class ManagementController {
     // ─── Helpers ────────────────────────────────────────────────────────
 
     private Map<String, Object> workspaceToMap(Workspace ws) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("id", ws.getId().toString());
-        map.put(KEY_NAME, ws.getName());
-        map.put(KEY_DESCRIPTION, ws.getDescription());
-        map.put("createdByUsername", ws.getCreatedByUsername());
         String ownerName = ws.getCreatedByUsername() != null
                 ? mgmtUserRepository.findById(ws.getCreatedByUsername())
                         .map(MgmtUser::getEmail)
                         .orElse(null)
                 : null;
-        map.put("createdByDisplayName", ownerName);
+        return buildWorkspaceMap(ws, ownerName);
+    }
+
+    private Map<String, Object> workspaceToMap(Workspace ws, Map<String, String> ownerEmails) {
+        String ownerName = ws.getCreatedByUsername() != null
+                ? ownerEmails.get(ws.getCreatedByUsername())
+                : null;
+        return buildWorkspaceMap(ws, ownerName);
+    }
+
+    private Map<String, Object> buildWorkspaceMap(Workspace ws, String ownerDisplayName) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", ws.getId().toString());
+        map.put(KEY_NAME, ws.getName());
+        map.put(KEY_DESCRIPTION, ws.getDescription());
+        map.put("createdByUsername", ws.getCreatedByUsername());
+        map.put("createdByDisplayName", ownerDisplayName);
         map.put(KEY_CREATED_AT, ws.getCreatedAt() != null ? ws.getCreatedAt().toString() : null);
         map.put("updatedAt", ws.getUpdatedAt() != null ? ws.getUpdatedAt().toString() : null);
         return map;
@@ -474,7 +489,7 @@ public class ManagementController {
     }
 
     private Map<String, Object> userToMap(ScimUser user) {
-        Map<String, Object> map = new LinkedHashMap<>();
+        Map<String, Object> map = new LinkedHashMap<>(22, 1.0f);
         map.put("id", user.getId().toString());
         map.put(KEY_USER_NAME, user.getUserName());
         map.put(KEY_DISPLAY_NAME, user.getDisplayName());
@@ -488,30 +503,63 @@ public class ManagementController {
         map.put("locale", user.getLocale());
         map.put("timezone", user.getTimezone());
         map.put("enterprise", enterpriseToMap(user));
-        map.put("emails", user.getEmails().stream()
-            .map(email -> multiValueToMap(email.getValue(), email.getType(), email.getDisplay(), email.isPrimaryFlag()))
-            .toList());
-        map.put("phoneNumbers", user.getPhoneNumbers().stream()
-            .map(phone -> multiValueToMap(phone.getValue(), phone.getType(), phone.getDisplay(), phone.isPrimaryFlag()))
-            .toList());
-        map.put("addresses", user.getAddresses().stream()
-            .map(this::addressToMap)
-            .toList());
-        map.put("entitlements", user.getEntitlements().stream()
-            .map(entitlement -> multiValueToMap(entitlement.getValue(), entitlement.getType(), entitlement.getDisplay(), entitlement.isPrimaryFlag()))
-            .toList());
-        map.put("roles", user.getRoles().stream()
-            .map(role -> multiValueToMap(role.getValue(), role.getType(), role.getDisplay(), role.isPrimaryFlag()))
-            .toList());
-        map.put("ims", user.getIms().stream()
-            .map(im -> multiValueToMap(im.getValue(), im.getType(), im.getDisplay(), im.isPrimaryFlag()))
-            .toList());
-        map.put("photos", user.getPhotos().stream()
-            .map(photo -> multiValueToMap(photo.getValue(), photo.getType(), photo.getDisplay(), photo.isPrimaryFlag()))
-            .toList());
-        map.put("x509Certificates", user.getX509Certificates().stream()
-            .map(cert -> multiValueToMap(cert.getValue(), cert.getType(), cert.getDisplay(), cert.isPrimaryFlag()))
-            .toList());
+
+        List<ScimUserEmail> emails = user.getEmails();
+        List<Map<String, Object>> emailList = new ArrayList<>(emails.size());
+        for (ScimUserEmail email : emails) {
+            emailList.add(multiValueToMap(email.getValue(), email.getType(), email.getDisplay(), email.isPrimaryFlag()));
+        }
+        map.put("emails", emailList);
+
+        List<ScimUserPhoneNumber> phones = user.getPhoneNumbers();
+        List<Map<String, Object>> phoneList = new ArrayList<>(phones.size());
+        for (ScimUserPhoneNumber phone : phones) {
+            phoneList.add(multiValueToMap(phone.getValue(), phone.getType(), phone.getDisplay(), phone.isPrimaryFlag()));
+        }
+        map.put("phoneNumbers", phoneList);
+
+        List<ScimUserAddress> addresses = user.getAddresses();
+        List<Map<String, Object>> addrList = new ArrayList<>(addresses.size());
+        for (ScimUserAddress addr : addresses) {
+            addrList.add(addressToMap(addr));
+        }
+        map.put("addresses", addrList);
+
+        List<ScimUserEntitlement> entitlements = user.getEntitlements();
+        List<Map<String, Object>> entList = new ArrayList<>(entitlements.size());
+        for (ScimUserEntitlement e : entitlements) {
+            entList.add(multiValueToMap(e.getValue(), e.getType(), e.getDisplay(), e.isPrimaryFlag()));
+        }
+        map.put("entitlements", entList);
+
+        List<ScimUserRole> roles = user.getRoles();
+        List<Map<String, Object>> roleList = new ArrayList<>(roles.size());
+        for (ScimUserRole r : roles) {
+            roleList.add(multiValueToMap(r.getValue(), r.getType(), r.getDisplay(), r.isPrimaryFlag()));
+        }
+        map.put("roles", roleList);
+
+        List<ScimUserIm> ims = user.getIms();
+        List<Map<String, Object>> imList = new ArrayList<>(ims.size());
+        for (ScimUserIm im : ims) {
+            imList.add(multiValueToMap(im.getValue(), im.getType(), im.getDisplay(), im.isPrimaryFlag()));
+        }
+        map.put("ims", imList);
+
+        List<ScimUserPhoto> photos = user.getPhotos();
+        List<Map<String, Object>> photoList = new ArrayList<>(photos.size());
+        for (ScimUserPhoto photo : photos) {
+            photoList.add(multiValueToMap(photo.getValue(), photo.getType(), photo.getDisplay(), photo.isPrimaryFlag()));
+        }
+        map.put("photos", photoList);
+
+        List<ScimUserX509Certificate> certs = user.getX509Certificates();
+        List<Map<String, Object>> certList = new ArrayList<>(certs.size());
+        for (ScimUserX509Certificate cert : certs) {
+            certList.add(multiValueToMap(cert.getValue(), cert.getType(), cert.getDisplay(), cert.isPrimaryFlag()));
+        }
+        map.put("x509Certificates", certList);
+
         map.put("active", user.isActive());
         map.put(KEY_CREATED_AT, user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         map.put(KEY_LAST_MODIFIED, user.getLastModified() != null ? user.getLastModified().toString() : null);
@@ -520,7 +568,7 @@ public class ManagementController {
     }
 
     private Map<String, Object> userLookupToMap(ScimUser user) {
-        Map<String, Object> map = new LinkedHashMap<>();
+        Map<String, Object> map = new LinkedHashMap<>(3, 1.0f);
         map.put("id", user.getId().toString());
         map.put(KEY_USER_NAME, user.getUserName());
         map.put(KEY_DISPLAY_NAME, user.getDisplayName());
@@ -589,7 +637,7 @@ public class ManagementController {
                 && user.getNameHonorificSuffix() == null) {
             return Map.of();
         }
-        Map<String, Object> name = new LinkedHashMap<>();
+        Map<String, Object> name = new LinkedHashMap<>(6, 1.0f);
         name.put("formatted", user.getNameFormatted());
         name.put("familyName", user.getNameFamilyName());
         name.put("givenName", user.getNameGivenName());
@@ -610,13 +658,13 @@ public class ManagementController {
                 && user.getEnterpriseManagerDisplay() == null) {
             return Map.of();
         }
-        Map<String, Object> enterprise = new LinkedHashMap<>();
+        Map<String, Object> enterprise = new LinkedHashMap<>(6, 1.0f);
         enterprise.put("employeeNumber", user.getEnterpriseEmployeeNumber());
         enterprise.put("costCenter", user.getEnterpriseCostCenter());
         enterprise.put("organization", user.getEnterpriseOrganization());
         enterprise.put("division", user.getEnterpriseDivision());
         enterprise.put("department", user.getEnterpriseDepartment());
-        Map<String, Object> manager = new LinkedHashMap<>();
+        Map<String, Object> manager = new LinkedHashMap<>(3, 1.0f);
         manager.put(KEY_VALUE, user.getEnterpriseManagerValue());
         manager.put("ref", user.getEnterpriseManagerRef());
         manager.put(KEY_DISPLAY, user.getEnterpriseManagerDisplay());
@@ -624,8 +672,8 @@ public class ManagementController {
         return enterprise;
     }
 
-    private Map<String, Object> addressToMap(com.scimplayground.server.model.ScimUserAddress address) {
-        Map<String, Object> map = new LinkedHashMap<>();
+    private Map<String, Object> addressToMap(ScimUserAddress address) {
+        Map<String, Object> map = new LinkedHashMap<>(8, 1.0f);
         map.put("formatted", address.getFormatted());
         map.put("streetAddress", address.getStreetAddress());
         map.put("locality", address.getLocality());
@@ -638,7 +686,7 @@ public class ManagementController {
     }
 
     private Map<String, Object> multiValueToMap(String value, String type, String display, boolean primary) {
-        Map<String, Object> map = new LinkedHashMap<>();
+        Map<String, Object> map = new LinkedHashMap<>(4, 1.0f);
         map.put(KEY_VALUE, value);
         map.put(KEY_TYPE, type);
         map.put(KEY_DISPLAY, display);
@@ -647,7 +695,7 @@ public class ManagementController {
     }
 
     private Map<String, Object> metaToMap(java.time.Instant createdAt, java.time.Instant lastModified, Long version) {
-        Map<String, Object> meta = new LinkedHashMap<>();
+        Map<String, Object> meta = new LinkedHashMap<>(3, 1.0f);
         meta.put(KEY_CREATED_AT, createdAt != null ? createdAt.toString() : null);
         meta.put(KEY_LAST_MODIFIED, lastModified != null ? lastModified.toString() : null);
         meta.put("version", version);
