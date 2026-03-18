@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.scimplayground</groupId>
+        <groupId>de.pal-software.scim</groupId>
         <artifactId>scim-playground</artifactId>
         <version>1.0.3</version>
     </parent>
@@ -52,8 +52,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.scimplayground</groupId>
-            <artifactId>scim-server-model</artifactId>
+            <groupId>de.pal-software.scim</groupId>
+            <artifactId>scim-server-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
