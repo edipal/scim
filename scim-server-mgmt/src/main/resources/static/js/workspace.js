@@ -34,7 +34,8 @@ const state = {
     lookupUsersMode: 'page',
     lookupGroupsMode: 'page',
     currentGroupId: null,
-    multiValuedEditorReady: false
+    multiValuedEditorReady: false,
+    blockingActionInFlight: false
 };
 const PER_PAGE = 20;
 
@@ -45,6 +46,35 @@ async function apiFetch(url, options = {}) {
         headers.set(CSRF_HEADER, CSRF_TOKEN);
     }
     return fetch(url, {...options, headers, credentials: 'same-origin'});
+}
+
+function setActionOverlay(active, title = 'Please wait', copy = 'The request is still running.') {
+    const overlay = document.getElementById('actionOverlay');
+    if (!overlay) {
+        return;
+    }
+    overlay.classList.toggle('active', active);
+    overlay.setAttribute('aria-hidden', active ? 'false' : 'true');
+    setText('actionOverlayTitle', title);
+    setText('actionOverlayCopy', copy);
+}
+
+async function runBlockingAction(title, operation, copy = 'This action may take a moment while the database responds.') {
+    if (state.blockingActionInFlight) {
+        return;
+    }
+    state.blockingActionInFlight = true;
+    setActionOverlay(true, title, copy);
+    try {
+        return await operation();
+    } catch (err) {
+        console.error('Action failed:', err);
+        toast('Request failed');
+        return null;
+    } finally {
+        state.blockingActionInFlight = false;
+        setActionOverlay(false);
+    }
 }
 
 const MULTI_VALUED_CONFIG = {
@@ -462,15 +492,19 @@ async function loadLogsPage(page, showToast = false) {
 
 async function clearLogs() {
     if (!confirm('Clear all logs for this workspace?')) return;
-    const res = await apiFetch(`${API}/workspaces/${wsId}/logs`, {method: 'DELETE'});
-    if (!res.ok) {
-        const msg = await res.text();
-        toast(msg || 'Failed to clear logs');
-        return;
-    }
-    toast('Logs cleared');
-    loadLogs();
-    refreshWorkspaceStats();
+    await runBlockingAction('Clearing logs', async () => {
+        const res = await apiFetch(`${API}/workspaces/${wsId}/logs`, {method: 'DELETE'});
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to clear logs');
+            return;
+        }
+        toast('Logs cleared');
+        await Promise.all([
+            loadLogs(),
+            refreshWorkspaceStats()
+        ]);
+    });
 }
 
 function showCreateTokenModal() {
@@ -492,46 +526,57 @@ async function createToken() {
     const name = document.getElementById('tokenName').value.trim();
     if (!name) return;
     const desc = document.getElementById('tokenDesc').value.trim();
-    const res = await apiFetch(`${API}/workspaces/${wsId}/tokens`, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name, description: desc || null})
+    await runBlockingAction('Creating token', async () => {
+        const res = await apiFetch(`${API}/workspaces/${wsId}/tokens`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, description: desc || null})
+        });
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to create token');
+            return;
+        }
+
+        let data;
+        try {
+            data = await res.json();
+        } catch {
+            toast('Token was created, but the response could not be read');
+            return;
+        }
+
+        const rawToken = typeof data?.token === 'string' ? data.token.trim() : '';
+        if (!rawToken) {
+            toast('Token was created, but no token value was returned');
+            return;
+        }
+
+        const tokenField = document.getElementById('newTokenValue');
+        tokenField.value = rawToken;
+        document.getElementById('newTokenReveal').style.display = 'block';
+        document.getElementById('createTokenBtn').style.display = 'none';
+        tokenField.focus();
+        tokenField.select();
+        await refreshWorkspaceStats();
+        toast('Token created');
     });
-    if (!res.ok) {
-        const msg = await res.text();
-        toast(msg || 'Failed to create token');
-        return;
-    }
-
-    let data;
-    try {
-        data = await res.json();
-    } catch {
-        toast('Token was created, but the response could not be read');
-        return;
-    }
-
-    const rawToken = typeof data?.token === 'string' ? data.token.trim() : '';
-    if (!rawToken) {
-        toast('Token was created, but no token value was returned');
-        return;
-    }
-
-    const tokenField = document.getElementById('newTokenValue');
-    tokenField.value = rawToken;
-    document.getElementById('newTokenReveal').style.display = 'block';
-    document.getElementById('createTokenBtn').style.display = 'none';
-    tokenField.focus();
-    tokenField.select();
-    refreshWorkspaceStats();
-    toast('Token created');
 }
 
 async function revokeToken(id, name) {
     if (!confirm(`Revoke token "${name}"? This cannot be undone.`)) return;
-    await apiFetch(`${API}/workspaces/${wsId}/tokens/${id}`, {method: 'DELETE'});
-    toast('Token revoked');
-    loadTokens();
-    refreshWorkspaceStats();
+    await runBlockingAction('Revoking token', async () => {
+        const res = await apiFetch(`${API}/workspaces/${wsId}/tokens/${id}`, {method: 'DELETE'});
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to revoke token');
+            return;
+        }
+        toast('Token revoked');
+        await Promise.all([
+            loadTokens(),
+            refreshWorkspaceStats()
+        ]);
+    });
 }
 
 function getGenerateCount() {
@@ -557,35 +602,37 @@ async function generateSampleData(kind) {
     const count = getGenerateCount();
     setGenerateButtonsDisabled(true);
     try {
-        const res = await apiFetch(`${API}/workspaces/${wsId}/generate/${kind}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({count})
+        await runBlockingAction('Generating sample data', async () => {
+            const res = await apiFetch(`${API}/workspaces/${wsId}/generate/${kind}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({count})
+            });
+            if (!res.ok) {
+                const msg = await res.text();
+                toast(msg || 'Failed to generate sample data');
+                return;
+            }
+            const result = await res.json();
+            await Promise.all([
+                refreshWorkspaceStats(),
+                loadUsersPage(1),
+                loadGroupsPage(1),
+                loadLogsPage(1),
+                loadTokens()
+            ]);
+            const summary = [];
+            if (result.usersCreated) {
+                summary.push(`${result.usersCreated} users`);
+            }
+            if (result.groupsCreated) {
+                summary.push(`${result.groupsCreated} groups`);
+            }
+            if (result.relationsCreated) {
+                summary.push(`${result.relationsCreated} relations`);
+            }
+            toast(summary.length ? `Generated ${summary.join(', ')}` : 'Nothing generated');
         });
-        if (!res.ok) {
-            const msg = await res.text();
-            toast(msg || 'Failed to generate sample data');
-            return;
-        }
-        const result = await res.json();
-        await Promise.all([
-            refreshWorkspaceStats(),
-            loadUsersPage(1),
-            loadGroupsPage(1),
-            loadLogsPage(1),
-            loadTokens()
-        ]);
-        const summary = [];
-        if (result.usersCreated) {
-            summary.push(`${result.usersCreated} users`);
-        }
-        if (result.groupsCreated) {
-            summary.push(`${result.groupsCreated} groups`);
-        }
-        if (result.relationsCreated) {
-            summary.push(`${result.relationsCreated} relations`);
-        }
-        toast(summary.length ? `Generated ${summary.join(', ')}` : 'Nothing generated');
     } finally {
         setGenerateButtonsDisabled(false);
     }
@@ -739,48 +786,78 @@ async function saveUser() {
         ? `${API}/workspaces/${wsId}/users/${userId}`
         : `${API}/workspaces/${wsId}/users`;
     const method = userId ? 'PUT' : 'POST';
-    const res = await apiFetch(url, {
-        method,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
+    await runBlockingAction(userId ? 'Updating user' : 'Creating user', async () => {
+        const res = await apiFetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to save user');
+            return;
+        }
+        hideUserModal();
+        toast(userId ? 'User updated' : 'User created');
+        await Promise.all([
+            loadUsersPage(state.usersPage || 1),
+            refreshWorkspaceStats()
+        ]);
     });
-    if (!res.ok) {
-        const msg = await res.text();
-        toast(msg || 'Failed to save user');
-        return;
-    }
-    hideUserModal();
-    toast(userId ? 'User updated' : 'User created');
-    loadUsersPage(state.usersPage || 1);
-    refreshWorkspaceStats();
 }
 
 async function deleteUser(id) {
     const user = state.users.find(u => u.id === id);
     const name = user ? user.userName : id;
     if (!confirm(`Delete user "${name}"?`)) return;
-    const res = await apiFetch(`${API}/workspaces/${wsId}/users/${id}`, {method: 'DELETE'});
-    if (!res.ok) {
-        const msg = await res.text();
-        toast(msg || 'Failed to delete user');
-        return;
-    }
-    toast('User deleted');
-    loadUsersPage(state.usersPage || 1);
-    refreshWorkspaceStats();
+    await runBlockingAction('Deleting user', async () => {
+        const res = await apiFetch(`${API}/workspaces/${wsId}/users/${id}`, {method: 'DELETE'});
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to delete user');
+            return;
+        }
+        toast('User deleted');
+        await Promise.all([
+            loadUsersPage(state.usersPage || 1),
+            refreshWorkspaceStats()
+        ]);
+    });
 }
 
 async function clearUsers() {
     if (!confirm('Clear all users for this workspace?')) return;
-    const res = await apiFetch(`${API}/workspaces/${wsId}/users`, {method: 'DELETE'});
-    if (!res.ok) {
-        const msg = await res.text();
-        toast(msg || 'Failed to clear users');
-        return;
-    }
-    toast('Users cleared');
-    loadUsersPage(1, true);
-    refreshWorkspaceStats();
+    await runBlockingAction('Clearing users', async () => {
+        const res = await apiFetch(`${API}/workspaces/${wsId}/users`, {method: 'DELETE'});
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to clear users');
+            return;
+        }
+        toast('Users cleared');
+        await Promise.all([
+            loadUsersPage(1, true),
+            refreshWorkspaceStats()
+        ]);
+    });
+}
+
+async function refreshLogs() {
+    await runBlockingAction('Refreshing logs', async () => {
+        await loadLogs(true);
+    });
+}
+
+async function refreshUsers() {
+    await runBlockingAction('Refreshing users', async () => {
+        await loadUsers(true);
+    });
+}
+
+async function refreshGroups() {
+    await runBlockingAction('Refreshing groups', async () => {
+        await loadGroups(true);
+    });
 }
 
 async function loadGroups(showToast = false) {
@@ -911,20 +988,22 @@ function buildPagination(kind, page, totalPages) {
 }
 
 function changePage(kind, delta) {
-    if (kind === 'logs') {
-        const next = Math.max(1, Math.min(state.logsTotalPages || 1, state.logsPage + delta));
-        loadLogsPage(next);
-        return;
-    }
-    if (kind === 'users') {
-        const next = Math.max(1, Math.min(state.usersTotalPages || 1, state.usersPage + delta));
-        loadUsersPage(next);
-        return;
-    }
-    if (kind === 'groups') {
-        const next = Math.max(1, Math.min(state.groupsTotalPages || 1, state.groupsPage + delta));
-        loadGroupsPage(next);
-    }
+    runBlockingAction('Loading page', async () => {
+        if (kind === 'logs') {
+            const next = Math.max(1, Math.min(state.logsTotalPages || 1, state.logsPage + delta));
+            await loadLogsPage(next);
+            return;
+        }
+        if (kind === 'users') {
+            const next = Math.max(1, Math.min(state.usersTotalPages || 1, state.usersPage + delta));
+            await loadUsersPage(next);
+            return;
+        }
+        if (kind === 'groups') {
+            const next = Math.max(1, Math.min(state.groupsTotalPages || 1, state.groupsPage + delta));
+            await loadGroupsPage(next);
+        }
+    });
 }
 
 function showGroupModal(groupId) {
@@ -976,20 +1055,24 @@ async function saveGroup() {
         ? `${API}/workspaces/${wsId}/groups/${groupId}`
         : `${API}/workspaces/${wsId}/groups`;
     const method = groupId ? 'PUT' : 'POST';
-    const res = await apiFetch(url, {
-        method,
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
+    await runBlockingAction(groupId ? 'Updating group' : 'Creating group', async () => {
+        const res = await apiFetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to save group');
+            return;
+        }
+        hideGroupModal();
+        toast(groupId ? 'Group updated' : 'Group created');
+        await Promise.all([
+            loadGroupsPage(state.groupsPage || 1),
+            refreshWorkspaceStats()
+        ]);
     });
-    if (!res.ok) {
-        const msg = await res.text();
-        toast(msg || 'Failed to save group');
-        return;
-    }
-    hideGroupModal();
-    toast(groupId ? 'Group updated' : 'Group created');
-    loadGroupsPage(state.groupsPage || 1);
-    refreshWorkspaceStats();
 }
 
 function addSelectedMember(type) {
@@ -1067,14 +1150,16 @@ async function searchUsersLookup() {
     const url = query
         ? `${API}/workspaces/${wsId}/users/lookup?q=${encodeURIComponent(query)}&size=100`
         : `${API}/workspaces/${wsId}/users/lookup?size=100`;
-    const res = await apiFetch(url);
-    if (!res.ok) {
-        toast('Failed to search users');
-        return;
-    }
-    state.lookupUsers = await res.json();
-    state.lookupUsersMode = 'search';
-    updateMemberLookups();
+    await runBlockingAction('Searching users', async () => {
+        const res = await apiFetch(url);
+        if (!res.ok) {
+            toast('Failed to search users');
+            return;
+        }
+        state.lookupUsers = await res.json();
+        state.lookupUsersMode = 'search';
+        updateMemberLookups();
+    });
 }
 
 async function searchGroupsLookup() {
@@ -1082,14 +1167,16 @@ async function searchGroupsLookup() {
     const url = query
         ? `${API}/workspaces/${wsId}/groups/lookup?q=${encodeURIComponent(query)}&size=100`
         : `${API}/workspaces/${wsId}/groups/lookup?size=100`;
-    const res = await apiFetch(url);
-    if (!res.ok) {
-        toast('Failed to search groups');
-        return;
-    }
-    state.lookupGroups = await res.json();
-    state.lookupGroupsMode = 'search';
-    updateMemberLookups();
+    await runBlockingAction('Searching groups', async () => {
+        const res = await apiFetch(url);
+        if (!res.ok) {
+            toast('Failed to search groups');
+            return;
+        }
+        state.lookupGroups = await res.json();
+        state.lookupGroupsMode = 'search';
+        updateMemberLookups();
+    });
 }
 
 function useUserLookup() {
@@ -1112,28 +1199,36 @@ async function deleteGroup(id) {
     const group = state.groups.find(g => g.id === id);
     const name = group ? group.displayName : id;
     if (!confirm(`Delete group "${name}"?`)) return;
-    const res = await apiFetch(`${API}/workspaces/${wsId}/groups/${id}`, {method: 'DELETE'});
-    if (!res.ok) {
-        const msg = await res.text();
-        toast(msg || 'Failed to delete group');
-        return;
-    }
-    toast('Group deleted');
-    loadGroupsPage(state.groupsPage || 1);
-    refreshWorkspaceStats();
+    await runBlockingAction('Deleting group', async () => {
+        const res = await apiFetch(`${API}/workspaces/${wsId}/groups/${id}`, {method: 'DELETE'});
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to delete group');
+            return;
+        }
+        toast('Group deleted');
+        await Promise.all([
+            loadGroupsPage(state.groupsPage || 1),
+            refreshWorkspaceStats()
+        ]);
+    });
 }
 
 async function clearGroups() {
     if (!confirm('Clear all groups for this workspace?')) return;
-    const res = await apiFetch(`${API}/workspaces/${wsId}/groups`, {method: 'DELETE'});
-    if (!res.ok) {
-        const msg = await res.text();
-        toast(msg || 'Failed to clear groups');
-        return;
-    }
-    toast('Groups cleared');
-    loadGroupsPage(1, true);
-    refreshWorkspaceStats();
+    await runBlockingAction('Clearing groups', async () => {
+        const res = await apiFetch(`${API}/workspaces/${wsId}/groups`, {method: 'DELETE'});
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to clear groups');
+            return;
+        }
+        toast('Groups cleared');
+        await Promise.all([
+            loadGroupsPage(1, true),
+            refreshWorkspaceStats()
+        ]);
+    });
 }
 
 function showDetails(kind, id) {

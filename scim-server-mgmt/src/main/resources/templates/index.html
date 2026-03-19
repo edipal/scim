@@ -157,12 +157,12 @@
     </div>
 </div>
 
-<div class="blocking-overlay" id="workspaceDeleteOverlay" aria-hidden="true">
+<div class="blocking-overlay" id="actionOverlay" aria-hidden="true">
     <output class="blocking-overlay-card" aria-live="polite" aria-busy="true">
         <div class="blocking-overlay-spinner"></div>
         <div>
-            <div class="blocking-overlay-title">Deleting workspace</div>
-            <div class="blocking-overlay-copy">The UI is locked until the delete operation completes.</div>
+            <div class="blocking-overlay-title" id="actionOverlayTitle">Please wait</div>
+            <div class="blocking-overlay-copy" id="actionOverlayCopy">The UI is locked until the request completes.</div>
         </div>
     </output>
 </div>
@@ -174,7 +174,7 @@ const API = '/api/management';
 const CSRF_TOKEN = document.querySelector('meta[name="_csrf"]')?.content;
 const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
 const statsCache = new Map();
-let deleteInFlight = false;
+let blockingActionInFlight = false;
 
 async function apiFetch(url, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
@@ -244,27 +244,56 @@ async function loadWorkspaceStats(workspaceId) {
 }
 
 async function showWorkspaceStats(workspaceId, workspaceName) {
-    try {
-        const stats = await loadWorkspaceStats(workspaceId);
+    if (statsCache.has(workspaceId)) {
+        const stats = statsCache.get(workspaceId);
         document.getElementById('statsModalTitle').textContent = `Workspace Stats: ${workspaceName}`;
         renderWorkspaceStats(stats, 'stats');
         document.getElementById('statsModal').classList.add('active');
-    } catch {
-        toast('Failed to load workspace stats');
+        return;
     }
+    await runBlockingAction('Loading workspace stats', async () => {
+        try {
+            const stats = await loadWorkspaceStats(workspaceId);
+            document.getElementById('statsModalTitle').textContent = `Workspace Stats: ${workspaceName}`;
+            renderWorkspaceStats(stats, 'stats');
+            document.getElementById('statsModal').classList.add('active');
+        } catch {
+            toast('Failed to load workspace stats');
+        }
+    });
 }
 
 function hideStatsModal() {
     document.getElementById('statsModal').classList.remove('active');
 }
 
-function setWorkspaceDeleteBlocking(active) {
-    const overlay = document.getElementById('workspaceDeleteOverlay');
+function setActionOverlay(active, title = 'Please wait', copy = 'The UI is locked until the request completes.') {
+    const overlay = document.getElementById('actionOverlay');
     if (!overlay) {
         return;
     }
     overlay.classList.toggle('active', active);
     overlay.setAttribute('aria-hidden', active ? 'false' : 'true');
+    setText('actionOverlayTitle', title);
+    setText('actionOverlayCopy', copy);
+}
+
+async function runBlockingAction(title, operation, copy = 'This action may take a moment while the database responds.') {
+    if (blockingActionInFlight) {
+        return;
+    }
+    blockingActionInFlight = true;
+    setActionOverlay(true, title, copy);
+    try {
+        return await operation();
+    } catch (err) {
+        console.error('Action failed:', err);
+        toast('Request failed');
+        return null;
+    } finally {
+        blockingActionInFlight = false;
+        setActionOverlay(false);
+    }
 }
 
 function showCreateModal() { document.getElementById('createModal').classList.add('active'); document.getElementById('wsName').focus(); }
@@ -274,23 +303,27 @@ async function createWorkspace() {
     const name = document.getElementById('wsName').value.trim();
     if (!name) return;
     const desc = document.getElementById('wsDesc').value.trim();
-    await apiFetch(`${API}/workspaces`, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name, description: desc || null})
+    await runBlockingAction('Creating workspace', async () => {
+        const res = await apiFetch(`${API}/workspaces`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, description: desc || null})
+        });
+        if (!res.ok) {
+            const msg = await res.text();
+            toast(msg || 'Failed to create workspace');
+            return;
+        }
+        hideCreateModal();
+        document.getElementById('wsName').value = '';
+        document.getElementById('wsDesc').value = '';
+        toast('Workspace created');
+        await loadWorkspaces();
     });
-    hideCreateModal();
-    document.getElementById('wsName').value = '';
-    document.getElementById('wsDesc').value = '';
-    toast('Workspace created');
-    loadWorkspaces();
 }
 
 async function deleteWorkspace(id, name) {
-    if (deleteInFlight) return;
     if (!confirm(`Delete workspace "${name}"? This also deletes all its data.`)) return;
-    deleteInFlight = true;
-    setWorkspaceDeleteBlocking(true);
-    try {
+    await runBlockingAction('Deleting workspace', async () => {
         const res = await apiFetch(`${API}/workspaces/${id}`, {method: 'DELETE'});
         if (!res.ok) {
             const msg = await res.text();
@@ -300,10 +333,7 @@ async function deleteWorkspace(id, name) {
         statsCache.delete(id);
         toast('Workspace deleted');
         await loadWorkspaces();
-    } finally {
-        deleteInFlight = false;
-        setWorkspaceDeleteBlocking(false);
-    }
+    });
 }
 
 function toast(msg) {
