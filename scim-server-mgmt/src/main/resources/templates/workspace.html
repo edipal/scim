@@ -92,7 +92,7 @@
                 <button class="card-toggle" onclick="toggleCard('logsCard', this)">Expand</button>
             </div>
             <div style="display:flex;gap:0.5rem">
-                <button class="btn btn-sm" style="background:var(--surface2)" onclick="loadLogs(true)">Refresh</button>
+                <button class="btn btn-sm" style="background:var(--surface2)" onclick="refreshLogs()">Refresh</button>
                 <button class="btn btn-danger btn-sm" onclick="clearLogs()">Clear Logs</button>
             </div>
         </div>
@@ -115,7 +115,7 @@
                 <button class="card-toggle" onclick="toggleCard('usersCard', this)">Expand</button>
             </div>
             <div style="display:flex;gap:0.5rem">
-                <button class="btn btn-sm" style="background:var(--surface2)" onclick="loadUsers(true)">Refresh</button>
+                <button class="btn btn-sm" style="background:var(--surface2)" onclick="refreshUsers()">Refresh</button>
                 <button class="btn btn-danger btn-sm" onclick="clearUsers()">Clear All</button>
                 <button class="btn btn-primary" onclick="showUserModal()">+ New User</button>
             </div>
@@ -140,7 +140,7 @@
                 <button class="card-toggle" onclick="toggleCard('groupsCard', this)">Expand</button>
             </div>
             <div style="display:flex;gap:0.5rem">
-                <button class="btn btn-sm" style="background:var(--surface2)" onclick="loadGroups(true)">Refresh</button>
+                <button class="btn btn-sm" style="background:var(--surface2)" onclick="refreshGroups()">Refresh</button>
                 <button class="btn btn-danger btn-sm" onclick="clearGroups()">Clear All</button>
                 <button class="btn btn-primary" onclick="showGroupModal()">+ New Group</button>
             </div>
@@ -419,6 +419,16 @@
             <button class="btn" style="background:var(--surface2)" onclick="hideLogModal()">Close</button>
         </div>
     </div>
+</div>
+
+<div class="blocking-overlay" id="actionOverlay" aria-hidden="true">
+    <output class="blocking-overlay-card" aria-live="polite" aria-busy="true">
+        <div class="blocking-overlay-spinner"></div>
+        <div>
+            <div class="blocking-overlay-title" id="actionOverlayTitle">Please wait</div>
+            <div class="blocking-overlay-copy" id="actionOverlayCopy">The request is still running.</div>
+        </div>
+    </output>
 </div>
 
 <div class="toast" id="toast"></div>
