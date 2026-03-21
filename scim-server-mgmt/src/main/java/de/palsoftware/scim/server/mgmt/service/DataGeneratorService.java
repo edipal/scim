@@ -64,6 +64,11 @@ public class DataGeneratorService {
     @Transactional
     public GenerationSummary generateUsers(UUID workspaceId, Integer requestedCount, String actorUsername,
             boolean admin) {
+        return doGenerateUsers(workspaceId, requestedCount, actorUsername, admin);
+    }
+
+    private GenerationSummary doGenerateUsers(UUID workspaceId, Integer requestedCount, String actorUsername,
+            boolean admin) {
         workspaceService.requireWorkspaceAccess(workspaceId, actorUsername, admin);
         int appliedCount = sanitizeCount(requestedCount);
         for (int index = 0; index < appliedCount; index++) {
@@ -76,6 +81,11 @@ public class DataGeneratorService {
 
     @Transactional
     public GenerationSummary generateGroups(UUID workspaceId, Integer requestedCount, String actorUsername,
+            boolean admin) {
+        return doGenerateGroups(workspaceId, requestedCount, actorUsername, admin);
+    }
+
+    private GenerationSummary doGenerateGroups(UUID workspaceId, Integer requestedCount, String actorUsername,
             boolean admin) {
         workspaceService.requireWorkspaceAccess(workspaceId, actorUsername, admin);
         int appliedCount = sanitizeCount(requestedCount);
@@ -93,6 +103,11 @@ public class DataGeneratorService {
 
     @Transactional
     public GenerationSummary generateRelations(UUID workspaceId, Integer requestedCount, String actorUsername,
+            boolean admin) {
+        return doGenerateRelations(workspaceId, requestedCount, actorUsername, admin);
+    }
+
+    private GenerationSummary doGenerateRelations(UUID workspaceId, Integer requestedCount, String actorUsername,
             boolean admin) {
         workspaceService.requireWorkspaceAccess(workspaceId, actorUsername, admin);
         int appliedCount = sanitizeCount(requestedCount);
@@ -129,9 +144,9 @@ public class DataGeneratorService {
     public GenerationSummary generateAll(UUID workspaceId, Integer requestedCount, String actorUsername,
             boolean admin) {
         int appliedCount = sanitizeCount(requestedCount);
-        GenerationSummary users = generateUsers(workspaceId, appliedCount, actorUsername, admin);
-        GenerationSummary groups = generateGroups(workspaceId, appliedCount, actorUsername, admin);
-        GenerationSummary relations = generateRelations(workspaceId, appliedCount, actorUsername, admin);
+        GenerationSummary users = doGenerateUsers(workspaceId, appliedCount, actorUsername, admin);
+        GenerationSummary groups = doGenerateGroups(workspaceId, appliedCount, actorUsername, admin);
+        GenerationSummary relations = doGenerateRelations(workspaceId, appliedCount, actorUsername, admin);
         return new GenerationSummary(
                 requestedCountOrDefault(requestedCount),
                 appliedCount,

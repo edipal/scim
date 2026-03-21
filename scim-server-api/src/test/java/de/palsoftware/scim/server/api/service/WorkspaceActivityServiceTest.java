@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +38,6 @@ class WorkspaceActivityServiceTest {
         service.touchWorkspace(workspaceId);
 
         // Assert
-        verify(workspaceRepository).touchUpdatedAt(eq(workspaceId), eq(Instant.now(clock)));
+        verify(workspaceRepository).touchUpdatedAt(workspaceId, Instant.now(clock));
     }
 }

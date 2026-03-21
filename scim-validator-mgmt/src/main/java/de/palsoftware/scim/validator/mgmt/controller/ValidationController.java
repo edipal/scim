@@ -24,6 +24,9 @@ import java.util.UUID;
 public class ValidationController {
 
     private static final String ATTR_CURRENT_USER = "currentUser";
+    private static final String ATTR_CURRENT_USER_ROLE = "currentUserRole";
+    private static final String ROLE_ADMIN = "Admin";
+    private static final String ROLE_USER = "User";
 
     private final ValidationRunService validationRunService;
     private final MgmtUserService mgmtUserService;
@@ -41,7 +44,7 @@ public class ValidationController {
         }
         model.addAttribute("runs", validationRunService.listRuns(actorUserId(authentication), isAdmin(authentication)));
         model.addAttribute(ATTR_CURRENT_USER, resolveDisplayName(authentication));
-        model.addAttribute("currentUserRole", isAdmin(authentication) ? "Admin" : "User");
+        model.addAttribute(ATTR_CURRENT_USER_ROLE, currentUserRole(authentication));
         return "index";
     }
 
@@ -54,7 +57,7 @@ public class ValidationController {
             model.addAttribute("runs",
                     validationRunService.listRuns(actorUserId(authentication), isAdmin(authentication)));
             model.addAttribute(ATTR_CURRENT_USER, resolveDisplayName(authentication));
-            model.addAttribute("currentUserRole", isAdmin(authentication) ? "Admin" : "User");
+            model.addAttribute(ATTR_CURRENT_USER_ROLE, currentUserRole(authentication));
             return "index";
         }
 
@@ -80,7 +83,7 @@ public class ValidationController {
             }
         }
         model.addAttribute(ATTR_CURRENT_USER, resolveDisplayName(authentication));
-        model.addAttribute("currentUserRole", isAdmin(authentication) ? "Admin" : "User");
+        model.addAttribute(ATTR_CURRENT_USER_ROLE, currentUserRole(authentication));
         return "run-detail";
     }
 
@@ -96,6 +99,10 @@ public class ValidationController {
 
     private boolean isAdmin(Authentication authentication) {
         return AuthenticatedUser.isAdmin(authentication);
+    }
+
+    private String currentUserRole(Authentication authentication) {
+        return isAdmin(authentication) ? ROLE_ADMIN : ROLE_USER;
     }
 
     private String resolveDisplayName(Authentication authentication) {
