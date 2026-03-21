@@ -1,10 +1,11 @@
 package de.palsoftware.scim.server.api.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.palsoftware.scim.server.common.repository.WorkspaceRepository;
+import de.palsoftware.scim.server.common.security.ActuatorApiKeyAuthFilter;
 import de.palsoftware.scim.server.common.repository.WorkspaceTokenRepository;
 import de.palsoftware.scim.server.api.security.BearerTokenAuthFilter;
 import de.palsoftware.scim.server.api.logging.RequestResponseLoggingFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,35 +14,61 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final WorkspaceTokenRepository tokenRepository;
-    private final WorkspaceRepository workspaceRepository;
     private final ObjectMapper objectMapper;
     private final RequestResponseLoggingFilter loggingFilter;
+    private final String actuatorApiKey;
 
     public SecurityConfig(WorkspaceTokenRepository tokenRepository,
-                          WorkspaceRepository workspaceRepository,
                           ObjectMapper objectMapper,
-                          RequestResponseLoggingFilter loggingFilter) {
+                          RequestResponseLoggingFilter loggingFilter,
+                          @Value("${ACTUATOR_API_KEY}") String actuatorApiKey) {
         this.tokenRepository = tokenRepository;
-        this.workspaceRepository = workspaceRepository;
         this.objectMapper = objectMapper;
         this.loggingFilter = loggingFilter;
+        this.actuatorApiKey = actuatorApiKey;
+    }
+
+    private RequestMatcher scimPaths() {
+        return request -> {
+            String uri = request.getRequestURI();
+            return uri != null && uri.contains("/scim/v2");
+        };
+    }
+
+    private RequestMatcher actuatorPaths() {
+        return request -> {
+            String uri = request.getRequestURI();
+            return uri != null && uri.startsWith("/actuator");
+        };
+    }
+
+    private RequestMatcher errorPaths() {
+        return request -> {
+            String uri = request.getRequestURI();
+            return uri != null && uri.equals("/error");
+        };
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+            // CSRF is safe to disable: SCIM and actuator endpoints are stateless APIs using bearer tokens, not browser sessions
+            .csrf(csrf -> csrf.ignoringRequestMatchers(actuatorPaths(), scimPaths(), errorPaths()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/health").permitAll()
-                .requestMatchers("/ws/*/scim/v2/**").permitAll() // Auth handled by our filter
-                .anyRequest().permitAll()
+                .requestMatchers(actuatorPaths()).permitAll()
+                .requestMatchers(scimPaths()).permitAll() // Auth handled by our filter
+                .requestMatchers(errorPaths()).permitAll() // Allow Spring Boot to render 404s cleanly
+                .anyRequest().denyAll()
             )
+            .addFilterBefore(actuatorApiKeyAuthFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(bearerTokenAuthFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterAfter(loggingFilter, BearerTokenAuthFilter.class);
 
@@ -50,6 +77,11 @@ public class SecurityConfig {
 
     @Bean
     public BearerTokenAuthFilter bearerTokenAuthFilter() {
-        return new BearerTokenAuthFilter(tokenRepository, workspaceRepository, objectMapper);
+        return new BearerTokenAuthFilter(tokenRepository, objectMapper);
+    }
+
+    @Bean
+    public ActuatorApiKeyAuthFilter actuatorApiKeyAuthFilter() {
+        return new ActuatorApiKeyAuthFilter(actuatorApiKey);
     }
 }

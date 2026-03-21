@@ -7,8 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Optional;
 
 @Service
+@Transactional(readOnly = true)
 public class MgmtUserService {
 
     private final MgmtUserRepository mgmtUserRepository;
@@ -25,4 +27,11 @@ public class MgmtUserService {
         user.setLastLoginAt(OffsetDateTime.now(ZoneOffset.UTC));
         mgmtUserRepository.save(user);
     }
+
+    public Optional<String> findEmailById(String sub) {
+        return mgmtUserRepository.findById(sub)
+                .map(MgmtUser::getEmail)
+                .filter(e -> e != null && !e.isBlank());
+    }
 }
+

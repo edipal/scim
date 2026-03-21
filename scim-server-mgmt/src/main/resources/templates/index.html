@@ -81,7 +81,11 @@
         @media (max-width: 720px) {
             .stats-grid, .stats-breakdown { grid-template-columns: 1fr; }
         }
-    </style>
+    
+        .auto-style-1 { margin:0 }
+        .auto-style-2 { background:var(--surface2);color:var(--text) }
+        .auto-style-3 { background:var(--surface2) }
+        .auto-style-4 { max-width: 760px; }</style>
 </head>
 <body>
 <div class="container">
@@ -90,10 +94,10 @@
             <h1>SCIM Playground</h1>
         </div>
         <div class="site-header-user">
-            <span class="user-name" th:text="${currentUser}">User</span>
-            <form method="post" th:action="@{/logout}" style="margin:0">
+            <span class="user-name" th:text="${currentUser} + ' (' + ${currentUserRole} + ')'">User (Role)</span>
+            <form method="post" th:action="@{/logout}"  class="auto-style-1" >
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                <button class="btn" type="submit" style="background:var(--surface2);color:var(--text)">Logout</button>
+                <button class="btn auto-style-2" type="submit" >Logout</button>
             </form>
         </div>
     </header>
@@ -118,14 +122,14 @@
         <label for="wsDesc">Description (optional)</label>
         <textarea id="wsDesc" rows="2" placeholder="A short description"></textarea>
         <div class="modal-actions">
-            <button class="btn" style="background:var(--surface2)" onclick="hideCreateModal()">Cancel</button>
+            <button class="btn auto-style-3"  onclick="hideCreateModal()">Cancel</button>
             <button class="btn btn-primary" onclick="createWorkspace()">Create</button>
         </div>
     </div>
 </div>
 
 <div class="modal-backdrop" id="statsModal">
-    <div class="modal" style="max-width: 760px;">
+    <div class="modal auto-style-4" >
         <h3 id="statsModalTitle">Workspace Stats</h3>
         <div class="stats-grid">
             <div class="stat-tile">
@@ -169,8 +173,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
-const API = '/api/management';
+<script type="module">
+const API = '/api';
 const CSRF_TOKEN = document.querySelector('meta[name="_csrf"]')?.content;
 const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
 const statsCache = new Map();
@@ -195,7 +199,7 @@ async function loadWorkspaces() {
             return;
         }
         list.innerHTML = data.map(ws => `
-            <li class="workspace-item" onclick="window.location='/ui/workspaces/${ws.id}'">
+            <li class="workspace-item" onclick="window.location='/workspaces/${ws.id}'">
                 <div>
                     <div class="name">${esc(ws.name)}</div>
                     <div class="meta">Workspace ID ${esc(ws.id)}</div>
@@ -396,14 +400,19 @@ function formatBytes(value) {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-(async () => {
-    try {
-        await loadWorkspaces();
-    } catch (err) {
-        console.error('Initialization error:', err);
-        toast('Failed to load workspaces');
-    }
-})();
+globalThis.showCreateModal = showCreateModal;
+globalThis.hideCreateModal = hideCreateModal;
+globalThis.createWorkspace = createWorkspace;
+globalThis.showWorkspaceStats = showWorkspaceStats;
+globalThis.hideStatsModal = hideStatsModal;
+globalThis.deleteWorkspace = deleteWorkspace;
+
+try {
+    await loadWorkspaces();
+} catch (err) {
+    console.error('Initialization error:', err);
+    toast('Failed to load workspaces');
+}
 </script>
 </body>
 </html>

@@ -14,21 +14,14 @@ public interface ValidationRunRepository extends JpaRepository<ValidationRun, UU
     @Query("""
         select run from ValidationRun run
         where run.createdByUser.id = :actorUserId
-           or (run.createdByUser is null and run.createdByUsername = :actorUsername)
         """)
-    List<ValidationRun> findOwnedRuns(@Param("actorUserId") String actorUserId,
-                                     @Param("actorUsername") String actorUsername,
-                                     Sort sort);
+    List<ValidationRun> findOwnedRuns(@Param("actorUserId") String actorUserId, Sort sort);
 
     @Query("""
         select run from ValidationRun run
         where run.id = :id
-          and (
-                run.createdByUser.id = :actorUserId
-             or (run.createdByUser is null and run.createdByUsername = :actorUsername)
-          )
+          and run.createdByUser.id = :actorUserId
         """)
     Optional<ValidationRun> findAccessibleById(@Param("id") UUID id,
-                                              @Param("actorUserId") String actorUserId,
-                                              @Param("actorUsername") String actorUsername);
+                                              @Param("actorUserId") String actorUserId);
 }

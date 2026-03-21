@@ -67,7 +67,7 @@
             <h1>SCIM Validator</h1>
         </div>
         <div class="site-header-user">
-            <span class="user-name" th:text="${currentUser}">User</span>
+            <span class="user-name" th:text="${currentUser} + ' (' + ${currentUserRole} + ')'">User (Role)</span>
             <form method="post" th:action="@{/logout}" class="logout-form">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <button type="submit" class="logout-button">Logout</button>

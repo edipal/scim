@@ -6,7 +6,9 @@ import org.hibernate.annotations.OnDeleteAction;
 import java.util.UUID;
 
 @Entity
-@Table(name = "scim_user_phone_numbers")
+@Table(name = "scim_user_phone_numbers", indexes = {
+    @Index(name = "idx_user_phone_numbers_workspace_user_id", columnList = "workspace_id, user_id")
+})
 public class ScimUserPhoneNumber {
 
     @Id
@@ -17,6 +19,9 @@ public class ScimUserPhoneNumber {
     @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private ScimUser user;
+
+    @Column(name = "workspace_id", nullable = false)
+    private UUID workspaceId;
 
     @Column(name = "attr_value")
     private String value;
@@ -29,6 +34,15 @@ public class ScimUserPhoneNumber {
 
     @Column(name = "primary_flag", nullable = false)
     private boolean primaryFlag = false;
+
+    @PrePersist
+    @PreUpdate
+    protected void syncWorkspaceId() {
+        workspaceId = user != null && user.getWorkspace() != null ? user.getWorkspace().getId() : null;
+        if (workspaceId == null) {
+            throw new IllegalStateException("User phone number requires a workspace id");
+        }
+    }
 
     // Getters and Setters
 
@@ -46,6 +60,14 @@ public class ScimUserPhoneNumber {
 
     public void setUser(ScimUser user) {
         this.user = user;
+    }
+
+    public UUID getWorkspaceId() {
+        return workspaceId;
+    }
+
+    public void setWorkspaceId(UUID workspaceId) {
+        this.workspaceId = workspaceId;
     }
 
     public String getValue() {

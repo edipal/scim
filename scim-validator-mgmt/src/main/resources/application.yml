@@ -3,7 +3,7 @@ spring:
     name: scim-validator-mgmt
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
   security:
     oauth2:
@@ -25,6 +25,22 @@ server:
     session:
       cookie:
         name: SCIM_VALIDATOR_MGMT_SESSION
+
+management:
+  endpoint:
+    health:
+      show-components: always
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    ping:
+      enabled: false
+    ssl:
+      enabled: false
+    diskspace:
+      enabled: false
 
 logging:
   level:

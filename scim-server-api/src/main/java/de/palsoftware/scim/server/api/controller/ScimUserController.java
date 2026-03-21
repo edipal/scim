@@ -11,8 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
 
 /**
@@ -21,7 +19,6 @@ import java.util.*;
  */
 @RestController
 @RequestMapping({"/ws/{workspaceId}/scim/v2/Users", "/ws/{workspaceId}/scim/v2/{compat}/Users"})
-@Transactional
 public class ScimUserController extends ScimBaseController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
@@ -42,7 +39,7 @@ public class ScimUserController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         String baseUrl = buildBaseUrl(request, workspaceId);
         String compatBaseUrl = buildBaseUrl(request, workspaceId, compat);
 
@@ -71,7 +68,7 @@ public class ScimUserController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         UUID uid = parseUUID(userId, "User");
         String baseUrl = buildBaseUrl(request, workspaceId);
         String compatBaseUrl = buildBaseUrl(request, workspaceId, compat);
@@ -108,7 +105,7 @@ public class ScimUserController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         String baseUrl = buildBaseUrl(request, workspaceId);
         String compatBaseUrl = buildBaseUrl(request, workspaceId, compat);
 
@@ -154,21 +151,12 @@ public class ScimUserController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         UUID uid = parseUUID(userId, "User");
-        
-        // Validate If-Match header for optimistic concurrency control (RFC 7644 §3.14)
-        if (ifMatch != null) {
-            ScimUser existing = userService.getUser(wsId, uid);
-            String currentETag = "W/\"" + existing.getVersion() + "\"";
-            if (!ifMatch.equals(currentETag)) {
-                throw new ScimException(412, null, "Failed to update. Resource changed on the server.");
-            }
-        }
         
         String baseUrl = buildBaseUrl(request, workspaceId);
         String compatBaseUrl = buildBaseUrl(request, workspaceId, compat);
-        ScimUser user = userService.replaceUser(wsId, uid, body);
+        ScimUser user = userService.replaceUser(wsId, uid, body, ifMatch);
         List<Map<String, Object>> groups = userService.getUserGroups(user.getId(), baseUrl);
         CompatMode compatMode = CompatMode.fromString(compat);
         Map<String, Object> scimResponse = ScimUserMapper.toScimResponse(user, compatBaseUrl, groups);
@@ -193,17 +181,8 @@ public class ScimUserController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         UUID uid = parseUUID(userId, "User");
-        
-        // Validate If-Match header for optimistic concurrency control (RFC 7644 §3.14)
-        if (ifMatch != null) {
-            ScimUser existing = userService.getUser(wsId, uid);
-            String currentETag = "W/\"" + existing.getVersion() + "\"";
-            if (!ifMatch.equals(currentETag)) {
-                throw new ScimException(412, null, "Failed to update. Resource changed on the server.");
-            }
-        }
         
         String baseUrl = buildBaseUrl(request, workspaceId);
         String compatBaseUrl = buildBaseUrl(request, workspaceId, compat);
@@ -220,7 +199,7 @@ public class ScimUserController extends ScimBaseController {
             throw new ScimException(400, "invalidValue", "PATCH Operations is required");
         }
 
-        ScimUser user = userService.patchUser(wsId, uid, operations);
+        ScimUser user = userService.patchUser(wsId, uid, operations, ifMatch);
         List<Map<String, Object>> groups = userService.getUserGroups(user.getId(), baseUrl);
         CompatMode compatMode = CompatMode.fromString(compat);
         Map<String, Object> scimResponse = ScimUserMapper.toScimResponse(user, compatBaseUrl, groups);
@@ -241,7 +220,7 @@ public class ScimUserController extends ScimBaseController {
             @PathVariable String userId,
             @PathVariable(name = "compat", required = false) String compat) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         UUID uid = parseUUID(userId, "User");
         userService.deleteUser(wsId, uid);
 

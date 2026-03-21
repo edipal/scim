@@ -525,6 +525,7 @@ public class ScimSchemaDefinitions {
                                                 "Extension schema URI", false)),
                                 attr(ATTR_REQUIRED, TYPE_BOOLEAN, true, MUT_READ_ONLY, UNIQ_NONE,
                                                 "Whether extension is required", false)));
+                @SuppressWarnings("unchecked")
                 Map<String, Object> schemaExtSchema = (Map<String, Object>) ((List<?>) schemaExtensions
                                 .get(KEY_SUB_ATTRIBUTES)).get(0);
                 schemaExtSchema.put(KEY_REFERENCE_TYPES, List.of(REF_TYPE_URI));

@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -16,7 +17,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "scim_request_logs")
+@Table(name = "scim_request_logs", indexes = {
+    @Index(name = "idx_request_logs_workspace_created_at", columnList = "workspace_id, created_at DESC")
+})
 public class ScimRequestLog {
 
     @Id

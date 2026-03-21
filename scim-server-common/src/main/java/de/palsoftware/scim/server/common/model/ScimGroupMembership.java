@@ -7,6 +7,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "scim_group_memberships", indexes = {
+    @Index(name = "idx_group_memberships_workspace_group_id", columnList = "workspace_id, group_id"),
+    @Index(name = "idx_group_memberships_workspace_member_value", columnList = "workspace_id, member_value"),
     @Index(name = "idx_membership_member_value", columnList = "member_value"),
     @Index(name = "idx_membership_group_id", columnList = "group_id")
 })
@@ -21,6 +23,9 @@ public class ScimGroupMembership {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private ScimGroup group;
 
+    @Column(name = "workspace_id", nullable = false)
+    private UUID workspaceId;
+
     @Column(name = "member_value", nullable = false)
     private UUID memberValue;
 
@@ -29,6 +34,15 @@ public class ScimGroupMembership {
 
     @Column(name = "display")
     private String display;
+
+    @PrePersist
+    @PreUpdate
+    protected void syncWorkspaceId() {
+        workspaceId = group != null && group.getWorkspace() != null ? group.getWorkspace().getId() : null;
+        if (workspaceId == null) {
+            throw new IllegalStateException("Group membership requires a workspace id");
+        }
+    }
 
     // Getters and Setters
 
@@ -46,6 +60,14 @@ public class ScimGroupMembership {
 
     public void setGroup(ScimGroup group) {
         this.group = group;
+    }
+
+    public UUID getWorkspaceId() {
+        return workspaceId;
+    }
+
+    public void setWorkspaceId(UUID workspaceId) {
+        this.workspaceId = workspaceId;
     }
 
     public UUID getMemberValue() {

@@ -9,8 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
 
 /**
@@ -18,7 +16,6 @@ import java.util.*;
  */
 @RestController
 @RequestMapping({"/ws/{workspaceId}/scim/v2/Groups", "/ws/{workspaceId}/scim/v2/{compat}/Groups"})
-@Transactional
 public class ScimGroupController extends ScimBaseController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
@@ -37,7 +34,7 @@ public class ScimGroupController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
         ScimGroup group = groupService.createGroup(wsId, body);
@@ -59,7 +56,7 @@ public class ScimGroupController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         UUID gid = parseUUID(groupId, RESOURCE_GROUP);
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
@@ -88,7 +85,7 @@ public class ScimGroupController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
         if (startIndex < 1) startIndex = 1;
@@ -121,21 +118,12 @@ public class ScimGroupController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         UUID gid = parseUUID(groupId, RESOURCE_GROUP);
-        
-        // Validate If-Match header for optimistic concurrency control
-        if (ifMatch != null) {
-            ScimGroup existing = groupService.getGroup(wsId, gid);
-            String currentETag = "W/\"" + existing.getVersion() + "\"";
-            if (!ifMatch.equals(currentETag)) {
-                throw new ScimException(412, null, "Failed to update. Resource changed on the server.");
-            }
-        }
         
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
-        ScimGroup group = groupService.replaceGroup(wsId, gid, body);
+        ScimGroup group = groupService.replaceGroup(wsId, gid, body, ifMatch);
         Map<String, Object> scimResponse = ScimGroupMapper.toScimResponse(group, baseUrl);
 
         return ResponseEntity.ok()
@@ -154,17 +142,8 @@ public class ScimGroupController extends ScimBaseController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         UUID gid = parseUUID(groupId, RESOURCE_GROUP);
-        
-        // Validate If-Match header for optimistic concurrency control
-        if (ifMatch != null) {
-            ScimGroup existing = groupService.getGroup(wsId, gid);
-            String currentETag = "W/\"" + existing.getVersion() + "\"";
-            if (!ifMatch.equals(currentETag)) {
-                throw new ScimException(412, null, "Failed to update. Resource changed on the server.");
-            }
-        }
         
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
@@ -179,7 +158,7 @@ public class ScimGroupController extends ScimBaseController {
             throw new ScimException(400, "invalidValue", "PATCH Operations is required");
         }
 
-        ScimGroup group = groupService.patchGroup(wsId, gid, operations);
+        ScimGroup group = groupService.patchGroup(wsId, gid, operations, ifMatch);
         Map<String, Object> scimResponse = ScimGroupMapper.toScimResponse(group, baseUrl);
 
         return ResponseEntity.ok()
@@ -194,7 +173,7 @@ public class ScimGroupController extends ScimBaseController {
             @PathVariable String groupId,
             @PathVariable(name = "compat", required = false) String compat) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         UUID gid = parseUUID(groupId, RESOURCE_GROUP);
         groupService.deleteGroup(wsId, gid);
 

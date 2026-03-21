@@ -1,6 +1,7 @@
 package de.palsoftware.scim.validator.mgmt.security;
 
 import de.palsoftware.scim.validator.mgmt.service.MgmtUserService;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,27 +29,37 @@ public class SecurityConfig {
     private final String adminRole;
     private final String userRole;
     private final MgmtUserService mgmtUserService;
+    private final String actuatorApiKey;
 
     public SecurityConfig(@Value("${app.security.oidc.admin-role:admin}") String adminRole,
                           @Value("${app.security.oidc.user-role:user}") String userRole,
-                          @Lazy MgmtUserService mgmtUserService) {
+                          @Lazy MgmtUserService mgmtUserService,
+                          @Value("${ACTUATOR_API_KEY}") String actuatorApiKey) {
         this.adminRole = normalizeRole(adminRole);
         this.userRole = normalizeRole(userRole);
         this.mgmtUserService = mgmtUserService;
+        this.actuatorApiKey = actuatorApiKey;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/error").permitAll()
                 .anyRequest().authenticated())
+            .addFilterBefore(actuatorApiKeyAuthFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/oauth2/authorization/azure")
                 .userInfoEndpoint(userInfo -> userInfo.oidcUserService(oidcUserService())))
             .logout(logout -> logout.logoutSuccessUrl("/"))
             .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository()));
         return http.build();
+    }
+
+    @Bean
+    public ActuatorApiKeyAuthFilter actuatorApiKeyAuthFilter() {
+        return new ActuatorApiKeyAuthFilter(actuatorApiKey);
     }
 
     // CSRF token cookies intentionally omit HttpOnly so JavaScript can read and submit the token

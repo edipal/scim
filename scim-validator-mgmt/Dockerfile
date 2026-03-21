@@ -13,10 +13,9 @@ COPY scim-validator/src scim-validator/src
 COPY scim-validator-mgmt/src scim-validator-mgmt/src
 RUN mvn -pl scim-validator-mgmt -am -DskipTests package -B
 
-FROM eclipse-temurin:17-jre
+FROM dhi.io/eclipse-temurin:17-debian13
 WORKDIR /app
-RUN groupadd --system app && useradd --system --gid app --home-dir /app --shell /usr/sbin/nologin app
 COPY --from=build /workspace/scim-validator-mgmt/target/*.jar app.jar
-USER app
+USER nonroot
 EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "app.jar"]

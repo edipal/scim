@@ -6,11 +6,11 @@ import de.palsoftware.scim.validator.mgmt.dto.ValidationHttpExchangeView;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationRunForm;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationRunView;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationTestResultView;
-import de.palsoftware.scim.validator.mgmt.model.MgmtUser;
+import de.palsoftware.scim.validator.mgmt.model.ValidationMgmtUser;
 import de.palsoftware.scim.validator.mgmt.model.ValidationHttpExchange;
 import de.palsoftware.scim.validator.mgmt.model.ValidationRun;
 import de.palsoftware.scim.validator.mgmt.model.ValidationTestResult;
-import de.palsoftware.scim.validator.mgmt.repo.MgmtUserRepository;
+import de.palsoftware.scim.validator.mgmt.repo.ValidationMgmtUserRepository;
 import de.palsoftware.scim.validator.mgmt.repo.ValidationHttpExchangeRepository;
 import de.palsoftware.scim.validator.mgmt.repo.ValidationRunRepository;
 import de.palsoftware.scim.validator.mgmt.repo.ValidationTestResultRepository;
@@ -22,6 +22,8 @@ import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -41,34 +43,36 @@ import java.util.UUID;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 @Service
+@Transactional(readOnly = true)
 public class ValidationRunService {
+
+    private static final Logger log = LoggerFactory.getLogger(ValidationRunService.class);
 
     private static final String SCIM_BASE_URL_PROPERTY = "scim.baseUrl";
     private static final String SCIM_AUTH_TOKEN_PROPERTY = "scim.authToken";
 
     private static final List<String> SPEC_CLASS_NAMES = List.of(
-        "de.palsoftware.scim.validator.specs.A1_ServiceDiscoverySpec",
-        "de.palsoftware.scim.validator.specs.A2_SchemaValidationSpec",
-        "de.palsoftware.scim.validator.specs.A3_UserCrudSpec",
-        "de.palsoftware.scim.validator.specs.A4_PatchOperationsSpec",
-        "de.palsoftware.scim.validator.specs.A5_FilteringSpec",
-        "de.palsoftware.scim.validator.specs.A5_PaginationSpec",
-        "de.palsoftware.scim.validator.specs.A5_SortingSpec",
-        "de.palsoftware.scim.validator.specs.A6_GroupLifecycleSpec",
-        "de.palsoftware.scim.validator.specs.A7_BulkOperationsSpec",
-        "de.palsoftware.scim.validator.specs.A8_SecurityAndRobustnessSpec",
-        "de.palsoftware.scim.validator.specs.A9_NegativeAndEdgeCasesSpec"
-    );
+            "de.palsoftware.scim.validator.specs.A1_ServiceDiscoverySpec",
+            "de.palsoftware.scim.validator.specs.A2_SchemaValidationSpec",
+            "de.palsoftware.scim.validator.specs.A3_UserCrudSpec",
+            "de.palsoftware.scim.validator.specs.A4_PatchOperationsSpec",
+            "de.palsoftware.scim.validator.specs.A5_FilteringSpec",
+            "de.palsoftware.scim.validator.specs.A5_PaginationSpec",
+            "de.palsoftware.scim.validator.specs.A5_SortingSpec",
+            "de.palsoftware.scim.validator.specs.A6_GroupLifecycleSpec",
+            "de.palsoftware.scim.validator.specs.A7_BulkOperationsSpec",
+            "de.palsoftware.scim.validator.specs.A8_SecurityAndRobustnessSpec",
+            "de.palsoftware.scim.validator.specs.A9_NegativeAndEdgeCasesSpec");
 
     private final ValidationRunRepository runRepository;
-    private final MgmtUserRepository mgmtUserRepository;
+    private final ValidationMgmtUserRepository mgmtUserRepository;
     private final ValidationTestResultRepository testResultRepository;
     private final ValidationHttpExchangeRepository exchangeRepository;
 
     public ValidationRunService(ValidationRunRepository runRepository,
-                                MgmtUserRepository mgmtUserRepository,
-                                ValidationTestResultRepository testResultRepository,
-                                ValidationHttpExchangeRepository exchangeRepository) {
+            ValidationMgmtUserRepository mgmtUserRepository,
+            ValidationTestResultRepository testResultRepository,
+            ValidationHttpExchangeRepository exchangeRepository) {
         this.runRepository = runRepository;
         this.mgmtUserRepository = mgmtUserRepository;
         this.testResultRepository = testResultRepository;
@@ -82,7 +86,7 @@ public class ValidationRunService {
         run.setTargetUrl(form.baseUrl().trim());
         run.setExecutedAt(OffsetDateTime.now());
         run.setStatus("RUNNING");
-        MgmtUser owner = mgmtUserRepository.findById(actorUserId).orElse(null);
+        ValidationMgmtUser owner = mgmtUserRepository.findById(actorUserId).orElse(null);
         run.setCreatedByUser(owner);
         run.setCreatedByUsername(actorDisplayName);
         run.setTotalTests(0);
@@ -99,7 +103,8 @@ public class ValidationRunService {
             ScimRunContext.reset();
             ScimRunContext.setCaptureEnabled(true);
 
-            ValidationExecutionListener listener = new ValidationExecutionListener(run, testResultRepository, exchangeRepository);
+            ValidationExecutionListener listener = new ValidationExecutionListener(run, testResultRepository,
+                    exchangeRepository);
             Launcher launcher = LauncherFactory.create();
             launcher.registerTestExecutionListeners(listener);
             launcher.execute(buildRequest());
@@ -109,6 +114,7 @@ public class ValidationRunService {
             run.setFailedTests(listener.failed);
             run.setStatus(listener.failed > 0 ? "FAILED" : "PASSED");
         } catch (Exception ex) {
+            log.error("Error executing validation run", ex);
             run.setStatus("ERROR");
         } finally {
             ScimRunContext.setCaptureEnabled(false);
@@ -119,60 +125,58 @@ public class ValidationRunService {
         return runRepository.save(run);
     }
 
-    @Transactional(readOnly = true)
-    public List<ValidationRunView> listRuns(String actorUserId, String actorUsername, boolean admin) {
+    public List<ValidationRunView> listRuns(String actorUserId, boolean admin) {
         List<ValidationRun> runs;
         Sort sort = Sort.by(Sort.Direction.DESC, "executedAt");
         if (admin) {
             runs = runRepository.findAll(sort);
         } else {
-            runs = runRepository.findOwnedRuns(actorUserId, actorUsername, sort);
+            runs = runRepository.findOwnedRuns(actorUserId, sort);
         }
         return runs
-            .stream()
-            .map(ValidationRunView::from)
-            .toList();
+                .stream()
+                .map(ValidationRunView::from)
+                .toList();
     }
 
-    @Transactional(readOnly = true)
-    public ValidationRunView getRun(UUID runId, String actorUserId, String actorUsername, boolean admin) {
-        ValidationRun run = requireRunAccess(runId, actorUserId, actorUsername, admin);
+    public ValidationRunView getRun(UUID runId, String actorUserId, boolean admin) {
+        ValidationRun run = requireRunAccess(runId, actorUserId, admin);
         return ValidationRunView.from(run);
     }
 
-    @Transactional(readOnly = true)
-    public List<ValidationTestResultView> getTestResults(UUID runId, String actorUserId, String actorUsername, boolean admin) {
-        requireRunAccess(runId, actorUserId, actorUsername, admin);
+    public List<ValidationTestResultView> getTestResults(UUID runId, String actorUserId, boolean admin) {
+        requireRunAccess(runId, actorUserId, admin);
         List<ValidationTestResult> testResults = testResultRepository.findByRunIdOrderByStartedAtAsc(runId);
         return testResults.stream()
-            .map(testResult -> {
-                List<ValidationHttpExchangeView> exchanges = exchangeRepository.findByTestResultIdOrderBySequenceNumberAsc(testResult.getId())
-                    .stream()
-                    .map(ValidationHttpExchangeView::from)
-                    .toList();
-                return ValidationTestResultView.from(testResult, exchanges);
-            })
-            .toList();
+                .map(testResult -> {
+                    List<ValidationHttpExchangeView> exchanges = exchangeRepository
+                            .findByTestResultIdOrderBySequenceNumberAsc(testResult.getId())
+                            .stream()
+                            .map(ValidationHttpExchangeView::from)
+                            .toList();
+                    return ValidationTestResultView.from(testResult, exchanges);
+                })
+                .toList();
     }
 
     @Transactional
-    public void deleteRun(UUID runId, String actorUserId, String actorUsername, boolean admin) {
-        requireRunAccess(runId, actorUserId, actorUsername, admin);
+    public void deleteRun(UUID runId, String actorUserId, boolean admin) {
+        requireRunAccess(runId, actorUserId, admin);
         runRepository.deleteById(runId);
     }
 
-    private ValidationRun requireRunAccess(UUID runId, String actorUserId, String actorUsername, boolean admin) {
+    private ValidationRun requireRunAccess(UUID runId, String actorUserId, boolean admin) {
         if (admin) {
             return runRepository.findById(runId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Validation run not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Validation run not found"));
         }
-        return runRepository.findAccessibleById(runId, actorUserId, actorUsername)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Validation run not found"));
+        return runRepository.findAccessibleById(runId, actorUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Validation run not found"));
     }
 
     private static LauncherDiscoveryRequest buildRequest() throws ClassNotFoundException {
         LauncherDiscoveryRequestBuilder builder = LauncherDiscoveryRequestBuilder.request()
-            .configurationParameter("junit.jupiter.execution.parallel.enabled", "false");
+                .configurationParameter("junit.jupiter.execution.parallel.enabled", "false");
 
         for (String className : SPEC_CLASS_NAMES) {
             Class<?> specClass = Class.forName(className);
@@ -214,8 +218,8 @@ public class ValidationRunService {
         private int failed;
 
         private ValidationExecutionListener(ValidationRun run,
-                                            ValidationTestResultRepository testResultRepository,
-                                            ValidationHttpExchangeRepository exchangeRepository) {
+                ValidationTestResultRepository testResultRepository,
+                ValidationHttpExchangeRepository exchangeRepository) {
             this.run = run;
             this.testResultRepository = testResultRepository;
             this.exchangeRepository = exchangeRepository;

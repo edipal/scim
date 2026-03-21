@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.hibernate.Hibernate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -31,7 +32,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class ScimAdminService {
 
     private final WorkspaceRepository workspaceRepository;
@@ -51,19 +52,26 @@ public class ScimAdminService {
 
     public List<ScimUser> listUsers(UUID workspaceId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
-        return userRepository.findByWorkspaceId(workspaceId).stream()
+        List<ScimUser> users = userRepository.findByWorkspaceId(workspaceId).stream()
                 .sorted(Comparator.comparing(u -> safeLower(u.getUserName())))
                 .toList();
+        users.forEach(this::initializeLazyUserCollections);
+        return users;
     }
 
     public Page<ScimUser> listUsersPage(UUID workspaceId, String query, Pageable pageable, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
+        Page<ScimUser> page;
         if (query == null || query.isBlank()) {
-            return userRepository.findByWorkspaceId(workspaceId, pageable);
+            page = userRepository.findByWorkspaceId(workspaceId, pageable);
+        } else {
+            page = userRepository.findByWorkspaceIdAndUserNameContainingIgnoreCase(workspaceId, query, pageable);
         }
-        return userRepository.findByWorkspaceIdAndUserNameContainingIgnoreCase(workspaceId, query, pageable);
+        page.forEach(this::initializeLazyUserCollections);
+        return page;
     }
 
+    @Transactional
     public ScimUser createUser(UUID workspaceId, UserUpsertRequest request, String actorUsername, boolean admin) {
         String userName = normalizeRequired("userName", request.userName());
         if (userRepository.existsByUserNameIgnoreCaseAndWorkspaceId(userName, workspaceId)) {
@@ -78,9 +86,12 @@ public class ScimAdminService {
         user.setUserName(userName);
         applyUserFields(user, request, true);
 
-        return userRepository.save(user);
+        ScimUser saved = userRepository.save(user);
+        initializeLazyUserCollections(saved);
+        return saved;
     }
 
+    @Transactional
     public ScimUser updateUser(UUID workspaceId, UUID userId, UserUpsertRequest request, String actorUsername, boolean admin) {
         ScimUser user = getUser(workspaceId, userId, actorUsername, admin);
 
@@ -96,15 +107,19 @@ public class ScimAdminService {
 
         applyUserFields(user, request, false);
 
-        return userRepository.save(user);
+        ScimUser saved = userRepository.save(user);
+        initializeLazyUserCollections(saved);
+        return saved;
     }
 
+    @Transactional
     public void deleteUser(UUID workspaceId, UUID userId, String actorUsername, boolean admin) {
         ScimUser user = getUser(workspaceId, userId, actorUsername, admin);
         membershipRepository.deleteByMemberValue(userId);
         userRepository.delete(user);
     }
 
+    @Transactional
     public void deleteAllUsers(UUID workspaceId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
         List<UUID> userIds = userRepository.findIdsByWorkspaceId(workspaceId);
@@ -116,24 +131,27 @@ public class ScimAdminService {
 
     public List<ScimGroup> listGroups(UUID workspaceId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
-        return groupRepository.findByWorkspaceId(workspaceId).stream()
+        List<ScimGroup> groups = groupRepository.findByWorkspaceId(workspaceId).stream()
                 .sorted(Comparator.comparing(g -> safeLower(g.getDisplayName())))
                 .toList();
+        groups.forEach(this::initializeLazyGroupCollections);
+        return groups;
     }
 
     public Page<ScimGroup> listGroupsPage(UUID workspaceId, String query, Pageable pageable, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
+        Page<ScimGroup> page;
         if (query == null || query.isBlank()) {
-            return groupRepository.findByWorkspaceId(workspaceId, pageable);
+            page = groupRepository.findByWorkspaceId(workspaceId, pageable);
+        } else {
+            page = groupRepository.findByWorkspaceIdAndDisplayNameContainingIgnoreCaseOrWorkspaceIdAndExternalIdContainingIgnoreCase(
+                    workspaceId, query, workspaceId, query, pageable);
         }
-        return groupRepository.findByWorkspaceIdAndDisplayNameContainingIgnoreCaseOrWorkspaceIdAndExternalIdContainingIgnoreCase(
-                workspaceId,
-                query,
-                workspaceId,
-                query,
-                pageable);
+        page.forEach(this::initializeLazyGroupCollections);
+        return page;
     }
 
+    @Transactional
     public ScimGroup createGroup(UUID workspaceId, GroupUpsertRequest request, String actorUsername, boolean admin) {
         String displayName = normalizeRequired("displayName", request.displayName());
         if (groupRepository.existsByDisplayNameAndWorkspaceId(displayName, workspaceId)) {
@@ -148,9 +166,12 @@ public class ScimAdminService {
         group.setDisplayName(displayName);
         applyGroupFields(group, request, true);
 
-        return groupRepository.save(group);
+        ScimGroup saved = groupRepository.save(group);
+        initializeLazyGroupCollections(saved);
+        return saved;
     }
 
+    @Transactional
     public ScimGroup updateGroup(UUID workspaceId, UUID groupId, GroupUpsertRequest request, String actorUsername, boolean admin) {
         ScimGroup group = getGroup(workspaceId, groupId, actorUsername, admin);
 
@@ -166,9 +187,12 @@ public class ScimAdminService {
 
         applyGroupFields(group, request, false);
 
-        return groupRepository.save(group);
+        ScimGroup saved = groupRepository.save(group);
+        initializeLazyGroupCollections(saved);
+        return saved;
     }
 
+    @Transactional
     public void deleteGroup(UUID workspaceId, UUID groupId, String actorUsername, boolean admin) {
         ScimGroup group = getGroup(workspaceId, groupId, actorUsername, admin);
         membershipRepository.deleteByMemberValue(groupId);
@@ -176,6 +200,7 @@ public class ScimAdminService {
         groupRepository.delete(group);
     }
 
+    @Transactional
     public void deleteAllGroups(UUID workspaceId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
         List<UUID> groupIds = groupRepository.findIdsByWorkspaceId(workspaceId);
@@ -197,14 +222,18 @@ public class ScimAdminService {
 
     private ScimUser getUser(UUID workspaceId, UUID userId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
-        return userRepository.findByIdAndWorkspaceId(userId, workspaceId)
+        ScimUser user = userRepository.findByIdAndWorkspaceId(userId, workspaceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        initializeLazyUserCollections(user);
+        return user;
     }
 
     private ScimGroup getGroup(UUID workspaceId, UUID groupId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
-        return groupRepository.findByIdAndWorkspaceId(groupId, workspaceId)
+        ScimGroup group = groupRepository.findByIdAndWorkspaceId(groupId, workspaceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found"));
+        initializeLazyGroupCollections(group);
+        return group;
     }
 
     private String normalizeOptional(String value) {
@@ -415,5 +444,24 @@ public class ScimAdminService {
 
     private String safeLower(String value) {
         return value == null ? "" : value.toLowerCase();
+    }
+
+    private void initializeLazyUserCollections(ScimUser user) {
+        if (user != null) {
+            Hibernate.initialize(user.getEmails());
+            Hibernate.initialize(user.getPhoneNumbers());
+            Hibernate.initialize(user.getAddresses());
+            Hibernate.initialize(user.getEntitlements());
+            Hibernate.initialize(user.getRoles());
+            Hibernate.initialize(user.getIms());
+            Hibernate.initialize(user.getPhotos());
+            Hibernate.initialize(user.getX509Certificates());
+        }
+    }
+
+    private void initializeLazyGroupCollections(ScimGroup group) {
+        if (group != null) {
+            Hibernate.initialize(group.getMembers());
+        }
     }
 }

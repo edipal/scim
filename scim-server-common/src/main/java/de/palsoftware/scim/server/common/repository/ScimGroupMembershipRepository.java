@@ -11,7 +11,8 @@ import java.util.UUID;
 
 public interface ScimGroupMembershipRepository extends JpaRepository<ScimGroupMembership, UUID> {
 
-    List<ScimGroupMembership> findByMemberValue(UUID memberValue);
+    @Query("SELECT m FROM ScimGroupMembership m JOIN FETCH m.group WHERE m.memberValue = :memberValue")
+    List<ScimGroupMembership> findByMemberValue(@Param("memberValue") UUID memberValue);
 
     @Query("SELECT m FROM ScimGroupMembership m JOIN FETCH m.group WHERE m.memberValue IN :memberValues")
     List<ScimGroupMembership> findByMemberValueIn(@Param("memberValues") List<UUID> memberValues);

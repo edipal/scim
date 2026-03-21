@@ -1,5 +1,12 @@
 # SCIM 2.0 Playground
 
+> **Note — AI-Generated Code**
+>
+> The entire codebase in this repository was written by AI (GitHub Copilot).
+> This includes all Java source code, configuration files, Dockerfiles,
+> tests, and documentation. Human involvement was limited to design guidance,
+> review, and acceptance.
+
 ## Disclaimer
 
 This repository is a playground and reference implementation for a multi-tenant

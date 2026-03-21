@@ -3,7 +3,6 @@ package de.palsoftware.scim.server.api.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.palsoftware.scim.server.common.model.Workspace;
 import de.palsoftware.scim.server.common.model.WorkspaceToken;
-import de.palsoftware.scim.server.common.repository.WorkspaceRepository;
 import de.palsoftware.scim.server.common.repository.WorkspaceTokenRepository;
 import de.palsoftware.scim.server.common.security.TokenSecurityUtil;
 import jakarta.servlet.FilterChain;
@@ -23,14 +22,11 @@ import java.util.*;
 public class BearerTokenAuthFilter extends OncePerRequestFilter {
 
     private final WorkspaceTokenRepository tokenRepository;
-    private final WorkspaceRepository workspaceRepository;
     private final ObjectMapper objectMapper;
 
     public BearerTokenAuthFilter(WorkspaceTokenRepository tokenRepository,
-                                  WorkspaceRepository workspaceRepository,
                                   ObjectMapper objectMapper) {
         this.tokenRepository = tokenRepository;
-        this.workspaceRepository = workspaceRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -40,12 +36,12 @@ public class BearerTokenAuthFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         // Only filter SCIM API paths: /ws/{workspaceId}/scim/v2/**
-        if (!path.matches("/ws/[^/]+/scim/v2.*")) {
+        if (!path.startsWith("/ws/") || !path.contains("/scim/v2")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Extract workspace ID from path
+        // Extract workspace ID from path. SCIM routes accept UUID workspace IDs only.
         String[] segments = path.split("/");
         if (segments.length < 3) {
             sendScimError(response, 404, null, "Invalid workspace path");
@@ -57,13 +53,8 @@ public class BearerTokenAuthFilter extends OncePerRequestFilter {
         try {
             workspaceId = UUID.fromString(workspaceIdStr);
         } catch (IllegalArgumentException e) {
-            // Try by name
-            Optional<Workspace> wsByName = workspaceRepository.findByName(workspaceIdStr);
-            if (wsByName.isEmpty()) {
-                sendScimError(response, 404, null, "Workspace not found: " + workspaceIdStr);
-                return;
-            }
-            workspaceId = wsByName.get().getId();
+            sendScimError(response, 404, null, "Invalid workspace ID: " + workspaceIdStr);
+            return;
         }
 
         // Extract Bearer token
@@ -102,14 +93,7 @@ public class BearerTokenAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Set workspace context (use workspace from token — already fetched via JOIN FETCH)
-        WorkspaceContext.set(tokenWorkspace, wsToken);
-
-        try {
-            filterChain.doFilter(request, response);
-        } finally {
-            WorkspaceContext.clear();
-        }
+        filterChain.doFilter(request, response);
     }
 
     private void sendScimError(HttpServletResponse response, int status, String scimType, String detail)

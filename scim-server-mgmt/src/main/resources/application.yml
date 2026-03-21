@@ -3,7 +3,7 @@ spring:
     name: scim-server-mgmt
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
   jackson:
     serialization:
@@ -41,3 +41,19 @@ server:
     session:
       cookie:
         name: SCIM_SERVER_MGMT_SESSION
+
+management:
+  endpoint:
+    health:
+      show-components: always
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    ping:
+      enabled: false
+    ssl:
+      enabled: false
+    diskspace:
+      enabled: false
