@@ -13,10 +13,9 @@ COPY scim-server-common/src scim-server-common/src
 COPY scim-server-api/src scim-server-api/src
 RUN mvn -pl scim-server-api -am -DskipTests package -B
 
-FROM eclipse-temurin:17-jre
+FROM dhi.io/eclipse-temurin:17-debian13
 WORKDIR /app
-RUN groupadd --system app && useradd --system --gid app --home-dir /app --shell /usr/sbin/nologin app
 COPY --from=build /workspace/scim-server-api/target/*.jar app.jar
-USER app
+USER nonroot
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

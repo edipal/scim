@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class WorkspaceService {
 
     private final WorkspaceRepository workspaceRepository;
@@ -29,9 +29,10 @@ public class WorkspaceService {
                              WorkspaceStatsRepository workspaceStatsRepository) {
         this.workspaceRepository = workspaceRepository;
         this.tokenRepository = tokenRepository;
-        this.workspaceStatsRepository = workspaceStatsRepository    ;
+        this.workspaceStatsRepository = workspaceStatsRepository;
     }
 
+    @Transactional
     public Workspace createWorkspace(String name, String description, String createdByUsername) {
         Workspace ws = new Workspace();
         ws.setName(name);
@@ -63,12 +64,18 @@ public class WorkspaceService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Workspace not found"));
     }
 
-    @Transactional(readOnly = true)
+    public UUID requireWorkspaceId(String workspaceId, String actorUsername, boolean admin) {
+        UUID wsId = UUID.fromString(workspaceId);
+        requireWorkspaceAccess(wsId, actorUsername, admin);
+        return wsId;
+    }
+
     public WorkspaceDataStats getWorkspaceDataStats(UUID workspaceId, String actorUsername, boolean admin) {
         requireWorkspaceAccess(workspaceId, actorUsername, admin);
         return workspaceStatsRepository.fetchWorkspaceDataStats(workspaceId);
     }
 
+    @Transactional
     public void deleteWorkspace(UUID id, String actorUsername, boolean admin) {
         Workspace workspace = requireWorkspaceAccess(id, actorUsername, admin);
         workspaceRepository.delete(workspace);
@@ -78,6 +85,7 @@ public class WorkspaceService {
      * Generate a new bearer token for a workspace.
      * Returns the raw token value (shown once to the user).
      */
+    @Transactional
     public String generateToken(UUID workspaceId, String name, String description, String actorUsername, boolean admin) {
         Workspace ws = requireWorkspaceAccess(workspaceId, actorUsername, admin);
 
@@ -99,6 +107,7 @@ public class WorkspaceService {
         return tokenRepository.findByWorkspaceId(workspaceId);
     }
 
+    @Transactional
     public void revokeToken(UUID workspaceId, UUID tokenId, String actorUsername, boolean admin) {
         requireWorkspaceAccess(workspaceId, actorUsername, admin);
         WorkspaceToken token = tokenRepository.findByIdAndWorkspaceId(tokenId, workspaceId)
@@ -108,6 +117,6 @@ public class WorkspaceService {
     }
 
     private String generateSecureToken() {
-        return TokenSecurityUtil.generateUrlSafeToken(48);
+        return TokenSecurityUtil.generateUrlSafeToken(64);
     }
 }

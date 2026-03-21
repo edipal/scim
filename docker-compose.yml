@@ -45,11 +45,11 @@ services:
     restart: unless-stopped
 
   postgres-playground:
-    image: postgres:16-alpine
+    image: dhi.io/postgres:18-alpine3.22
     env_file:
       - ./docker/env/postgres-playground.env
     volumes:
-      - pgdata-playground:/var/lib/postgresql/data
+      - pgdata-playground:/var/lib/postgresql
     ports:
       - "5432:5432"
     healthcheck:
@@ -59,11 +59,11 @@ services:
       retries: 5
 
   postgres-validator:
-    image: postgres:16-alpine
+    image: dhi.io/postgres:18-alpine3.22
     env_file:
       - ./docker/env/postgres-validator.env
     volumes:
-      - pgdata-validator:/var/lib/postgresql/data
+      - pgdata-validator:/var/lib/postgresql
     ports:
       - "5433:5432"
     healthcheck:

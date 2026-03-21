@@ -1,7 +1,6 @@
 package de.palsoftware.scim.server.api.controller;
 
 import de.palsoftware.scim.server.api.scim.error.ScimException;
-import de.palsoftware.scim.server.api.security.WorkspaceContext;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.*;
@@ -13,12 +12,12 @@ abstract class ScimBaseController {
 
     protected static final String KEY_SCHEMAS = "schemas";
 
-    protected static UUID resolveWorkspaceId() {
-        var ws = WorkspaceContext.getWorkspace();
-        if (ws == null) {
-            throw new ScimException(401, null, "Unauthorized");
+    protected static UUID resolveWorkspaceId(String workspaceId) {
+        try {
+            return UUID.fromString(workspaceId);
+        } catch (IllegalArgumentException e) {
+            throw new ScimException(404, null, "Invalid workspace ID: " + workspaceId);
         }
-        return ws.getId();
     }
 
     protected static UUID parseUUID(String value, String resourceType) {
@@ -38,8 +37,8 @@ abstract class ScimBaseController {
         String forwardedHost = request.getHeader("X-Forwarded-Host");
         String forwardedPort = request.getHeader("X-Forwarded-Port");
 
-        String scheme = forwardedProto != null ? forwardedProto.split(",")[0].trim() : request.getScheme();
-        String host = forwardedHost != null ? forwardedHost.split(",")[0].trim() : request.getServerName();
+        String scheme = forwardedProto != null ? sanitizeHeaderValue(forwardedProto.split(",")[0].trim()) : request.getScheme();
+        String host = forwardedHost != null ? sanitizeHeaderValue(forwardedHost.split(",")[0].trim()) : request.getServerName();
 
         int port = request.getServerPort();
         if (forwardedPort != null) {
@@ -56,6 +55,18 @@ abstract class ScimBaseController {
             return base + "/" + compat;
         }
         return base;
+    }
+
+    private static String sanitizeHeaderValue(String value) {
+        // Reject header values containing newlines (header injection) or non-printable characters
+        if (value == null) return null;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c < 0x20 || c == 0x7f) {
+                throw new ScimException(400, "invalidValue", "Invalid header value");
+            }
+        }
+        return value;
     }
 
     protected static void applyAttributeProjection(Map<String, Object> resource,

@@ -10,6 +10,29 @@
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}" href="/favicon.svg">
     <link rel="stylesheet" th:href="@{/fonts/fonts.css}" href="/fonts/fonts.css">
     <link rel="stylesheet" href="/css/workspace.css">
+
+    <style>
+        .auto-style-1 { margin:0 }
+        .auto-style-2 { background:var(--surface2);color:var(--text) }
+        .auto-style-3 { margin-bottom: 0.25rem }
+        .auto-style-4 { margin-bottom: 1.5rem }
+        .auto-style-5 { margin-top:1rem }
+        .auto-style-6 { font-size:0.8rem;color:var(--text-muted);line-height:1.8 }
+        .auto-style-7 { display:flex;gap:0.5rem }
+        .auto-style-8 { background:var(--surface2) }
+        .auto-style-9 { margin-bottom:0 }
+        .auto-style-10 { display:none }
+        .auto-style-11 { margin-top:0.75rem }
+        .auto-style-12 { font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem }
+        .auto-style-13 { display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem }
+        .auto-style-14 { width:auto;margin:0 }
+        .auto-style-15 { display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem }
+        .auto-style-16 { margin-bottom:0;flex:1 }
+        .auto-style-17 { display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem }
+        .auto-style-18 { flex:1;padding:0.5rem 0.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text) }
+        .auto-style-19 { max-width: 720px }
+        .auto-style-20 { max-width: 760px }
+    </style>
 </head>
 <body>
 <div class="container">
@@ -19,21 +42,21 @@
         </div>
         <div class="site-header-user">
             <span class="user-name" th:text="${currentUser}">User</span>
-            <form method="post" th:action="@{/logout}" style="margin:0">
+            <form method="post" th:action="@{/logout}"  class="auto-style-1" >
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                <button class="btn" type="submit" style="background:var(--surface2);color:var(--text)">Logout</button>
+                <button class="btn auto-style-2" type="submit" >Logout</button>
             </form>
         </div>
     </header>
     <div class="breadcrumb"><a href="/">← All Workspaces</a></div>
     <h1 id="wsName">Loading...</h1>
-    <p class="breadcrumb" id="wsId" style="margin-bottom: 0.25rem"></p>
-    <p class="breadcrumb" id="wsOwner" style="margin-bottom: 0.25rem"></p>
+    <p class="breadcrumb auto-style-3" id="wsId" ></p>
+    <p class="breadcrumb auto-style-3" id="wsOwner" ></p>
     <div class="workspace-meta-row">
         <p class="breadcrumb workspace-meta-text" id="wsSize"></p>
         <button class="btn btn-info btn-sm" type="button" onclick="showStatsModal()">Stats</button>
     </div>
-    <p class="breadcrumb" id="wsCreated" style="margin-bottom: 1.5rem"></p>
+    <p class="breadcrumb auto-style-4" id="wsCreated" ></p>
 
     <!-- Endpoints Card -->
     <div class="card">
@@ -43,8 +66,8 @@
             <span id="scimBaseUrl">—</span>
             <button class="btn btn-copy btn-sm" onclick="copyText(document.getElementById('scimBaseUrl').textContent)">Copy</button>
         </div>
-        <p class="section-title" style="margin-top:1rem">Quick Reference</p>
-        <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.8">
+        <p class="section-title auto-style-5" >Quick Reference</p>
+        <div  class="auto-style-6" >
             <code>GET  /ServiceProviderConfig</code><br>
             <code>GET  /Schemas</code> · <code>GET /Schemas/{id}</code><br>
             <code>GET  /ResourceTypes</code> · <code>GET /ResourceTypes/{id}</code><br>
@@ -91,14 +114,14 @@
                 <h2>Request Logs</h2>
                 <button class="card-toggle" onclick="toggleCard('logsCard', this)">Expand</button>
             </div>
-            <div style="display:flex;gap:0.5rem">
-                <button class="btn btn-sm" style="background:var(--surface2)" onclick="refreshLogs()">Refresh</button>
+            <div  class="auto-style-7" >
+                <button class="btn btn-sm auto-style-8"  onclick="refreshLogs()">Refresh</button>
                 <button class="btn btn-danger btn-sm" onclick="clearLogs()">Clear Logs</button>
             </div>
         </div>
         <div class="card-body" id="logsCard">
             <div class="list-controls">
-                <span class="section-title" style="margin-bottom:0">Showing 20 per page</span>
+                <span class="section-title auto-style-9" >Showing 20 per page</span>
             </div>
             <ul class="log-list scrollable-list" id="logList">
                 <li class="empty-state">Loading...</li>
@@ -114,8 +137,8 @@
                 <h2>Users</h2>
                 <button class="card-toggle" onclick="toggleCard('usersCard', this)">Expand</button>
             </div>
-            <div style="display:flex;gap:0.5rem">
-                <button class="btn btn-sm" style="background:var(--surface2)" onclick="refreshUsers()">Refresh</button>
+            <div  class="auto-style-7" >
+                <button class="btn btn-sm auto-style-8"  onclick="refreshUsers()">Refresh</button>
                 <button class="btn btn-danger btn-sm" onclick="clearUsers()">Clear All</button>
                 <button class="btn btn-primary" onclick="showUserModal()">+ New User</button>
             </div>
@@ -123,7 +146,7 @@
         <div class="card-body" id="usersCard">
             <div class="list-controls">
                 <input class="search" type="text" id="userSearch" aria-label="Search users" placeholder="Search users (user name)" oninput="onUserSearch()">
-                <span class="section-title" style="margin-bottom:0">20 per page</span>
+                <span class="section-title auto-style-9" >20 per page</span>
             </div>
             <ul class="entity-list scrollable-list" id="userList">
                 <li class="empty-state">Loading...</li>
@@ -139,8 +162,8 @@
                 <h2>Groups</h2>
                 <button class="card-toggle" onclick="toggleCard('groupsCard', this)">Expand</button>
             </div>
-            <div style="display:flex;gap:0.5rem">
-                <button class="btn btn-sm" style="background:var(--surface2)" onclick="refreshGroups()">Refresh</button>
+            <div  class="auto-style-7" >
+                <button class="btn btn-sm auto-style-8"  onclick="refreshGroups()">Refresh</button>
                 <button class="btn btn-danger btn-sm" onclick="clearGroups()">Clear All</button>
                 <button class="btn btn-primary" onclick="showGroupModal()">+ New Group</button>
             </div>
@@ -148,7 +171,7 @@
         <div class="card-body" id="groupsCard">
             <div class="list-controls">
                 <input class="search" type="text" id="groupSearch" aria-label="Search groups" placeholder="Search groups (display name, external ID)" oninput="onGroupSearch()">
-                <span class="section-title" style="margin-bottom:0">20 per page</span>
+                <span class="section-title auto-style-9" >20 per page</span>
             </div>
             <ul class="entity-list scrollable-list" id="groupList">
                 <li class="empty-state">Loading...</li>
@@ -199,7 +222,7 @@
         <input type="text" id="tokenName" placeholder="e.g. CI/CD pipeline">
         <label for="tokenDesc">Description (optional)</label>
         <textarea id="tokenDesc" rows="2" placeholder="What is this token for?"></textarea>
-        <div id="newTokenReveal" style="display:none">
+        <div id="newTokenReveal"  class="auto-style-10" >
             <div class="token-reveal">
                 <label for="newTokenValue" class="token-reveal-label">Access Token</label>
                 <textarea id="newTokenValue" class="token-reveal-value" rows="4" readonly spellcheck="false"></textarea>
@@ -207,7 +230,7 @@
             </div>
         </div>
         <div class="modal-actions">
-            <button class="btn" style="background:var(--surface2)" onclick="hideCreateTokenModal()">Close</button>
+            <button class="btn auto-style-8"  onclick="hideCreateTokenModal()">Close</button>
             <button class="btn btn-primary" id="createTokenBtn" onclick="createToken()">Create</button>
         </div>
     </div>
@@ -224,7 +247,7 @@
         <input type="text" id="userDisplayName" placeholder="Jane Doe">
         <label for="userExternalId">External ID (optional)</label>
         <input type="text" id="userExternalId" placeholder="HR-12345">
-        <p class="section-title" style="margin-top:0.75rem">Name</p>
+        <p class="section-title auto-style-11" >Name</p>
         <label for="userNameFormatted">Formatted</label>
         <input type="text" id="userNameFormatted" placeholder="Dr. Jane Doe">
         <label for="userNameFamily">Family Name</label>
@@ -237,7 +260,7 @@
         <input type="text" id="userNameHonorificPrefix" placeholder="Dr.">
         <label for="userNameHonorificSuffix">Honorific Suffix</label>
         <input type="text" id="userNameHonorificSuffix" placeholder="PhD">
-        <p class="section-title" style="margin-top:0.75rem">Profile</p>
+        <p class="section-title auto-style-11" >Profile</p>
         <label for="userNickName">Nick Name</label>
         <input type="text" id="userNickName" placeholder="Janie">
         <label for="userProfileUrl">Profile URL</label>
@@ -254,7 +277,7 @@
         <input type="text" id="userTimezone" placeholder="America/New_York">
         <label for="userPassword">Password (optional)</label>
         <input type="password" id="userPassword" placeholder="Set to overwrite">
-        <p class="section-title" style="margin-top:0.75rem">Enterprise</p>
+        <p class="section-title auto-style-11" >Enterprise</p>
         <label for="userEnterpriseEmployeeNumber">Employee Number</label>
         <input type="text" id="userEnterpriseEmployeeNumber" placeholder="12345">
         <label for="userEnterpriseCostCenter">Cost Center</label>
@@ -271,85 +294,85 @@
         <input type="text" id="userEnterpriseManagerRef" placeholder="/Users/{id}">
         <label for="userEnterpriseManagerDisplay">Manager Display</label>
         <input type="text" id="userEnterpriseManagerDisplay" placeholder="Alex Smith">
-        <p class="section-title" style="margin-top:0.75rem">Multi-Valued</p>
-        <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem">Use Add to create entries with known fields and Remove to delete.</p>
+        <p class="section-title auto-style-11" >Multi-Valued</p>
+        <p  class="auto-style-12" >Use Add to create entries with known fields and Remove to delete.</p>
 
         <div class="multi-valued-field">
             <div class="multi-valued-header">
                 <label for="userEmails">Emails</label>
-                <button type="button" class="btn btn-sm" style="background:var(--surface2)" onclick="addMultiValuedItem('userEmails')">+ Add</button>
+                <button type="button" class="btn btn-sm auto-style-8"  onclick="addMultiValuedItem('userEmails')">+ Add</button>
             </div>
             <div class="multi-valued-builder" id="userEmailsBuilder"></div>
-            <textarea id="userEmails" rows="2" style="display:none" placeholder='[{"value":"jane@example.com","type":"work","primary":true}]'></textarea>
+            <textarea id="userEmails" rows="2"  class="auto-style-10"  placeholder='[{"value":"jane@example.com","type":"work","primary":true}]'></textarea>
         </div>
 
         <div class="multi-valued-field">
             <div class="multi-valued-header">
                 <label for="userPhoneNumbers">Phone Numbers</label>
-                <button type="button" class="btn btn-sm" style="background:var(--surface2)" onclick="addMultiValuedItem('userPhoneNumbers')">+ Add</button>
+                <button type="button" class="btn btn-sm auto-style-8"  onclick="addMultiValuedItem('userPhoneNumbers')">+ Add</button>
             </div>
             <div class="multi-valued-builder" id="userPhoneNumbersBuilder"></div>
-            <textarea id="userPhoneNumbers" rows="2" style="display:none" placeholder='[{"value":"+1-555-0100","type":"work"}]'></textarea>
+            <textarea id="userPhoneNumbers" rows="2"  class="auto-style-10"  placeholder='[{"value":"+1-555-0100","type":"work"}]'></textarea>
         </div>
 
         <div class="multi-valued-field">
             <div class="multi-valued-header">
                 <label for="userAddresses">Addresses</label>
-                <button type="button" class="btn btn-sm" style="background:var(--surface2)" onclick="addMultiValuedItem('userAddresses')">+ Add</button>
+                <button type="button" class="btn btn-sm auto-style-8"  onclick="addMultiValuedItem('userAddresses')">+ Add</button>
             </div>
             <div class="multi-valued-builder" id="userAddressesBuilder"></div>
-            <textarea id="userAddresses" rows="2" style="display:none" placeholder='[{"formatted":"1 Main St","locality":"NYC","country":"US","type":"work"}]'></textarea>
+            <textarea id="userAddresses" rows="2"  class="auto-style-10"  placeholder='[{"formatted":"1 Main St","locality":"NYC","country":"US","type":"work"}]'></textarea>
         </div>
 
         <div class="multi-valued-field">
             <div class="multi-valued-header">
                 <label for="userEntitlements">Entitlements</label>
-                <button type="button" class="btn btn-sm" style="background:var(--surface2)" onclick="addMultiValuedItem('userEntitlements')">+ Add</button>
+                <button type="button" class="btn btn-sm auto-style-8"  onclick="addMultiValuedItem('userEntitlements')">+ Add</button>
             </div>
             <div class="multi-valued-builder" id="userEntitlementsBuilder"></div>
-            <textarea id="userEntitlements" rows="2" style="display:none" placeholder='[{"value":"admin","type":"role"}]'></textarea>
+            <textarea id="userEntitlements" rows="2"  class="auto-style-10"  placeholder='[{"value":"admin","type":"role"}]'></textarea>
         </div>
 
         <div class="multi-valued-field">
             <div class="multi-valued-header">
                 <label for="userRoles">Roles</label>
-                <button type="button" class="btn btn-sm" style="background:var(--surface2)" onclick="addMultiValuedItem('userRoles')">+ Add</button>
+                <button type="button" class="btn btn-sm auto-style-8"  onclick="addMultiValuedItem('userRoles')">+ Add</button>
             </div>
             <div class="multi-valued-builder" id="userRolesBuilder"></div>
-            <textarea id="userRoles" rows="2" style="display:none" placeholder='[{"value":"editor","type":"app"}]'></textarea>
+            <textarea id="userRoles" rows="2"  class="auto-style-10"  placeholder='[{"value":"editor","type":"app"}]'></textarea>
         </div>
 
         <div class="multi-valued-field">
             <div class="multi-valued-header">
                 <label for="userIms">IMs</label>
-                <button type="button" class="btn btn-sm" style="background:var(--surface2)" onclick="addMultiValuedItem('userIms')">+ Add</button>
+                <button type="button" class="btn btn-sm auto-style-8"  onclick="addMultiValuedItem('userIms')">+ Add</button>
             </div>
             <div class="multi-valued-builder" id="userImsBuilder"></div>
-            <textarea id="userIms" rows="2" style="display:none" placeholder='[{"value":"jane_doe","type":"slack"}]'></textarea>
+            <textarea id="userIms" rows="2"  class="auto-style-10"  placeholder='[{"value":"jane_doe","type":"slack"}]'></textarea>
         </div>
 
         <div class="multi-valued-field">
             <div class="multi-valued-header">
                 <label for="userPhotos">Photos</label>
-                <button type="button" class="btn btn-sm" style="background:var(--surface2)" onclick="addMultiValuedItem('userPhotos')">+ Add</button>
+                <button type="button" class="btn btn-sm auto-style-8"  onclick="addMultiValuedItem('userPhotos')">+ Add</button>
             </div>
             <div class="multi-valued-builder" id="userPhotosBuilder"></div>
-            <textarea id="userPhotos" rows="2" style="display:none" placeholder='[{"value":"https://example.com/photo.jpg","type":"photo"}]'></textarea>
+            <textarea id="userPhotos" rows="2"  class="auto-style-10"  placeholder='[{"value":"https://example.com/photo.jpg","type":"photo"}]'></textarea>
         </div>
 
         <div class="multi-valued-field">
             <div class="multi-valued-header">
                 <label for="userX509">X509 Certificates</label>
-                <button type="button" class="btn btn-sm" style="background:var(--surface2)" onclick="addMultiValuedItem('userX509')">+ Add</button>
+                <button type="button" class="btn btn-sm auto-style-8"  onclick="addMultiValuedItem('userX509')">+ Add</button>
             </div>
             <div class="multi-valued-builder" id="userX509Builder"></div>
-            <textarea id="userX509" rows="2" style="display:none" placeholder='[{"value":"-----BEGIN CERTIFICATE-----...","type":"work"}]'></textarea>
+            <textarea id="userX509" rows="2"  class="auto-style-10"  placeholder='[{"value":"-----BEGIN CERTIFICATE-----...","type":"work"}]'></textarea>
         </div>
-        <label style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem">
-            <input type="checkbox" id="userActive" checked style="width:auto;margin:0"> Active
+        <label  class="auto-style-13" >
+            <input type="checkbox" id="userActive" checked  class="auto-style-14" > Active
         </label>
         <div class="modal-actions">
-            <button class="btn" style="background:var(--surface2)" onclick="hideUserModal()">Cancel</button>
+            <button class="btn auto-style-8"  onclick="hideUserModal()">Cancel</button>
             <button class="btn btn-primary" onclick="saveUser()" id="userSaveBtn">Save</button>
         </div>
     </div>
@@ -364,33 +387,33 @@
         <input type="text" id="groupDisplayName" placeholder="e.g. Engineering">
         <label for="groupExternalId">External ID (optional)</label>
         <input type="text" id="groupExternalId" placeholder="TEAM-ENG">
-        <p class="section-title" style="margin-top:0.75rem">Members</p>
-        <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem">Add a user or group by UUID (required). Display is optional.</p>
+        <p class="section-title auto-style-11" >Members</p>
+        <p  class="auto-style-12" >Add a user or group by UUID (required). Display is optional.</p>
         <p class="section-title">Users</p>
-        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
-            <input type="text" id="groupUserSearch" aria-label="Search users to add as members" placeholder="Search all users..." style="margin-bottom:0;flex:1">
-            <button class="btn btn-sm" style="background:var(--surface2)" onclick="searchUsersLookup()">Search</button>
+        <div  class="auto-style-15" >
+            <input type="text" id="groupUserSearch" aria-label="Search users to add as members" placeholder="Search all users..."  class="auto-style-16" >
+            <button class="btn btn-sm auto-style-8"  onclick="searchUsersLookup()">Search</button>
         </div>
-        <div class="lookup-row" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
-            <select id="groupUserLookup" aria-label="Select a user to add" class="lookup-select" style="flex:1;padding:0.5rem 0.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text)">
+        <div class="lookup-row auto-style-17" >
+            <select id="groupUserLookup" aria-label="Select a user to add" class="lookup-select auto-style-18" >
                 <option value="">Pick from loaded users...</option>
             </select>
-            <button class="btn btn-sm" style="background:var(--surface2)" onclick="addSelectedMember('User')">Add User</button>
+            <button class="btn btn-sm auto-style-8"  onclick="addSelectedMember('User')">Add User</button>
         </div>
         <p class="section-title">Groups</p>
-        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
-            <input type="text" id="groupGroupSearch" aria-label="Search groups to add as members" placeholder="Search all groups..." style="margin-bottom:0;flex:1">
-            <button class="btn btn-sm" style="background:var(--surface2)" onclick="searchGroupsLookup()">Search</button>
+        <div  class="auto-style-15" >
+            <input type="text" id="groupGroupSearch" aria-label="Search groups to add as members" placeholder="Search all groups..."  class="auto-style-16" >
+            <button class="btn btn-sm auto-style-8"  onclick="searchGroupsLookup()">Search</button>
         </div>
-        <div class="lookup-row" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem">
-            <select id="groupGroupLookup" aria-label="Select a group to add" class="lookup-select" style="flex:1;padding:0.5rem 0.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text)">
+        <div class="lookup-row auto-style-17" >
+            <select id="groupGroupLookup" aria-label="Select a group to add" class="lookup-select auto-style-18" >
                 <option value="">Pick from loaded groups...</option>
             </select>
-            <button class="btn btn-sm" style="background:var(--surface2)" onclick="addSelectedMember('Group')">Add Group</button>
+            <button class="btn btn-sm auto-style-8"  onclick="addSelectedMember('Group')">Add Group</button>
         </div>
         <ul class="entity-list" id="groupMembersList"></ul>
         <div class="modal-actions">
-            <button class="btn" style="background:var(--surface2)" onclick="hideGroupModal()">Cancel</button>
+            <button class="btn auto-style-8"  onclick="hideGroupModal()">Cancel</button>
             <button class="btn btn-primary" onclick="saveGroup()" id="groupSaveBtn">Save</button>
         </div>
     </div>
@@ -398,25 +421,25 @@
 
 <!-- Details Modal -->
 <div class="modal-backdrop" id="detailsModal">
-    <div class="modal" style="max-width: 720px">
+    <div class="modal auto-style-19" >
         <h3 id="detailsTitle">Details</h3>
         <pre class="details-pre" id="detailsContent"></pre>
         <div class="modal-actions">
-            <button class="btn" style="background:var(--surface2)" onclick="hideDetailsModal()">Close</button>
+            <button class="btn auto-style-8"  onclick="hideDetailsModal()">Close</button>
         </div>
     </div>
 </div>
 
 <!-- Log Modal -->
 <div class="modal-backdrop" id="logModal">
-    <div class="modal" style="max-width: 760px">
+    <div class="modal auto-style-20" >
         <h3 id="logModalTitle">Request Log</h3>
         <p class="section-title">Request</p>
         <pre class="details-pre" id="logRequest"></pre>
-        <p class="section-title" style="margin-top:0.75rem">Response</p>
+        <p class="section-title auto-style-11" >Response</p>
         <pre class="details-pre" id="logResponse"></pre>
         <div class="modal-actions">
-            <button class="btn" style="background:var(--surface2)" onclick="hideLogModal()">Close</button>
+            <button class="btn auto-style-8"  onclick="hideLogModal()">Close</button>
         </div>
     </div>
 </div>

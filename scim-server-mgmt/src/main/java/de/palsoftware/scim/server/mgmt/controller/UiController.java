@@ -1,8 +1,7 @@
 package de.palsoftware.scim.server.mgmt.controller;
 
-import de.palsoftware.scim.server.mgmt.model.MgmtUser;
-import de.palsoftware.scim.server.mgmt.repository.MgmtUserRepository;
 import de.palsoftware.scim.server.mgmt.security.AuthenticatedUser;
+import de.palsoftware.scim.server.mgmt.service.MgmtUserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -17,35 +16,40 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class UiController {
 
-    private final MgmtUserRepository mgmtUserRepository;
+    private final MgmtUserService mgmtUserService;
     private final String scimApiBaseUrl;
 
-    public UiController(MgmtUserRepository mgmtUserRepository,
-                        @Value("${app.scim-api.base.url:http://localhost:8080}") String scimApiBaseUrl) {
-        this.mgmtUserRepository = mgmtUserRepository;
+    public UiController(MgmtUserService mgmtUserService,
+            @Value("${app.scim-api.base.url}") String scimApiBaseUrl) {
+        this.mgmtUserService = mgmtUserService;
         this.scimApiBaseUrl = scimApiBaseUrl;
     }
 
     @GetMapping("/")
     public String index(Model model, Authentication authentication) {
         model.addAttribute("currentUser", resolveDisplayName(authentication));
+        model.addAttribute("currentUserRole", AuthenticatedUser.isAdmin(authentication) ? "Admin" : "User");
         return "index";
     }
 
-    @GetMapping("/ui/workspaces/{workspaceId}")
+    @GetMapping("/workspaces/{workspaceId}")
     public String workspaceDetail(@PathVariable String workspaceId, Model model, Authentication authentication) {
-        model.addAttribute("currentUser", resolveDisplayName(authentication));
-        model.addAttribute("scimApiBaseUrl", scimApiBaseUrl);
+        populateWorkspaceModel(model, authentication);
         return "workspace";
+    }
+
+
+    private void populateWorkspaceModel(Model model, Authentication authentication) {
+        model.addAttribute("currentUser", resolveDisplayName(authentication));
+        model.addAttribute("currentUserRole", AuthenticatedUser.isAdmin(authentication) ? "Admin" : "User");
+        model.addAttribute("scimApiBaseUrl", scimApiBaseUrl);
     }
 
     private String resolveDisplayName(Authentication authentication) {
         if (authentication != null && authentication.getPrincipal() instanceof OidcUser oidcUser) {
             String sub = oidcUser.getSubject();
             if (sub != null) {
-                return mgmtUserRepository.findById(sub)
-                        .map(MgmtUser::getEmail)
-                        .filter(e -> e != null && !e.isBlank())
+                return mgmtUserService.findEmailById(sub)
                         .orElseGet(() -> AuthenticatedUser.displayName(authentication));
             }
         }

@@ -13,26 +13,31 @@ import de.palsoftware.scim.server.common.repository.WorkspaceRepository;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.hibernate.Hibernate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class ScimUserService {
 
     private final ScimUserRepository userRepository;
     private final ScimGroupMembershipRepository membershipRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final WorkspaceActivityService workspaceActivityService;
 
     public ScimUserService(ScimUserRepository userRepository,
-                            ScimGroupMembershipRepository membershipRepository,
-                            WorkspaceRepository workspaceRepository) {
+            ScimGroupMembershipRepository membershipRepository,
+            WorkspaceRepository workspaceRepository,
+            WorkspaceActivityService workspaceActivityService) {
         this.userRepository = userRepository;
         this.membershipRepository = membershipRepository;
         this.workspaceRepository = workspaceRepository;
+        this.workspaceActivityService = workspaceActivityService;
     }
 
+    @Transactional
     public ScimUser createUser(UUID workspaceId, Map<String, Object> input) {
         String userName = (String) input.get("userName");
         if (userName == null || userName.isBlank()) {
@@ -50,16 +55,21 @@ public class ScimUserService {
         user.setWorkspace(ws);
         ScimUserMapper.applyFromScimInput(user, input);
 
-        return userRepository.save(user);
+        ScimUser savedUser = userRepository.save(user);
+        workspaceActivityService.touchWorkspace(workspaceId);
+        initializeLazyCollections(savedUser);
+        return savedUser;
     }
 
     public ScimUser getUser(UUID workspaceId, UUID userId) {
-        return userRepository.findByIdAndWorkspaceId(userId, workspaceId)
+        ScimUser user = userRepository.findByIdAndWorkspaceId(userId, workspaceId)
                 .orElseThrow(() -> new ScimException(404, null, "User not found: " + userId));
+        initializeLazyCollections(user);
+        return user;
     }
 
     public Map<String, Object> listUsers(UUID workspaceId, String filter, String sortBy,
-                                          String sortOrder, int startIndex, int count) {
+            String sortOrder, int startIndex, int count) {
         Specification<ScimUser> spec = ScimFilterParser.parseUserFilter(filter, workspaceId);
 
         // Get total count
@@ -72,7 +82,8 @@ public class ScimUserService {
         // Sorting
         String sortAttr = ScimFilterParser.resolveUserSortAttribute(sortBy);
         Sort.Direction direction = "descending".equalsIgnoreCase(sortOrder)
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
         Sort sort = Sort.by(direction, sortAttr);
 
         // Pagination (SCIM is 1-based, Spring Data Pageable is 0-based)
@@ -92,15 +103,16 @@ public class ScimUserService {
         } else {
             page = resultPage.getContent();
         }
+        page.forEach(this::initializeLazyCollections);
 
         return buildListResponse(page, totalResults, startIndex, page.size());
     }
 
     private Map<String, Object> buildListResponse(List<ScimUser> users, long totalResults,
-                                                    int startIndex, int itemsPerPage) {
+            int startIndex, int itemsPerPage) {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
-        response.put("totalResults", (int) totalResults);
+        response.put("totalResults", totalResults);
         response.put("startIndex", startIndex);
         response.put("itemsPerPage", itemsPerPage);
         // Resources will be populated by the controller with full SCIM representations
@@ -108,8 +120,17 @@ public class ScimUserService {
         return response;
     }
 
-    public ScimUser replaceUser(UUID workspaceId, UUID userId, Map<String, Object> input) {
+    @Transactional
+    public ScimUser replaceUser(UUID workspaceId, UUID userId, Map<String, Object> input, String ifMatch) {
         ScimUser existing = getUser(workspaceId, userId);
+
+        // Validate If-Match ETag for optimistic concurrency control
+        if (ifMatch != null) {
+            String currentETag = "W/\"" + existing.getVersion() + "\"";
+            if (!ifMatch.equals(currentETag)) {
+                throw new ScimException(412, null, "Failed to update. Resource changed on the server.");
+            }
+        }
 
         // Validate userName
         String newUserName = (String) input.get("userName");
@@ -133,20 +154,38 @@ public class ScimUserService {
         ScimUserMapper.clearMutableAttributes(existing);
         ScimUserMapper.applyFromScimInput(existing, input);
 
-        return userRepository.save(existing);
+        ScimUser savedUser = userRepository.save(existing);
+        workspaceActivityService.touchWorkspace(workspaceId);
+        initializeLazyCollections(savedUser);
+        return savedUser;
     }
 
-    public ScimUser patchUser(UUID workspaceId, UUID userId, List<Map<String, Object>> operations) {
+    @Transactional
+    public ScimUser patchUser(UUID workspaceId, UUID userId, List<Map<String, Object>> operations, String ifMatch) {
         ScimUser user = getUser(workspaceId, userId);
+
+        // Validate If-Match ETag for optimistic concurrency control
+        if (ifMatch != null) {
+            String currentETag = "W/\"" + user.getVersion() + "\"";
+            if (!ifMatch.equals(currentETag)) {
+                throw new ScimException(412, null, "Failed to update. Resource changed on the server.");
+            }
+        }
+
         ScimPatchEngine.applyPatchOperations(user, operations);
-        return userRepository.save(user);
+        ScimUser savedUser = userRepository.save(user);
+        workspaceActivityService.touchWorkspace(workspaceId);
+        initializeLazyCollections(savedUser);
+        return savedUser;
     }
 
+    @Transactional
     public void deleteUser(UUID workspaceId, UUID userId) {
         ScimUser user = getUser(workspaceId, userId);
         // Remove user from all groups
         membershipRepository.deleteByMemberValue(userId);
         userRepository.delete(user);
+        workspaceActivityService.touchWorkspace(workspaceId);
     }
 
     /**
@@ -184,5 +223,18 @@ public class ScimUserService {
             result.computeIfAbsent(m.getMemberValue(), k -> new ArrayList<>()).add(g);
         }
         return result;
+    }
+
+    private void initializeLazyCollections(ScimUser user) {
+        if (user != null) {
+            Hibernate.initialize(user.getEmails());
+            Hibernate.initialize(user.getPhoneNumbers());
+            Hibernate.initialize(user.getAddresses());
+            Hibernate.initialize(user.getEntitlements());
+            Hibernate.initialize(user.getRoles());
+            Hibernate.initialize(user.getIms());
+            Hibernate.initialize(user.getPhotos());
+            Hibernate.initialize(user.getX509Certificates());
+        }
     }
 }

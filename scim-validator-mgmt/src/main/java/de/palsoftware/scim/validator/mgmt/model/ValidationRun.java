@@ -41,7 +41,7 @@ public class ValidationRun {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_user_id")
-    private MgmtUser createdByUser;
+    private ValidationMgmtUser createdByUser;
 
     @Column(length = 255)
     private String createdByUsername;
@@ -95,11 +95,11 @@ public class ValidationRun {
         this.status = status;
     }
 
-    public MgmtUser getCreatedByUser() {
+    public ValidationMgmtUser getCreatedByUser() {
         return createdByUser;
     }
 
-    public void setCreatedByUser(MgmtUser createdByUser) {
+    public void setCreatedByUser(ValidationMgmtUser createdByUser) {
         this.createdByUser = createdByUser;
     }
 

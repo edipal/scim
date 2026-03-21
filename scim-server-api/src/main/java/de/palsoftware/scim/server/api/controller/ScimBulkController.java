@@ -3,13 +3,11 @@ package de.palsoftware.scim.server.api.controller;
 import de.palsoftware.scim.server.common.model.ScimGroup;
 import de.palsoftware.scim.server.common.model.ScimUser;
 import de.palsoftware.scim.server.api.scim.error.ScimException;
-import de.palsoftware.scim.server.api.security.WorkspaceContext;
 import de.palsoftware.scim.server.api.service.ScimGroupService;
 import de.palsoftware.scim.server.api.service.ScimUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -19,8 +17,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping({"/ws/{workspaceId}/scim/v2/Bulk", "/ws/{workspaceId}/scim/v2/{compat}/Bulk"})
-@Transactional
-public class ScimBulkController {
+public class ScimBulkController extends ScimBaseController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
     private static final int MAX_OPERATIONS = 1000;
@@ -47,7 +44,7 @@ public class ScimBulkController {
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
-        UUID wsId = resolveWorkspaceId();
+        UUID wsId = resolveWorkspaceId(workspaceId);
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
         List<Map<String, Object>> operations = (List<Map<String, Object>>) body.get(KEY_OPERATIONS);
@@ -82,7 +79,11 @@ public class ScimBulkController {
     @SuppressWarnings("unchecked")
     private Map<String, Object> processOperation(Map<String, Object> op, UUID wsId,
                                                    String baseUrl, Map<String, String> bulkIdMap) {
-        String method = ((String) op.get("method")).toUpperCase();
+        Object rawMethod = op.get("method");
+        if (!(rawMethod instanceof String)) {
+            throw new ScimException(400, "invalidValue", "Operation method is required");
+        }
+        String method = ((String) rawMethod).toUpperCase();
         String path = (String) op.get("path");
         String bulkId = (String) op.get("bulkId");
         Map<String, Object> data = (Map<String, Object>) op.get("data");
@@ -125,7 +126,7 @@ public class ScimBulkController {
                     String.valueOf(e.getHttpStatus()), e.getScimType(), e.getMessage()));
         } catch (Exception e) {
             result.put(KEY_STATUS, "500");
-            result.put(KEY_RESPONSE, buildError("500", null, e.getMessage()));
+            result.put(KEY_RESPONSE, buildError("500", null, "Internal server error"));
         }
 
         return result;
@@ -161,11 +162,11 @@ public class ScimBulkController {
         UUID resourceId = UUID.fromString(parts[1]);
 
         if (RESOURCE_USERS.equals(resourceType)) {
-            ScimUser user = userService.replaceUser(wsId, resourceId, data);
+            ScimUser user = userService.replaceUser(wsId, resourceId, data, null);
             result.put(KEY_STATUS, "200");
             result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_USERS, user.getId()));
         } else if (RESOURCE_GROUPS.equals(resourceType)) {
-            ScimGroup group = groupService.replaceGroup(wsId, resourceId, data);
+            ScimGroup group = groupService.replaceGroup(wsId, resourceId, data, null);
             result.put(KEY_STATUS, "200");
             result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_GROUPS, group.getId()));
         }
@@ -183,11 +184,11 @@ public class ScimBulkController {
         if (operations == null) operations = List.of();
 
         if (RESOURCE_USERS.equals(resourceType)) {
-            ScimUser user = userService.patchUser(wsId, resourceId, operations);
+            ScimUser user = userService.patchUser(wsId, resourceId, operations, null);
             result.put(KEY_STATUS, "200");
             result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_USERS, user.getId()));
         } else if (RESOURCE_GROUPS.equals(resourceType)) {
-            ScimGroup group = groupService.patchGroup(wsId, resourceId, operations);
+            ScimGroup group = groupService.patchGroup(wsId, resourceId, operations, null);
             result.put(KEY_STATUS, "200");
             result.put(KEY_LOCATION, buildResourceLocation(baseUrl, RESOURCE_GROUPS, group.getId()));
         }
@@ -270,24 +271,6 @@ public class ScimBulkController {
         if (scimType != null) error.put("scimType", scimType);
         if (detail != null) error.put("detail", detail);
         return error;
-    }
-
-    private UUID resolveWorkspaceId() {
-        var ws = WorkspaceContext.getWorkspace();
-        if (ws == null) throw new ScimException(401, null, "Unauthorized");
-        return ws.getId();
-    }
-
-    private String buildBaseUrl(HttpServletRequest request, String workspaceId, String compat) {
-        String scheme = request.getScheme();
-        String host = request.getServerName();
-        int port = request.getServerPort();
-        String portStr = (port == 80 || port == 443) ? "" : ":" + port;
-        String base = scheme + "://" + host + portStr + "/ws/" + workspaceId + "/scim/v2";
-        if (compat != null && !compat.isBlank()) {
-            return base + "/" + compat;
-        }
-        return base;
     }
 
     private String buildResourceLocation(String baseUrl, String resourceType, UUID resourceId) {

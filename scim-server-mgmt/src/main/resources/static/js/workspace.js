@@ -1,4 +1,4 @@
-const API = '/api/management';
+const API = '/api';
 const CSRF_TOKEN = document.querySelector('meta[name="_csrf"]')?.content;
 const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
 
@@ -176,6 +176,8 @@ async function loadWorkspaceSummary() {
     const wsRes = await apiFetch(`${API}/workspaces/${wsId}`);
     if (!wsRes.ok) {
         document.getElementById('wsName').textContent = 'Workspace not found';
+        const content = document.getElementById('workspaceContent');
+        if (content) content.style.display = 'none';
         return null;
     }
     const ws = await wsRes.json();

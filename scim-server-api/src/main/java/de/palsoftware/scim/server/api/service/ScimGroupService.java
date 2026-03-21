@@ -13,6 +13,7 @@ import de.palsoftware.scim.server.common.repository.WorkspaceRepository;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.hibernate.Hibernate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -20,7 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class ScimGroupService {
 
     private static final String KEY_DISPLAY_NAME = "displayName";
@@ -29,7 +30,7 @@ public class ScimGroupService {
     private static final String KEY_EXTERNAL_ID = "externalId";
     private static final String RESOURCE_TYPE_GROUP = "Group";
     private static final String RESOURCE_TYPE_USER = "User";
-        private static final Pattern MEMBER_VALUE_FILTER = Pattern.compile(
+    private static final Pattern MEMBER_VALUE_FILTER = Pattern.compile(
             "value\\s+eq\\s+\"([^\"]+)\"",
             Pattern.CASE_INSENSITIVE);
 
@@ -37,17 +38,21 @@ public class ScimGroupService {
     private final ScimGroupMembershipRepository membershipRepository;
     private final ScimUserRepository userRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final WorkspaceActivityService workspaceActivityService;
 
     public ScimGroupService(ScimGroupRepository groupRepository,
             ScimGroupMembershipRepository membershipRepository,
             ScimUserRepository userRepository,
-            WorkspaceRepository workspaceRepository) {
+            WorkspaceRepository workspaceRepository,
+            WorkspaceActivityService workspaceActivityService) {
         this.groupRepository = groupRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
         this.workspaceRepository = workspaceRepository;
+        this.workspaceActivityService = workspaceActivityService;
     }
 
+    @Transactional
     @SuppressWarnings("unchecked")
     public ScimGroup createGroup(UUID workspaceId, Map<String, Object> input) {
         String displayName = (String) input.get(KEY_DISPLAY_NAME);
@@ -56,7 +61,8 @@ public class ScimGroupService {
         }
 
         if (groupRepository.findByDisplayNameAndWorkspaceId(displayName, workspaceId).isPresent()) {
-            throw new ScimException(409, "uniqueness", RESOURCE_TYPE_GROUP + " with " + KEY_DISPLAY_NAME + " '" + displayName + "' already exists");
+            throw new ScimException(409, "uniqueness",
+                    RESOURCE_TYPE_GROUP + " with " + KEY_DISPLAY_NAME + " '" + displayName + "' already exists");
         }
 
         Workspace ws = workspaceRepository.findById(workspaceId)
@@ -82,12 +88,16 @@ public class ScimGroupService {
             group = groupRepository.save(group);
         }
 
+        workspaceActivityService.touchWorkspace(workspaceId);
+        Hibernate.initialize(group.getMembers());
         return group;
     }
 
     public ScimGroup getGroup(UUID workspaceId, UUID groupId) {
-        return groupRepository.findByIdAndWorkspaceId(groupId, workspaceId)
+        ScimGroup group = groupRepository.findByIdAndWorkspaceId(groupId, workspaceId)
                 .orElseThrow(() -> new ScimException(404, null, "Group not found: " + groupId));
+        Hibernate.initialize(group.getMembers());
+        return group;
     }
 
     public Map<String, Object> listGroups(UUID workspaceId, String filter, String sortBy,
@@ -122,6 +132,7 @@ public class ScimGroupService {
         } else {
             page = resultPage.getContent();
         }
+        page.forEach(g -> Hibernate.initialize(g.getMembers()));
 
         return buildListResponse(page, totalResults, startIndex, page.size());
     }
@@ -130,16 +141,25 @@ public class ScimGroupService {
             int startIndex, int itemsPerPage) {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:ListResponse"));
-        response.put("totalResults", (int) totalResults);
+        response.put("totalResults", totalResults);
         response.put("startIndex", startIndex);
         response.put("itemsPerPage", itemsPerPage);
         response.put("Resources", groups);
         return response;
     }
 
+    @Transactional
     @SuppressWarnings("unchecked")
-    public ScimGroup replaceGroup(UUID workspaceId, UUID groupId, Map<String, Object> input) {
+    public ScimGroup replaceGroup(UUID workspaceId, UUID groupId, Map<String, Object> input, String ifMatch) {
         ScimGroup existing = getGroup(workspaceId, groupId);
+
+        // Validate If-Match ETag for optimistic concurrency control
+        if (ifMatch != null) {
+            String currentETag = "W/\"" + existing.getVersion() + "\"";
+            if (!ifMatch.equals(currentETag)) {
+                throw new ScimException(412, null, "Failed to update. Resource changed on the server.");
+            }
+        }
 
         String displayName = (String) input.get(KEY_DISPLAY_NAME);
         if (displayName == null || displayName.isBlank()) {
@@ -150,7 +170,7 @@ public class ScimGroupService {
         if (!existing.getDisplayName().equals(displayName)
                 && groupRepository.findByDisplayNameAndWorkspaceId(displayName, workspaceId).isPresent()) {
             throw new ScimException(409, "uniqueness",
-                RESOURCE_TYPE_GROUP + " with " + KEY_DISPLAY_NAME + " '" + displayName + "' already exists");
+                    RESOURCE_TYPE_GROUP + " with " + KEY_DISPLAY_NAME + " '" + displayName + "' already exists");
         }
 
         existing.setDisplayName(displayName);
@@ -168,17 +188,32 @@ public class ScimGroupService {
             }
         }
 
-        return groupRepository.save(existing);
+        ScimGroup savedGroup = groupRepository.save(existing);
+        workspaceActivityService.touchWorkspace(workspaceId);
+        Hibernate.initialize(savedGroup.getMembers());
+        return savedGroup;
     }
 
-    public ScimGroup patchGroup(UUID workspaceId, UUID groupId, List<Map<String, Object>> operations) {
+    @Transactional
+    public ScimGroup patchGroup(UUID workspaceId, UUID groupId, List<Map<String, Object>> operations, String ifMatch) {
         ScimGroup group = getGroup(workspaceId, groupId);
+
+        // Validate If-Match ETag for optimistic concurrency control
+        if (ifMatch != null) {
+            String currentETag = "W/\"" + group.getVersion() + "\"";
+            if (!ifMatch.equals(currentETag)) {
+                throw new ScimException(412, null, "Failed to update. Resource changed on the server.");
+            }
+        }
 
         for (Map<String, Object> op : operations) {
             applyPatchOperation(group, workspaceId, op);
         }
 
-        return groupRepository.save(group);
+        ScimGroup savedGroup = groupRepository.save(group);
+        workspaceActivityService.touchWorkspace(workspaceId);
+        Hibernate.initialize(savedGroup.getMembers());
+        return savedGroup;
     }
 
     private void applyPatchOperation(ScimGroup group, UUID workspaceId, Map<String, Object> op) {
@@ -207,7 +242,8 @@ public class ScimGroupService {
     @SuppressWarnings("unchecked")
     private void applyReplaceOperation(ScimGroup group, UUID workspaceId, String path, Object value) {
         if (KEY_MEMBERS.equals(path)) {
-            replaceMembers(group, workspaceId, extractMembersPayload(value, false, "Invalid value for members replace"));
+            replaceMembers(group, workspaceId,
+                    extractMembersPayload(value, false, "Invalid value for members replace"));
             return;
         }
         if (KEY_DISPLAY_NAME.equals(path) && value instanceof String displayName) {
@@ -267,7 +303,8 @@ public class ScimGroupService {
     private void addMissingMembers(ScimGroup group, UUID workspaceId, List<Map<String, Object>> membersToAdd) {
         for (Map<String, Object> member : membersToAdd) {
             String memberValue = toString(member.get(KEY_VALUE));
-            if (memberValue == null || group.getMembers().stream().anyMatch(existing -> memberValueEquals(existing, memberValue))) {
+            if (memberValue == null
+                    || group.getMembers().stream().anyMatch(existing -> memberValueEquals(existing, memberValue))) {
                 continue;
             }
             addMember(group, workspaceId, member);
@@ -324,10 +361,12 @@ public class ScimGroupService {
         return value != null ? value.toString() : null;
     }
 
+    @Transactional
     public void deleteGroup(UUID workspaceId, UUID groupId) {
         ScimGroup group = getGroup(workspaceId, groupId);
         membershipRepository.deleteByMemberValue(groupId);
         groupRepository.delete(group);
+        workspaceActivityService.touchWorkspace(workspaceId);
     }
 
     private void addMember(ScimGroup group, UUID workspaceId, Map<String, Object> memberMap) {

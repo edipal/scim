@@ -28,7 +28,7 @@ public class ScimExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleBadJson(HttpMessageNotReadableException ex) {
-        return buildErrorResponse(400, "invalidSyntax", "Invalid or malformed JSON: " + ex.getMostSpecificCause().getMessage());
+        return buildErrorResponse(400, "invalidSyntax", "Invalid or malformed JSON in request body");
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
