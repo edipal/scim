@@ -156,13 +156,6 @@
             <version>1.37</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- H2 for JMH benchmarks (no Docker needed) -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>

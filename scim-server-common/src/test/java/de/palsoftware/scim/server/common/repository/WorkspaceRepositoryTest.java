@@ -3,7 +3,6 @@ package de.palsoftware.scim.server.common.repository;
 import de.palsoftware.scim.server.common.model.Workspace;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -13,8 +12,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest
-class WorkspaceRepositoryTest {
+@PostgresDataJpaTest
+class WorkspaceRepositoryTest extends PostgresRepositoryTestSupport {
 
     private static final String TEST_NAME = "TestName";
     private static final String USERNAME = "user123";

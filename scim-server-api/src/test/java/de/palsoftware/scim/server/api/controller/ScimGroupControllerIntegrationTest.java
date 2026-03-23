@@ -1,5 +1,6 @@
 package de.palsoftware.scim.server.api.controller;
 
+import de.palsoftware.scim.server.api.PostgresIntegrationTestSupport;
 import de.palsoftware.scim.server.common.model.ScimGroup;
 import de.palsoftware.scim.server.common.model.ScimGroupMembership;
 import de.palsoftware.scim.server.common.model.ScimUser;
@@ -25,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 @TestPropertySource(properties = "ACTUATOR_API_KEY=test-key")
-class ScimGroupControllerIntegrationTest {
+class ScimGroupControllerIntegrationTest extends PostgresIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

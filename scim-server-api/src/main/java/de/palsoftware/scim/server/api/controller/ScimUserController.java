@@ -22,6 +22,8 @@ import java.util.*;
 public class ScimUserController extends ScimBaseController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
+    private static final String CONTENT_LOCATION_HEADER = "Content-Location";
+    private static final String RESOURCE_USER = "User";
 
     private final ScimUserService userService;
 
@@ -49,9 +51,11 @@ public class ScimUserController extends ScimBaseController {
         Map<String, Object> scimResponse = ScimUserMapper.toScimResponse(user, compatBaseUrl, groups);
         scimResponse = applyCompat(scimResponse, compatMode);
 
+        String resourceUrl = buildResourceUrl(compatBaseUrl, user.getId());
         return ResponseEntity.status(201)
                 .contentType(SCIM_JSON)
-                .header("Location", compatBaseUrl + "/Users/" + user.getId())
+                .header("Location", resourceUrl)
+                .header(CONTENT_LOCATION_HEADER, resourceUrl)
                 .header("ETag", "W/\"" + user.getVersion() + "\"")
                 .body(scimResponse);
     }
@@ -65,6 +69,7 @@ public class ScimUserController extends ScimBaseController {
             @PathVariable String userId,
             @RequestParam(required = false) String attributes,
             @RequestParam(required = false) String excludedAttributes,
+            @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch,
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
@@ -74,6 +79,13 @@ public class ScimUserController extends ScimBaseController {
         String compatBaseUrl = buildBaseUrl(request, workspaceId, compat);
 
         ScimUser user = userService.getUser(wsId, uid);
+        String etag = "W/\"" + user.getVersion() + "\"";
+
+        // RFC 7644 §3.4.1: If-None-Match support
+        if (ifNoneMatch != null && (ifNoneMatch.equals(etag) || ifNoneMatch.equals("*"))) {
+            return ResponseEntity.status(304).eTag(etag).build();
+        }
+
         List<Map<String, Object>> groups = userService.getUserGroups(user.getId(), baseUrl);
         CompatMode compatMode = CompatMode.fromString(compat);
         Map<String, Object> scimResponse = ScimUserMapper.toScimResponse(user, compatBaseUrl, groups);
@@ -84,7 +96,8 @@ public class ScimUserController extends ScimBaseController {
 
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
-                .header("ETag", "W/\"" + user.getVersion() + "\"")
+                .header(CONTENT_LOCATION_HEADER, buildResourceUrl(compatBaseUrl, user.getId()))
+                .header("ETag", etag)
                 .body(scimResponse);
     }
 
@@ -164,6 +177,7 @@ public class ScimUserController extends ScimBaseController {
 
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
+                .header(CONTENT_LOCATION_HEADER, buildResourceUrl(compatBaseUrl, user.getId()))
                 .header("ETag", "W/\"" + user.getVersion() + "\"")
                 .body(scimResponse);
     }
@@ -207,8 +221,31 @@ public class ScimUserController extends ScimBaseController {
 
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
+                .header(CONTENT_LOCATION_HEADER, buildResourceUrl(compatBaseUrl, user.getId()))
                 .header("ETag", "W/\"" + user.getVersion() + "\"")
                 .body(scimResponse);
+    }
+
+    /**
+     * POST /Users/.search — Search users via POST (RFC 7644 §3.4.3)
+     */
+    @PostMapping("/.search")
+    public ResponseEntity<Map<String, Object>> searchUsers(
+            @PathVariable String workspaceId,
+            @RequestBody Map<String, Object> body,
+            @PathVariable(name = "compat", required = false) String compat,
+            HttpServletRequest request) {
+
+        String filter = (String) body.get("filter");
+        String sortBy = body.containsKey("sortBy") ? (String) body.get("sortBy") : "userName";
+        String sortOrder = body.containsKey("sortOrder") ? (String) body.get("sortOrder") : "ascending";
+        int startIndex = body.containsKey("startIndex") ? ((Number) body.get("startIndex")).intValue() : 1;
+        int count = body.containsKey("count") ? ((Number) body.get("count")).intValue() : 100;
+        String attributes = (String) body.get("attributes");
+        String excludedAttributes = (String) body.get("excludedAttributes");
+
+        return listUsers(workspaceId, filter, sortBy, sortOrder, startIndex, count,
+                attributes, excludedAttributes, compat, request);
     }
 
     /**
@@ -234,5 +271,9 @@ public class ScimUserController extends ScimBaseController {
             return MsScimUserMapper.toMsCompat(scimResponse);
         }
         return scimResponse;
+    }
+
+    private static String buildResourceUrl(String baseUrl, UUID userId) {
+        return baseUrl + "/" + RESOURCE_USER + "s/" + userId;
     }
 }

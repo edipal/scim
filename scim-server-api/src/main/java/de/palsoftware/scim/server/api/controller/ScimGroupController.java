@@ -19,6 +19,7 @@ import java.util.*;
 public class ScimGroupController extends ScimBaseController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
+    private static final String CONTENT_LOCATION_HEADER = "Content-Location";
     private static final String RESOURCE_GROUP = "Group";
 
     private final ScimGroupService groupService;
@@ -40,9 +41,11 @@ public class ScimGroupController extends ScimBaseController {
         ScimGroup group = groupService.createGroup(wsId, body);
         Map<String, Object> scimResponse = ScimGroupMapper.toScimResponse(group, baseUrl);
 
+        String resourceUrl = buildResourceUrl(baseUrl, group.getId());
         return ResponseEntity.status(201)
                 .contentType(SCIM_JSON)
-                .header("Location", baseUrl + "/Groups/" + group.getId())
+                .header("Location", resourceUrl)
+                .header(CONTENT_LOCATION_HEADER, resourceUrl)
                 .header("ETag", "W/\"" + group.getVersion() + "\"")
                 .body(scimResponse);
     }
@@ -53,6 +56,7 @@ public class ScimGroupController extends ScimBaseController {
             @PathVariable String groupId,
             @RequestParam(required = false) String attributes,
             @RequestParam(required = false) String excludedAttributes,
+            @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch,
             @PathVariable(name = "compat", required = false) String compat,
             HttpServletRequest request) {
 
@@ -61,13 +65,21 @@ public class ScimGroupController extends ScimBaseController {
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
         ScimGroup group = groupService.getGroup(wsId, gid);
+        String etag = "W/\"" + group.getVersion() + "\"";
+
+        // RFC 7644 §3.4.1: If-None-Match support
+        if (ifNoneMatch != null && (ifNoneMatch.equals(etag) || ifNoneMatch.equals("*"))) {
+            return ResponseEntity.status(304).eTag(etag).build();
+        }
+
         Map<String, Object> scimResponse = ScimGroupMapper.toScimResponse(group, baseUrl);
 
         applyAttributeProjection(scimResponse, attributes, excludedAttributes);
 
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
-                .header("ETag", "W/\"" + group.getVersion() + "\"")
+                .header(CONTENT_LOCATION_HEADER, buildResourceUrl(baseUrl, group.getId()))
+                .header("ETag", etag)
                 .body(scimResponse);
     }
 
@@ -128,6 +140,7 @@ public class ScimGroupController extends ScimBaseController {
 
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
+                .header(CONTENT_LOCATION_HEADER, buildResourceUrl(baseUrl, group.getId()))
                 .header("ETag", "W/\"" + group.getVersion() + "\"")
                 .body(scimResponse);
     }
@@ -163,8 +176,31 @@ public class ScimGroupController extends ScimBaseController {
 
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
+                .header(CONTENT_LOCATION_HEADER, buildResourceUrl(baseUrl, group.getId()))
                 .header("ETag", "W/\"" + group.getVersion() + "\"")
                 .body(scimResponse);
+    }
+
+    /**
+     * POST /Groups/.search — Search groups via POST (RFC 7644 §3.4.3)
+     */
+    @PostMapping("/.search")
+    public ResponseEntity<Map<String, Object>> searchGroups(
+            @PathVariable String workspaceId,
+            @RequestBody Map<String, Object> body,
+            @PathVariable(name = "compat", required = false) String compat,
+            HttpServletRequest request) {
+
+        String filter = (String) body.get("filter");
+        String sortBy = body.containsKey("sortBy") ? (String) body.get("sortBy") : "displayName";
+        String sortOrder = body.containsKey("sortOrder") ? (String) body.get("sortOrder") : "ascending";
+        int startIndex = body.containsKey("startIndex") ? ((Number) body.get("startIndex")).intValue() : 1;
+        int count = body.containsKey("count") ? ((Number) body.get("count")).intValue() : 100;
+        String attributes = (String) body.get("attributes");
+        String excludedAttributes = (String) body.get("excludedAttributes");
+
+        return listGroups(workspaceId, filter, sortBy, sortOrder, startIndex, count,
+                attributes, excludedAttributes, compat, request);
     }
 
     @DeleteMapping("/{groupId}")
@@ -178,6 +214,10 @@ public class ScimGroupController extends ScimBaseController {
         groupService.deleteGroup(wsId, gid);
 
         return ResponseEntity.noContent().build();
+    }
+
+    private static String buildResourceUrl(String baseUrl, UUID groupId) {
+        return baseUrl + "/" + RESOURCE_GROUP + "s/" + groupId;
     }
 
 }

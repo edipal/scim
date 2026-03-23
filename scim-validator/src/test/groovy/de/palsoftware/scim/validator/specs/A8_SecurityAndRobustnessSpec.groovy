@@ -38,8 +38,10 @@ class A8_SecurityAndRobustnessSpec extends ScimBaseSpec {
 
         then:
         response.statusCode() == 401
-        // TODO DEVIATION: api.scim.dev returns 401 with a non-SCIM error body
-        // assertScimError(response, 401)
+
+        and: "WWW-Authenticate header MUST be present on 401 (RFC 7235 §3.1)"
+        response.header("WWW-Authenticate") != null
+        response.header("WWW-Authenticate").contains("Bearer")
     }
 
     // ─── SEC_02: Invalid token returns 401 ──────────────────────────────────
@@ -54,8 +56,10 @@ class A8_SecurityAndRobustnessSpec extends ScimBaseSpec {
 
         then:
         response.statusCode() == 401
-        // TODO DEVIATION: api.scim.dev returns 401 with a non-SCIM error body
-        // assertScimError(response, 401)
+
+        and: "WWW-Authenticate header MUST be present on 401 (RFC 7235 §3.1)"
+        response.header("WWW-Authenticate") != null
+        response.header("WWW-Authenticate").contains("Bearer")
     }
 
     // ─── SEC_03: Read-only attributes cannot be modified ────────────────────
@@ -143,5 +147,127 @@ class A8_SecurityAndRobustnessSpec extends ScimBaseSpec {
         and: "password attribute is NOT present in the response (returned=never)"
         def body = response.body().asString()
         !body.contains('"password"')
+    }
+
+    // ─── SEC_08: If-None-Match returns 304 when ETag matches ────────────────
+
+    def "SEC_08: GET with matching If-None-Match returns 304 Not Modified"() {
+        // RFC 7644 §3.14 — ETag / If-None-Match
+        given: "Fetch the user to obtain ETag"
+        Response getResponse = scimRequest()
+            .get("/Users/${testUserId}")
+        assert getResponse.statusCode() == 200
+        String etag = getResponse.header("ETag")
+        assert etag != null : "ETag header must be present"
+
+        when: "GET with matching If-None-Match"
+        Response response = scimRequest()
+            .header("If-None-Match", etag)
+            .get("/Users/${testUserId}")
+
+        then: "Server should return 304 Not Modified"
+        response.statusCode() == 304
+    }
+
+    // ─── SEC_09: If-None-Match wildcard returns 304 ─────────────────────────
+
+    def "SEC_09: GET with If-None-Match wildcard returns 304"() {
+        // RFC 7232 §3.2 — If-None-Match: * means any version matches
+        when:
+        Response response = scimRequest()
+            .header("If-None-Match", "*")
+            .get("/Users/${testUserId}")
+
+        then:
+        response.statusCode() == 304
+    }
+
+    // ─── SEC_10: If-None-Match mismatch returns 200 ─────────────────────────
+
+    def "SEC_10: GET with non-matching If-None-Match returns 200"() {
+        // RFC 7232 §3.2 — Non-matching ETag should return full response
+        when:
+        Response response = scimRequest()
+            .header("If-None-Match", "W/\"99999\"")
+            .get("/Users/${testUserId}")
+
+        then:
+        response.statusCode() == 200
+        response.jsonPath().getString("id") == testUserId
+    }
+
+    // ─── SEC_11: Content-Location header on GET ─────────────────────────────
+
+    def "SEC_11: GET single resource includes Content-Location header"() {
+        // RFC 7644 §3.1 — Responses for individual resources MUST include Content-Location
+        when:
+        Response response = scimRequest()
+            .get("/Users/${testUserId}")
+
+        then:
+        response.statusCode() == 200
+        String contentLocation = response.header("Content-Location")
+        contentLocation != null
+        contentLocation.contains("/Users/${testUserId}")
+    }
+
+    // ─── SEC_12: Content-Location header on POST ────────────────────────────
+
+    def "SEC_12: POST new resource response includes Content-Location header"() {
+        // RFC 7644 §3.1 — Content-Location on resource responses
+        when:
+        Response response = createUser()
+
+        then:
+        response.statusCode() == 201
+        String contentLocation = response.header("Content-Location")
+        String id = response.jsonPath().getString("id")
+        contentLocation != null
+        contentLocation.contains("/Users/${id}")
+    }
+
+    // ─── SEC_13: Content-Location header on PUT ─────────────────────────────
+
+    def "SEC_13: PUT replace resource response includes Content-Location header"() {
+        // RFC 7644 §3.5.1 — Replacing with PUT
+        given: "Retrieve the existing user"
+        Response existing = scimRequest()
+            .get("/Users/${testUserId}")
+        assert existing.statusCode() == 200
+        String etag = existing.header("ETag")
+        Map userBody = existing.jsonPath().getMap("")
+
+        when: "PUT the user back"
+        def reqSpec = scimRequest()
+            .body(JsonOutput.toJson(userBody))
+        if (etag) reqSpec = reqSpec.header("If-Match", etag)
+        Response response = reqSpec.put("/Users/${testUserId}")
+
+        then:
+        response.statusCode() == 200
+        String contentLocation = response.header("Content-Location")
+        contentLocation != null
+        contentLocation.contains("/Users/${testUserId}")
+    }
+
+    // ─── SEC_14: Content-Location header on PATCH ───────────────────────────
+
+    def "SEC_14: PATCH resource response includes Content-Location header"() {
+        // RFC 7644 §3.5.2 — Modifying with PATCH
+        given:
+        Map patchPayload = buildPatchOp([
+            [op: "replace", path: "displayName", value: "SEC14-Patched"]
+        ])
+
+        when:
+        Response response = scimRequest()
+            .body(JsonOutput.toJson(patchPayload))
+            .patch("/Users/${testUserId}")
+
+        then:
+        response.statusCode() == 200
+        String contentLocation = response.header("Content-Location")
+        contentLocation != null
+        contentLocation.contains("/Users/${testUserId}")
     }
 }

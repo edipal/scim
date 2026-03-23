@@ -39,6 +39,12 @@ abstract class ScimBaseController {
 
         String scheme = forwardedProto != null ? sanitizeHeaderValue(forwardedProto.split(",")[0].trim()) : request.getScheme();
         String host = forwardedHost != null ? sanitizeHeaderValue(forwardedHost.split(",")[0].trim()) : request.getServerName();
+        if (host == null || host.isBlank()) {
+            host = request.getServerName();
+        }
+        if (host == null || host.isBlank()) {
+            host = "localhost";
+        }
 
         int port = request.getServerPort();
         if (forwardedPort != null) {
@@ -49,12 +55,16 @@ abstract class ScimBaseController {
             }
         }
 
-        String portStr = (port == 80 || port == 443 || host.contains(":")) ? "" : ":" + port;
+        String portStr = shouldAppendPort(port, host) ? ":" + port : "";
         String base = scheme + "://" + host + portStr + "/ws/" + workspaceId + "/scim/v2";
         if (compat != null && !compat.isBlank()) {
             return base + "/" + compat;
         }
         return base;
+    }
+
+    private static boolean shouldAppendPort(int port, String host) {
+        return port != 80 && port != 443 && !host.contains(":");
     }
 
     private static String sanitizeHeaderValue(String value) {
@@ -71,6 +81,9 @@ abstract class ScimBaseController {
 
     protected static void applyAttributeProjection(Map<String, Object> resource,
                                                     String attributes, String excludedAttributes) {
+        // Defense-in-depth: never return password (returned="never" per RFC 7643 §7)
+        resource.remove("password");
+
         if (attributes != null && !attributes.isBlank()) {
             Set<String> requested = parseAttrList(attributes);
             requested.add(KEY_SCHEMAS);
@@ -90,9 +103,39 @@ abstract class ScimBaseController {
         for (String attr : attrList.split(",")) {
             String trimmed = attr.trim();
             if (!trimmed.isEmpty()) {
-                result.add(trimmed);
+                result.add(resolveUrnPrefixedAttribute(trimmed));
             }
         }
         return result;
+    }
+
+    /**
+     * Resolves URN-prefixed attribute names to their top-level map keys.
+     * For example:
+     * - "urn:ietf:params:scim:schemas:core:2.0:User:userName" → "userName"
+     * - "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber" → "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+     *   (the entire enterprise extension is a top-level key; sub-attribute requests return the whole extension)
+     * - "userName" → "userName" (no transformation)
+     */
+    private static String resolveUrnPrefixedAttribute(String attr) {
+        if (!attr.startsWith("urn:")) {
+            return attr;
+        }
+        // Enterprise extension URN — the extension itself is a top-level key
+        String enterpriseUrn = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+        if (attr.startsWith(enterpriseUrn)) {
+            return enterpriseUrn;
+        }
+        // Core schema URN prefix: "urn:ietf:params:scim:schemas:core:2.0:User:" or "...Group:"
+        String userCorePrefix = "urn:ietf:params:scim:schemas:core:2.0:User:";
+        if (attr.startsWith(userCorePrefix)) {
+            return attr.substring(userCorePrefix.length());
+        }
+        String groupCorePrefix = "urn:ietf:params:scim:schemas:core:2.0:Group:";
+        if (attr.startsWith(groupCorePrefix)) {
+            return attr.substring(groupCorePrefix.length());
+        }
+        // Unknown URN — return as-is
+        return attr;
     }
 }

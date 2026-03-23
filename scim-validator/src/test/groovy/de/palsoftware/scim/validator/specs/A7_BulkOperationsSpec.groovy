@@ -169,4 +169,90 @@ class A7_BulkOperationsSpec extends ScimBaseSpec {
         then: "Server should return 413 (PayloadTooLarge) or 400"
         response.statusCode() in [413, 400]
     }
+
+    // ─── BLK_04: failOnErrors stops processing after N errors ───────────────
+
+    def "BLK_04: Bulk with failOnErrors stops after specified error count"() {
+        // RFC 7644 §3.7 — failOnErrors: processing stops when error count >= failOnErrors
+        given: "Build a bulk request with 3 invalid DELETEs and failOnErrors=1"
+        Map bulkPayload = [
+            schemas     : [BULK_REQUEST_SCHEMA],
+            failOnErrors: 1,
+            Operations  : [
+                [method: "DELETE", path: "/Users/nonexistent-id-1"],
+                [method: "DELETE", path: "/Users/nonexistent-id-2"],
+                [method: "DELETE", path: "/Users/nonexistent-id-3"]
+            ]
+        ]
+
+        when:
+        Response response = scimRequest()
+            .body(JsonOutput.toJson(bulkPayload))
+            .post("/Bulk")
+
+        then: "Server returns 200 with operations, but stops after first error"
+        response.statusCode() == 200
+        def operations = response.jsonPath().getList("Operations")
+        // Only 1 operation should be processed since failOnErrors=1
+        operations.size() == 1
+    }
+
+    // ─── BLK_05: Missing BulkRequest schema returns 400 ────────────────────
+
+    def "BLK_05: Bulk request without proper schema returns 400"() {
+        // RFC 7644 §3.7 — BulkRequest MUST include the BulkRequest schema URI
+        given: "Build a bulk request with missing schemas"
+        Map bulkPayload = [
+            Operations: [
+                [
+                    method: "POST",
+                    path  : "/Users",
+                    bulkId: "noschem_1",
+                    data  : [
+                        schemas : [USER_SCHEMA],
+                        userName: "noschem_${UUID.randomUUID().toString().substring(0,6)}@test.com",
+                        emails  : [[value: "noschem@test.com", type: "work", primary: true]]
+                    ]
+                ]
+            ]
+        ]
+
+        when:
+        Response response = scimRequest()
+            .body(JsonOutput.toJson(bulkPayload))
+            .post("/Bulk")
+
+        then: "Server should return 400 Bad Request"
+        response.statusCode() == 400
+    }
+
+    // ─── BLK_06: Wrong schema in BulkRequest returns 400 ───────────────────
+
+    def "BLK_06: Bulk request with wrong schema returns 400"() {
+        // RFC 7644 §3.7 — BulkRequest requires urn:ietf:params:scim:api:messages:2.0:BulkRequest
+        given: "Build a bulk request with wrong schema"
+        Map bulkPayload = [
+            schemas   : [USER_SCHEMA],
+            Operations: [
+                [
+                    method: "POST",
+                    path  : "/Users",
+                    bulkId: "wrongschem_1",
+                    data  : [
+                        schemas : [USER_SCHEMA],
+                        userName: "wrongschem_${UUID.randomUUID().toString().substring(0,6)}@test.com",
+                        emails  : [[value: "wrongschem@test.com", type: "work", primary: true]]
+                    ]
+                ]
+            ]
+        ]
+
+        when:
+        Response response = scimRequest()
+            .body(JsonOutput.toJson(bulkPayload))
+            .post("/Bulk")
+
+        then: "Server should return 400 Bad Request"
+        response.statusCode() == 400
+    }
 }

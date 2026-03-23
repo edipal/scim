@@ -4,6 +4,10 @@
 >
 > The entire codebase in this repository was written by AI (GitHub Copilot).
 > This includes all Java source code, configuration files, Dockerfiles,
+
+# Full reactor test run (uses PostgreSQL via Testcontainers; Docker must be available)
+mvn clean test
+
 > tests, and documentation. Human involvement was limited to design guidance,
 > review, and acceptance.
 

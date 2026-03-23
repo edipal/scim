@@ -8,6 +8,7 @@ import de.palsoftware.scim.server.common.model.Workspace;
 import de.palsoftware.scim.server.common.repository.ScimGroupRepository;
 import de.palsoftware.scim.server.common.repository.ScimUserRepository;
 import de.palsoftware.scim.server.common.repository.WorkspaceRepository;
+import de.palsoftware.scim.server.mgmt.PostgresIntegrationTestSupport;
 import de.palsoftware.scim.server.mgmt.model.MgmtUser;
 import de.palsoftware.scim.server.mgmt.repository.MgmtUserRepository;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "AZURE_SCOPES=openid",
     "AZURE_TENANT_ID=common"
 })
-class LazyLoadingIntegrationTest {
+class LazyLoadingIntegrationTest extends PostgresIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
