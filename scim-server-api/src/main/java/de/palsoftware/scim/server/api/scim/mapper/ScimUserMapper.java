@@ -330,7 +330,6 @@ public class ScimUserMapper {
 
     public static ScimUserEmail buildEmail(ScimUser user, Map<String, Object> item) {
         ScimUserEmail email = new ScimUserEmail();
-        email.setUser(user);
         email.setValue((String) item.get(KEY_VALUE));
         email.setType(normalizeCanonical((String) item.get(KEY_TYPE), EMAIL_TYPES, "emails.type"));
         email.setDisplay((String) item.get(KEY_DISPLAY));
@@ -340,7 +339,6 @@ public class ScimUserMapper {
 
     public static ScimUserPhoneNumber buildPhone(ScimUser user, Map<String, Object> item) {
         ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
-        phone.setUser(user);
         phone.setValue((String) item.get(KEY_VALUE));
         phone.setType(normalizeCanonical((String) item.get(KEY_TYPE), PHONE_TYPES, "phoneNumbers.type"));
         phone.setDisplay((String) item.get(KEY_DISPLAY));
@@ -350,7 +348,6 @@ public class ScimUserMapper {
 
     public static ScimUserAddress buildAddress(ScimUser user, Map<String, Object> item) {
         ScimUserAddress address = new ScimUserAddress();
-        address.setUser(user);
         address.setFormatted((String) item.get(KEY_FORMATTED));
         address.setStreetAddress((String) item.get("streetAddress"));
         address.setLocality((String) item.get("locality"));
@@ -364,7 +361,6 @@ public class ScimUserMapper {
 
     public static ScimUserIm buildIm(ScimUser user, Map<String, Object> item) {
         ScimUserIm im = new ScimUserIm();
-        im.setUser(user);
         im.setValue((String) item.get(KEY_VALUE));
         im.setType(normalizeCanonical((String) item.get(KEY_TYPE), IM_TYPES, "ims.type"));
         im.setDisplay((String) item.get(KEY_DISPLAY));
@@ -374,7 +370,6 @@ public class ScimUserMapper {
 
     public static ScimUserPhoto buildPhoto(ScimUser user, Map<String, Object> item) {
         ScimUserPhoto photo = new ScimUserPhoto();
-        photo.setUser(user);
         photo.setValue((String) item.get(KEY_VALUE));
         photo.setType(normalizeCanonical((String) item.get(KEY_TYPE), PHOTO_TYPES, "photos.type"));
         photo.setDisplay((String) item.get(KEY_DISPLAY));
@@ -384,7 +379,6 @@ public class ScimUserMapper {
 
     public static ScimUserEntitlement buildEntitlement(ScimUser user, Map<String, Object> item) {
         ScimUserEntitlement entitlement = new ScimUserEntitlement();
-        entitlement.setUser(user);
         entitlement.setValue((String) item.get(KEY_VALUE));
         entitlement.setType((String) item.get(KEY_TYPE));
         entitlement.setDisplay((String) item.get(KEY_DISPLAY));
@@ -394,7 +388,6 @@ public class ScimUserMapper {
 
     public static ScimUserRole buildRole(ScimUser user, Map<String, Object> item) {
         ScimUserRole role = new ScimUserRole();
-        role.setUser(user);
         role.setValue((String) item.get(KEY_VALUE));
         role.setType((String) item.get(KEY_TYPE));
         role.setDisplay((String) item.get(KEY_DISPLAY));
@@ -404,7 +397,6 @@ public class ScimUserMapper {
 
     public static ScimUserX509Certificate buildCertificate(ScimUser user, Map<String, Object> item) {
         ScimUserX509Certificate certificate = new ScimUserX509Certificate();
-        certificate.setUser(user);
         certificate.setValue((String) item.get(KEY_VALUE));
         certificate.setType((String) item.get(KEY_TYPE));
         certificate.setDisplay((String) item.get(KEY_DISPLAY));

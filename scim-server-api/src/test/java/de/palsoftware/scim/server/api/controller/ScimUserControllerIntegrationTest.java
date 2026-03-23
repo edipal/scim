@@ -49,7 +49,6 @@ class ScimUserControllerIntegrationTest {
         user.setExternalId("ext1");
 
         ScimUserEmail email = new ScimUserEmail();
-        email.setUser(user);
         email.setValue("test@example.com");
         email.setType("work");
         user.getEmails().add(email);

@@ -294,7 +294,6 @@ public class ScimAdminService {
         user.getEmails().clear();
         for (UserUpsertRequest.MultiValue mv : emails) {
             ScimUserEmail email = new ScimUserEmail();
-            email.setUser(user);
             email.setValue(normalizeOptional(mv.value()));
             email.setType(normalizeOptional(mv.type()));
             email.setDisplay(normalizeOptional(mv.display()));
@@ -307,7 +306,6 @@ public class ScimAdminService {
         user.getPhoneNumbers().clear();
         for (UserUpsertRequest.MultiValue mv : phones) {
             ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
-            phone.setUser(user);
             phone.setValue(normalizeOptional(mv.value()));
             phone.setType(normalizeOptional(mv.type()));
             phone.setDisplay(normalizeOptional(mv.display()));
@@ -320,7 +318,6 @@ public class ScimAdminService {
         user.getAddresses().clear();
         for (UserUpsertRequest.Address addr : addresses) {
             ScimUserAddress address = new ScimUserAddress();
-            address.setUser(user);
             address.setFormatted(normalizeOptional(addr.formatted()));
             address.setStreetAddress(normalizeOptional(addr.streetAddress()));
             address.setLocality(normalizeOptional(addr.locality()));
@@ -337,7 +334,6 @@ public class ScimAdminService {
         user.getEntitlements().clear();
         for (UserUpsertRequest.MultiValue mv : entitlements) {
             ScimUserEntitlement entitlement = new ScimUserEntitlement();
-            entitlement.setUser(user);
             entitlement.setValue(normalizeOptional(mv.value()));
             entitlement.setType(normalizeOptional(mv.type()));
             entitlement.setDisplay(normalizeOptional(mv.display()));
@@ -350,7 +346,6 @@ public class ScimAdminService {
         user.getRoles().clear();
         for (UserUpsertRequest.MultiValue mv : roles) {
             ScimUserRole role = new ScimUserRole();
-            role.setUser(user);
             role.setValue(normalizeOptional(mv.value()));
             role.setType(normalizeOptional(mv.type()));
             role.setDisplay(normalizeOptional(mv.display()));
@@ -363,7 +358,6 @@ public class ScimAdminService {
         user.getIms().clear();
         for (UserUpsertRequest.MultiValue mv : ims) {
             ScimUserIm im = new ScimUserIm();
-            im.setUser(user);
             im.setValue(normalizeOptional(mv.value()));
             im.setType(normalizeOptional(mv.type()));
             im.setDisplay(normalizeOptional(mv.display()));
@@ -376,7 +370,6 @@ public class ScimAdminService {
         user.getPhotos().clear();
         for (UserUpsertRequest.MultiValue mv : photos) {
             ScimUserPhoto photo = new ScimUserPhoto();
-            photo.setUser(user);
             photo.setValue(normalizeOptional(mv.value()));
             photo.setType(normalizeOptional(mv.type()));
             photo.setDisplay(normalizeOptional(mv.display()));
@@ -389,7 +382,6 @@ public class ScimAdminService {
         user.getX509Certificates().clear();
         for (UserUpsertRequest.MultiValue mv : certs) {
             ScimUserX509Certificate cert = new ScimUserX509Certificate();
-            cert.setUser(user);
             cert.setValue(normalizeOptional(mv.value()));
             cert.setType(normalizeOptional(mv.type()));
             cert.setDisplay(normalizeOptional(mv.display()));
@@ -448,14 +440,6 @@ public class ScimAdminService {
 
     private void initializeLazyUserCollections(ScimUser user) {
         if (user != null) {
-            Hibernate.initialize(user.getEmails());
-            Hibernate.initialize(user.getPhoneNumbers());
-            Hibernate.initialize(user.getAddresses());
-            Hibernate.initialize(user.getEntitlements());
-            Hibernate.initialize(user.getRoles());
-            Hibernate.initialize(user.getIms());
-            Hibernate.initialize(user.getPhotos());
-            Hibernate.initialize(user.getX509Certificates());
         }
     }
 

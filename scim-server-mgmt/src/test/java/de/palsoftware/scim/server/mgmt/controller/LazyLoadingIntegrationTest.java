@@ -80,7 +80,6 @@ class LazyLoadingIntegrationTest {
         user.setExternalId("ext-user-1");
 
         ScimUserEmail email = new ScimUserEmail();
-        email.setUser(user);
         email.setValue("lazy@example.com");
         email.setType("work");
         user.getEmails().add(email);

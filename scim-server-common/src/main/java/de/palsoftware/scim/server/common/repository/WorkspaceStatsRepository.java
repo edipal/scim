@@ -19,22 +19,22 @@ public class WorkspaceStatsRepository {
                     (SELECT COUNT(*) FROM workspace_tokens) AS total_tokens,
                     (SELECT COUNT(*) FROM scim_request_logs l WHERE l.workspace_id = :workspaceId) AS workspace_logs,
                     (SELECT COUNT(*) FROM scim_request_logs) AS total_logs,
-                    (SELECT COUNT(*) FROM scim_user_emails e WHERE e.workspace_id = :workspaceId) AS workspace_emails,
-                    (SELECT COUNT(*) FROM scim_user_emails) AS total_emails,
-                    (SELECT COUNT(*) FROM scim_user_phone_numbers p WHERE p.workspace_id = :workspaceId) AS workspace_phone_numbers,
-                    (SELECT COUNT(*) FROM scim_user_phone_numbers) AS total_phone_numbers,
-                    (SELECT COUNT(*) FROM scim_user_addresses a WHERE a.workspace_id = :workspaceId) AS workspace_addresses,
-                    (SELECT COUNT(*) FROM scim_user_addresses) AS total_addresses,
-                    (SELECT COUNT(*) FROM scim_user_entitlements e WHERE e.workspace_id = :workspaceId) AS workspace_entitlements,
-                    (SELECT COUNT(*) FROM scim_user_entitlements) AS total_entitlements,
-                    (SELECT COUNT(*) FROM scim_user_roles r WHERE r.workspace_id = :workspaceId) AS workspace_roles,
-                    (SELECT COUNT(*) FROM scim_user_roles) AS total_roles,
-                    (SELECT COUNT(*) FROM scim_user_ims i WHERE i.workspace_id = :workspaceId) AS workspace_ims,
-                    (SELECT COUNT(*) FROM scim_user_ims) AS total_ims,
-                    (SELECT COUNT(*) FROM scim_user_photos p WHERE p.workspace_id = :workspaceId) AS workspace_photos,
-                    (SELECT COUNT(*) FROM scim_user_photos) AS total_photos,
-                    (SELECT COUNT(*) FROM scim_user_x509_certificates c WHERE c.workspace_id = :workspaceId) AS workspace_x509_certificates,
-                    (SELECT COUNT(*) FROM scim_user_x509_certificates) AS total_x509_certificates,
+                    (SELECT COALESCE(SUM(json_array_length(emails)), 0) FROM scim_users u WHERE u.workspace_id = :workspaceId) AS workspace_emails,
+                    (SELECT COALESCE(SUM(json_array_length(emails)), 0) FROM scim_users) AS total_emails,
+                    (SELECT COALESCE(SUM(json_array_length(phone_numbers)), 0) FROM scim_users u WHERE u.workspace_id = :workspaceId) AS workspace_phone_numbers,
+                    (SELECT COALESCE(SUM(json_array_length(phone_numbers)), 0) FROM scim_users) AS total_phone_numbers,
+                    (SELECT COALESCE(SUM(json_array_length(addresses)), 0) FROM scim_users u WHERE u.workspace_id = :workspaceId) AS workspace_addresses,
+                    (SELECT COALESCE(SUM(json_array_length(addresses)), 0) FROM scim_users) AS total_addresses,
+                    (SELECT COALESCE(SUM(json_array_length(entitlements)), 0) FROM scim_users u WHERE u.workspace_id = :workspaceId) AS workspace_entitlements,
+                    (SELECT COALESCE(SUM(json_array_length(entitlements)), 0) FROM scim_users) AS total_entitlements,
+                    (SELECT COALESCE(SUM(json_array_length(roles)), 0) FROM scim_users u WHERE u.workspace_id = :workspaceId) AS workspace_roles,
+                    (SELECT COALESCE(SUM(json_array_length(roles)), 0) FROM scim_users) AS total_roles,
+                    (SELECT COALESCE(SUM(json_array_length(ims)), 0) FROM scim_users u WHERE u.workspace_id = :workspaceId) AS workspace_ims,
+                    (SELECT COALESCE(SUM(json_array_length(ims)), 0) FROM scim_users) AS total_ims,
+                    (SELECT COALESCE(SUM(json_array_length(photos)), 0) FROM scim_users u WHERE u.workspace_id = :workspaceId) AS workspace_photos,
+                    (SELECT COALESCE(SUM(json_array_length(photos)), 0) FROM scim_users) AS total_photos,
+                    (SELECT COALESCE(SUM(json_array_length(x509_certificates)), 0) FROM scim_users u WHERE u.workspace_id = :workspaceId) AS workspace_x509_certificates,
+                    (SELECT COALESCE(SUM(json_array_length(x509_certificates)), 0) FROM scim_users) AS total_x509_certificates,
                     (SELECT COUNT(*) FROM scim_group_memberships m WHERE m.workspace_id = :workspaceId) AS workspace_group_memberships,
                     (SELECT COUNT(*) FROM scim_group_memberships) AS total_group_memberships
             )
@@ -57,14 +57,6 @@ public class WorkspaceStatsRepository {
                     + COALESCE(pg_total_relation_size('scim_groups'::regclass)::numeric * workspace_groups / NULLIF(total_groups, 0), 0)
                     + COALESCE(pg_total_relation_size('workspace_tokens'::regclass)::numeric * workspace_tokens / NULLIF(total_tokens, 0), 0)
                     + COALESCE(pg_total_relation_size('scim_request_logs'::regclass)::numeric * workspace_logs / NULLIF(total_logs, 0), 0)
-                    + COALESCE(pg_total_relation_size('scim_user_emails'::regclass)::numeric * workspace_emails / NULLIF(total_emails, 0), 0)
-                    + COALESCE(pg_total_relation_size('scim_user_phone_numbers'::regclass)::numeric * workspace_phone_numbers / NULLIF(total_phone_numbers, 0), 0)
-                    + COALESCE(pg_total_relation_size('scim_user_addresses'::regclass)::numeric * workspace_addresses / NULLIF(total_addresses, 0), 0)
-                    + COALESCE(pg_total_relation_size('scim_user_entitlements'::regclass)::numeric * workspace_entitlements / NULLIF(total_entitlements, 0), 0)
-                    + COALESCE(pg_total_relation_size('scim_user_roles'::regclass)::numeric * workspace_roles / NULLIF(total_roles, 0), 0)
-                    + COALESCE(pg_total_relation_size('scim_user_ims'::regclass)::numeric * workspace_ims / NULLIF(total_ims, 0), 0)
-                    + COALESCE(pg_total_relation_size('scim_user_photos'::regclass)::numeric * workspace_photos / NULLIF(total_photos, 0), 0)
-                    + COALESCE(pg_total_relation_size('scim_user_x509_certificates'::regclass)::numeric * workspace_x509_certificates / NULLIF(total_x509_certificates, 0), 0)
                     + COALESCE(pg_total_relation_size('scim_group_memberships'::regclass)::numeric * workspace_group_memberships / NULLIF(total_group_memberships, 0), 0)
                 )::bigint
             FROM counts
