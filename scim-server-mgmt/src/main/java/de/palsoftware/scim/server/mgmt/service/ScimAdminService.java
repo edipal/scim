@@ -52,11 +52,9 @@ public class ScimAdminService {
 
     public List<ScimUser> listUsers(UUID workspaceId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
-        List<ScimUser> users = userRepository.findByWorkspaceId(workspaceId).stream()
-                .sorted(Comparator.comparing(u -> safeLower(u.getUserName())))
-                .toList();
-        users.forEach(this::initializeLazyUserCollections);
-        return users;
+        return userRepository.findByWorkspaceId(workspaceId).stream()
+            .sorted(Comparator.comparing(u -> safeLower(u.getUserName())))
+            .toList();
     }
 
     public Page<ScimUser> listUsersPage(UUID workspaceId, String query, Pageable pageable, String actorUsername, boolean admin) {
@@ -67,7 +65,6 @@ public class ScimAdminService {
         } else {
             page = userRepository.findByWorkspaceIdAndUserNameContainingIgnoreCase(workspaceId, query, pageable);
         }
-        page.forEach(this::initializeLazyUserCollections);
         return page;
     }
 
@@ -86,9 +83,7 @@ public class ScimAdminService {
         user.setUserName(userName);
         applyUserFields(user, request, true);
 
-        ScimUser saved = userRepository.save(user);
-        initializeLazyUserCollections(saved);
-        return saved;
+        return userRepository.save(user);
     }
 
     @Transactional
@@ -107,9 +102,7 @@ public class ScimAdminService {
 
         applyUserFields(user, request, false);
 
-        ScimUser saved = userRepository.save(user);
-        initializeLazyUserCollections(saved);
-        return saved;
+        return userRepository.save(user);
     }
 
     @Transactional
@@ -222,10 +215,8 @@ public class ScimAdminService {
 
     private ScimUser getUser(UUID workspaceId, UUID userId, String actorUsername, boolean admin) {
         ensureWorkspaceAccess(workspaceId, actorUsername, admin);
-        ScimUser user = userRepository.findByIdAndWorkspaceId(userId, workspaceId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        initializeLazyUserCollections(user);
-        return user;
+        return userRepository.findByIdAndWorkspaceId(userId, workspaceId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
     private ScimGroup getGroup(UUID workspaceId, UUID groupId, String actorUsername, boolean admin) {
@@ -438,10 +429,7 @@ public class ScimAdminService {
         return value == null ? "" : value.toLowerCase();
     }
 
-    private void initializeLazyUserCollections(ScimUser user) {
-        if (user != null) {
-        }
-    }
+    
 
     private void initializeLazyGroupCollections(ScimGroup group) {
         if (group != null) {
