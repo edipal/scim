@@ -1,6 +1,7 @@
 package de.palsoftware.scim.validator.specs
 
 import de.palsoftware.scim.validator.base.ScimBaseSpec
+import de.palsoftware.scim.validator.base.ScimOutput
 import groovy.json.JsonOutput
 import io.restassured.response.Response
 import spock.lang.Shared
@@ -152,7 +153,7 @@ class A3_UserCrudSpec extends ScimBaseSpec {
         // RFC-correct: emails == null || emails.isEmpty()
         // Relaxed: document if emails still present
         if (emails != null && !emails.isEmpty()) {
-            println "DEVIATION: api.scim.dev merges PUT instead of replacing (emails still present after omission)"
+            ScimOutput.println "DEVIATION: api.scim.dev merges PUT instead of replacing (emails still present after omission)"
         }
     }
 

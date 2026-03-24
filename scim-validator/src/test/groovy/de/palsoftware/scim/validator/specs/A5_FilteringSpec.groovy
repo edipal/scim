@@ -1,6 +1,7 @@
 package de.palsoftware.scim.validator.specs
 
 import de.palsoftware.scim.validator.base.A5_BaseSpec
+import de.palsoftware.scim.validator.base.ScimOutput
 import io.restassured.response.Response
 import groovy.json.JsonOutput
 
@@ -218,7 +219,7 @@ class A5_FilteringSpec extends A5_BaseSpec {
         boolean hasExternalId = body?.containsKey("externalId")
 
         if (hasName || hasEmails || hasExternalId) {
-            println "DEVIATION: api.scim.dev returns default attributes even when attributes=userName is specified"
+            ScimOutput.println "DEVIATION: api.scim.dev returns default attributes even when attributes=userName is specified"
         }
     }
 
@@ -242,7 +243,7 @@ class A5_FilteringSpec extends A5_BaseSpec {
 
         boolean emailsPresent = resources.any { Map r -> r.containsKey("emails") }
         if (emailsPresent) {
-            println "DEVIATION: api.scim.dev does not honor excludedAttributes=emails on list responses"
+            ScimOutput.println "DEVIATION: api.scim.dev does not honor excludedAttributes=emails on list responses"
         }
     }
 

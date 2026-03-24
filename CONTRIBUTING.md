@@ -92,15 +92,46 @@ SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
 
 ### Validator CLI execution
 
-The validator specs are skipped by default during regular builds. To execute
-them explicitly:
+The validator CLI now boots a disposable PostgreSQL instance and the published
+`edipal/scim-server-api:latest` image through Testcontainers when `SCIM_*`
+variables are not provided.
+
+Default validator run:
+
+```bash
+cd scim-validator
+mvn test
+```
+
+To point the validator at an existing SCIM target instead:
+
+```bash
+cd scim-validator
+mvn test \
+  -Dscim.testcontainers.enabled=false \
+  -Dscim.baseUrl=http://localhost:8080/ws/<workspace-id-or-name>/scim/v2 \
+  -Dscim.authToken=<workspace-token>
+```
+
+Alternative CLI model:
+
+```bash
+cd scim-validator
+mvn test \
+  -Dscim.testcontainers.enabled=false \
+  -Dscim.apiUrl=http://localhost:8080 \
+  -Dscim.workspaceId=<workspace-id-or-name> \
+  -Dscim.authToken=<workspace-token>
+```
+
+Environment variables are still supported:
 
 ```bash
 export SCIM_BASE_URL=http://localhost:8080/ws/<workspace-id-or-name>/scim/v2
 export SCIM_AUTH_TOKEN=<workspace-token>
 
 cd scim-validator
-mvn test -Pvalidator-tests
+mvn test
 ```
 
 ## Project Conventions
@@ -159,7 +190,7 @@ Run the validator explicitly:
 
 ```bash
 cd scim-validator
-mvn test -Pvalidator-tests
+mvn test
 ```
 
 If your change affects:

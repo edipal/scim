@@ -1,6 +1,7 @@
 package de.palsoftware.scim.validator.specs
 
 import de.palsoftware.scim.validator.base.ScimBaseSpec
+import de.palsoftware.scim.validator.base.ScimOutput
 import spock.lang.Stepwise
 
 /**
@@ -51,14 +52,14 @@ class A1_ServiceDiscoverySpec extends ScimBaseSpec {
         response.jsonPath().get("sort") != null
 
         and: "Log discovered capabilities"
-        println "=== SCIM Server Capabilities ==="
-        println "patch.supported    = ${response.jsonPath().getBoolean('patch.supported')}"
-        println "bulk.supported     = ${response.jsonPath().getBoolean('bulk.supported')}"
-        println "bulk.maxOperations = ${response.jsonPath().get('bulk.maxOperations')}"
-        println "filter.maxResults  = ${response.jsonPath().get('filter.maxResults')}"
-        println "etag.supported     = ${response.jsonPath().getBoolean('etag.supported')}"
-        println "sort.supported     = ${response.jsonPath().getBoolean('sort.supported')}"
-        println "================================"
+        ScimOutput.println "=== SCIM Server Capabilities ==="
+        ScimOutput.println "patch.supported    = ${response.jsonPath().getBoolean('patch.supported')}"
+        ScimOutput.println "bulk.supported     = ${response.jsonPath().getBoolean('bulk.supported')}"
+        ScimOutput.println "bulk.maxOperations = ${response.jsonPath().get('bulk.maxOperations')}"
+        ScimOutput.println "filter.maxResults  = ${response.jsonPath().get('filter.maxResults')}"
+        ScimOutput.println "etag.supported     = ${response.jsonPath().getBoolean('etag.supported')}"
+        ScimOutput.println "sort.supported     = ${response.jsonPath().getBoolean('sort.supported')}"
+        ScimOutput.println "================================"
     }
 
     // ─── ResourceTypes ──────────────────────────────────────────────────────
@@ -176,9 +177,9 @@ class A1_ServiceDiscoverySpec extends ScimBaseSpec {
         def hasRT = schemaNames.any { it.toLowerCase().contains("resourcetype") || it.toLowerCase().contains("resource type") }
         def hasSchema = schemaNames.any { it.toLowerCase() == "schema" }
 
-        if (!hasSPC) println "DEVIATION: /Schemas missing ServiceProviderConfig schema definition (RFC 7643 §5)"
-        if (!hasRT) println "DEVIATION: /Schemas missing ResourceType schema definition (RFC 7643 §6)"
-        if (!hasSchema) println "DEVIATION: /Schemas missing Schema schema definition (RFC 7643 §7)"
+        if (!hasSPC) ScimOutput.println "DEVIATION: /Schemas missing ServiceProviderConfig schema definition (RFC 7643 §5)"
+        if (!hasRT) ScimOutput.println "DEVIATION: /Schemas missing ResourceType schema definition (RFC 7643 §6)"
+        if (!hasSchema) ScimOutput.println "DEVIATION: /Schemas missing Schema schema definition (RFC 7643 §7)"
 
         // Relaxed: at least one of the three should be present
         hasSPC || hasRT || hasSchema || schemas.size() >= 1
@@ -329,7 +330,7 @@ class A1_ServiceDiscoverySpec extends ScimBaseSpec {
                 assert response.statusCode() >= 400 :
                     "${method} ${endpoint} should return error but got ${response.statusCode()}"
                 if (response.statusCode() != 405) {
-                    println "DEVIATION: ${method} ${endpoint} returned ${response.statusCode()} instead of 405 (RFC 7644 §4)"
+                    ScimOutput.println "DEVIATION: ${method} ${endpoint} returned ${response.statusCode()} instead of 405 (RFC 7644 §4)"
                 }
             }
         }
@@ -356,7 +357,7 @@ class A1_ServiceDiscoverySpec extends ScimBaseSpec {
                 assert response.statusCode() >= 400 :
                     "${method} ${endpoint} should return error but got ${response.statusCode()}"
                 if (response.statusCode() != 405) {
-                    println "DEVIATION: ${method} ${endpoint} returned ${response.statusCode()} instead of 405 (RFC 7644 §4)"
+                    ScimOutput.println "DEVIATION: ${method} ${endpoint} returned ${response.statusCode()} instead of 405 (RFC 7644 §4)"
                 }
             }
         }
@@ -383,7 +384,7 @@ class A1_ServiceDiscoverySpec extends ScimBaseSpec {
                 assert response.statusCode() >= 400 :
                     "${method} ${endpoint} should return error but got ${response.statusCode()}"
                 if (response.statusCode() != 405) {
-                    println "DEVIATION: ${method} ${endpoint} returned ${response.statusCode()} instead of 405 (RFC 7644 §4)"
+                    ScimOutput.println "DEVIATION: ${method} ${endpoint} returned ${response.statusCode()} instead of 405 (RFC 7644 §4)"
                 }
             }
         }
