@@ -1,6 +1,7 @@
 package de.palsoftware.scim.validator.specs
 
 import de.palsoftware.scim.validator.base.ScimBaseSpec
+import de.palsoftware.scim.validator.base.ScimOutput
 import groovy.json.JsonOutput
 import io.restassured.response.Response
 import spock.lang.Shared
@@ -152,7 +153,7 @@ class A3_UserCrudSpec extends ScimBaseSpec {
         // RFC-correct: emails == null || emails.isEmpty()
         // Relaxed: document if emails still present
         if (emails != null && !emails.isEmpty()) {
-            println "DEVIATION: api.scim.dev merges PUT instead of replacing (emails still present after omission)"
+            ScimOutput.println "DEVIATION: api.scim.dev merges PUT instead of replacing (emails still present after omission)"
         }
     }
 
@@ -268,25 +269,13 @@ class A3_UserCrudSpec extends ScimBaseSpec {
         def response = scimRequest()
             .get("/Me")
 
-        then: "Server returns the authenticated user, redirects, or indicates not supported"
+        then: "Server returns 501 Not Implemented per RFC 7644 §3.11"
         // RFC 7644 §3.11: A service provider that does NOT support /Me SHOULD respond with 501.
-        // A service provider MAY redirect with 308 or process directly.
-        // TODO DEVIATION: api.scim.dev may not support /Me endpoint
-        if (response.statusCode() == 200) {
-            assert response.jsonPath().getString("id") != null : "/Me should return a resource with an id"
-            assert response.jsonPath().getString("userName") != null ||
-                   response.jsonPath().getList("schemas") != null :
-                "/Me should return a valid SCIM User resource"
-        } else if (response.statusCode() in [307, 308]) {
-            def location = response.header("Location")
-            assert location != null : "Redirect should include Location header"
-            println "DEVIATION: /Me endpoint redirects to ${location} (RFC 7644 §3.11 allows this)"
-        } else {
-            println "DEVIATION: /Me endpoint returned ${response.statusCode()} (RFC 7644 §3.11)"
-        }
-        // Relaxed: accept any of 200, 307, 308, 404, 500, 501
-        // TODO DEVIATION: api.scim.dev returns 500 for /Me endpoint
-        response.statusCode() in [200, 307, 308, 404, 500, 501]
+        response.statusCode() == 501
+
+        and: "Response follows SCIM error schema"
+        response.jsonPath().getList("schemas")?.contains(ERROR_SCHEMA)
+        response.jsonPath().getString("status") == "501"
     }
 
     // ─── Cleanup ────────────────────────────────────────────────────────────

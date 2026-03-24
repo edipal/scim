@@ -101,6 +101,11 @@ public class BearerTokenAuthFilter extends OncePerRequestFilter {
         response.setStatus(status);
         response.setContentType("application/scim+json;charset=UTF-8");
 
+        // RFC 7644 §3.12: 401 responses MUST include WWW-Authenticate header
+        if (status == 401) {
+            response.setHeader("WWW-Authenticate", "Bearer");
+        }
+
         Map<String, Object> error = new LinkedHashMap<>();
         error.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:Error"));
         error.put("status", String.valueOf(status));

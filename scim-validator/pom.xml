@@ -26,9 +26,11 @@
         <datafaker.version>2.4.3</datafaker.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <jackson.version>2.18.6</jackson.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <skip.validator.tests>true</skip.validator.tests>
+        <skipTests>${skip.validator.tests}</skipTests>
+        <skip.validator.tests>false</skip.validator.tests>
     </properties>
 
     <dependencies>
@@ -97,6 +99,25 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.8</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- SLF4J for logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -134,8 +155,12 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
-                    <skipTests>${skip.validator.tests}</skipTests>
+                    <skipTests>${skipTests}</skipTests>
                     <useFile>false</useFile>
+                    <environmentVariables>
+                        <DOCKER_HOST>${docker.host}</DOCKER_HOST>
+                        <TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>${testcontainers.docker.socket.override}</TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>
+                    </environmentVariables>
                     <includes>
                         <include>**/*Spec.java</include>
                         <include>**/*Spec.groovy</include>

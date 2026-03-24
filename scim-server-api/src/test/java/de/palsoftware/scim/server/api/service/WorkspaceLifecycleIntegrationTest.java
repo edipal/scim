@@ -1,6 +1,7 @@
 package de.palsoftware.scim.server.api.service;
 
 import de.palsoftware.scim.server.api.ScimServerApplication;
+import de.palsoftware.scim.server.api.PostgresIntegrationTestSupport;
 import de.palsoftware.scim.server.common.model.Workspace;
 import de.palsoftware.scim.server.common.repository.WorkspaceRepository;
 import org.junit.jupiter.api.Test;
@@ -31,17 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         WorkspaceLifecycleIntegrationTest.FixedClockConfiguration.class
 }, properties = {
         "ACTUATOR_API_KEY=test-key",
-        "spring.datasource.url=jdbc:h2:mem:workspace-lifecycle;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
-        "spring.datasource.driverClassName=org.h2.Driver",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=validate",
     "app.cleanup.workspace.cron=0 0 0 1 1 *",
     "app.cleanup.workspace.stale-after=P3M"
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Transactional
-class WorkspaceLifecycleIntegrationTest {
+class WorkspaceLifecycleIntegrationTest extends PostgresIntegrationTestSupport {
 
     @Autowired
     private WorkspaceRepository workspaceRepository;

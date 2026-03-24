@@ -121,20 +121,20 @@ class ScimUserMapperTest {
         Map<String, Object> item = new HashMap<>();
         item.put("value", "test@test.com");
         item.put("type", "work");
-        ScimUserEmail email = ScimUserMapper.buildEmail(user, item);
+        ScimUserEmail email = ScimUserMapper.buildEmail(item);
         assertEquals("test@test.com", email.getValue());
         assertEquals("work", email.getType());
 
         item.put("type", "invalid");
-        assertThrows(ScimException.class, () -> ScimUserMapper.buildEmail(user, item));
+        assertThrows(ScimException.class, () -> ScimUserMapper.buildEmail(item));
 
         item.clear();
         item.put("value", Base64.getEncoder().encodeToString("cert".getBytes()));
         item.put("type", "work");
-        ScimUserX509Certificate cert = ScimUserMapper.buildCertificate(user, item);
+        ScimUserX509Certificate cert = ScimUserMapper.buildCertificate(item);
         assertNotNull(cert.getValue());
 
         item.put("value", "invalid-base64!!");
-        assertThrows(ScimException.class, () -> ScimUserMapper.buildCertificate(user, item));
+        assertThrows(ScimException.class, () -> ScimUserMapper.buildCertificate(item));
     }
 }

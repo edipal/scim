@@ -4,6 +4,10 @@
 >
 > The entire codebase in this repository was written by AI (GitHub Copilot).
 > This includes all Java source code, configuration files, Dockerfiles,
+
+# Full reactor test run (uses PostgreSQL via Testcontainers; Docker must be available)
+mvn clean test
+
 > tests, and documentation. Human involvement was limited to design guidance,
 > review, and acceptance.
 
@@ -227,9 +231,11 @@ mvn clean install
 Notes:
 
 - The validator module is part of the reactor build.
-- The validator specs are skipped by default during ordinary reactor builds.
-- To execute the validator specs from the CLI, enable the validator profile as
-  shown later in this README.
+- The validator specs now self-bootstrap a disposable PostgreSQL database and
+  the published `edipal/scim-server-api:latest` image through Testcontainers
+  when no explicit `SCIM_*` configuration is provided.
+- Use `-Dskip.validator.tests=true` if you need to skip the validator suite in a
+  reactor build.
 
 ### Run with Docker Compose
 
@@ -412,15 +418,49 @@ the spec suite and inspect the captured exchanges.
 
 ### Through the CLI validator module
 
-The standalone validator module is configured to skip tests unless you enable
-the validator profile.
+The standalone validator module now starts its own disposable validator target
+when you do not provide explicit `SCIM_*` settings. It uses Testcontainers to
+run PostgreSQL plus the published `edipal/scim-server-api:latest` image, seeds a
+workspace directly in PostgreSQL, inserts a matching SHA-256 token hash, and
+then runs the specs against that bootstrapped tenant.
+
+Default local execution:
+
+```bash
+cd scim-validator
+mvn test
+```
+
+If you want to point the validator at an already running SCIM service instead,
+pass the SCIM target via CLI properties:
+
+```bash
+cd scim-validator
+mvn test \
+  -Dscim.testcontainers.enabled=false \
+  -Dscim.baseUrl=http://localhost:8080/ws/<workspace-id-or-name>/scim/v2 \
+  -Dscim.authToken=<workspace-token>
+```
+
+Alternative CLI model:
+
+```bash
+cd scim-validator
+mvn test \
+  -Dscim.testcontainers.enabled=false \
+  -Dscim.apiUrl=http://localhost:8080 \
+  -Dscim.workspaceId=<workspace-id-or-name> \
+  -Dscim.authToken=<workspace-token>
+```
+
+Environment variables remain supported as well:
 
 ```bash
 export SCIM_BASE_URL=http://localhost:8080/ws/<workspace-id-or-name>/scim/v2
 export SCIM_AUTH_TOKEN=<workspace-token>
 
 cd scim-validator
-mvn test -Pvalidator-tests
+mvn test
 ```
 
 Alternative environment model:
@@ -431,11 +471,21 @@ export SCIM_WORKSPACE_ID=<workspace-id-or-name>
 export SCIM_AUTH_TOKEN=<workspace-token>
 
 cd scim-validator
-mvn test -Pvalidator-tests
+mvn test
 ```
 
 The validator will derive the full base path from `SCIM_API_URL` and
 `SCIM_WORKSPACE_ID` if `SCIM_BASE_URL` is not provided.
+
+Mode selection:
+
+- Default: Testcontainers bootstrap is enabled.
+- Disable it explicitly with `-Dscim.testcontainers.enabled=false` or `SCIM_TESTCONTAINERS_ENABLED=false` when targeting another environment.
+
+Advanced overrides for the automatic bootstrap:
+
+- `SCIM_VALIDATOR_API_IMAGE` or `-Dscim.validator.apiImage=...`
+- `SCIM_VALIDATOR_POSTGRES_IMAGE` or `-Dscim.validator.postgresImage=...`
 
 ## CI/CD and Release Automation
 

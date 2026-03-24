@@ -20,7 +20,10 @@ import java.util.*;
 public class ScimBulkController extends ScimBaseController {
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
+    private static final String BULK_REQUEST_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:BulkRequest";
     private static final int MAX_OPERATIONS = 1000;
+    private static final int MAX_PAYLOAD_SIZE = 1048576; // 1 MB per ServiceProviderConfig
+    private static final String KEY_FAIL_ON_ERRORS = "failOnErrors";
     private static final String KEY_OPERATIONS = "Operations";
     private static final String KEY_STATUS = "status";
     private static final String KEY_RESPONSE = "response";
@@ -47,24 +50,26 @@ public class ScimBulkController extends ScimBaseController {
         UUID wsId = resolveWorkspaceId(workspaceId);
         String baseUrl = buildBaseUrl(request, workspaceId, compat);
 
-        List<Map<String, Object>> operations = (List<Map<String, Object>>) body.get(KEY_OPERATIONS);
-        if (operations == null) {
-            throw new ScimException(400, "invalidValue", "Bulk request must contain Operations");
-        }
+        validateBulkRequest(request, body);
 
-        // Check maxOperations
-        if (operations.size() > MAX_OPERATIONS) {
-            throw new ScimException(413, null,
-                    "Bulk request exceeds maxOperations (" + MAX_OPERATIONS + ")");
-        }
+        List<Map<String, Object>> operations = (List<Map<String, Object>>) body.get(KEY_OPERATIONS);
+        int failOnErrors = parseFailOnErrors(body.get(KEY_FAIL_ON_ERRORS));
 
         // Process bulkId references — map bulkId → created resource ID
         Map<String, String> bulkIdMap = new LinkedHashMap<>();
         List<Map<String, Object>> results = new ArrayList<>();
+        int errorCount = 0;
 
         for (Map<String, Object> op : operations) {
             Map<String, Object> result = processOperation(op, wsId, baseUrl, bulkIdMap);
             results.add(result);
+
+            if (isErrorResult(result)) {
+                errorCount++;
+                if (shouldStopProcessing(failOnErrors, errorCount)) {
+                    break;
+                }
+            }
         }
 
         Map<String, Object> response = new LinkedHashMap<>();
@@ -74,6 +79,45 @@ public class ScimBulkController extends ScimBaseController {
         return ResponseEntity.ok()
                 .contentType(SCIM_JSON)
                 .body(response);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void validateBulkRequest(HttpServletRequest request, Map<String, Object> body) {
+        long contentLength = request.getContentLengthLong();
+        if (contentLength > MAX_PAYLOAD_SIZE) {
+            throw new ScimException(413, null,
+                    "Bulk request exceeds maxPayloadSize (" + MAX_PAYLOAD_SIZE + " bytes)");
+        }
+
+        List<String> schemas = (List<String>) body.get(KEY_SCHEMAS);
+        if (schemas == null || !schemas.contains(BULK_REQUEST_SCHEMA)) {
+            throw new ScimException(400, "invalidValue", "Bulk request must include BulkRequest schema");
+        }
+
+        List<Map<String, Object>> operations = (List<Map<String, Object>>) body.get(KEY_OPERATIONS);
+        if (operations == null) {
+            throw new ScimException(400, "invalidValue", "Bulk request must contain Operations");
+        }
+        if (operations.size() > MAX_OPERATIONS) {
+            throw new ScimException(413, null,
+                    "Bulk request exceeds maxOperations (" + MAX_OPERATIONS + ")");
+        }
+    }
+
+    private static int parseFailOnErrors(Object failOnErrorsObj) {
+        if (failOnErrorsObj instanceof Number number) {
+            return number.intValue();
+        }
+        return 0;
+    }
+
+    private static boolean isErrorResult(Map<String, Object> result) {
+        String status = (String) result.get(KEY_STATUS);
+        return status != null && Integer.parseInt(status) >= 400;
+    }
+
+    private static boolean shouldStopProcessing(int failOnErrors, int errorCount) {
+        return failOnErrors > 0 && errorCount >= failOnErrors;
     }
 
     @SuppressWarnings("unchecked")

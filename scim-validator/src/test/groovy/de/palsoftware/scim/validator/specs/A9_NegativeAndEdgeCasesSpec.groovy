@@ -1,6 +1,7 @@
 package de.palsoftware.scim.validator.specs
 
 import de.palsoftware.scim.validator.base.ScimBaseSpec
+import de.palsoftware.scim.validator.base.ScimOutput
 import io.restassured.RestAssured
 import io.restassured.response.Response
 import groovy.json.JsonOutput
@@ -197,7 +198,7 @@ class A9_NegativeAndEdgeCasesSpec extends ScimBaseSpec {
         if (response.statusCode() == 404) {
             assertScimError(response, 404)
         } else {
-            println "DEVIATION: GET /${randomPath} returned ${response.statusCode()} instead of 404 (RFC 7644 §3.12)"
+            ScimOutput.println "DEVIATION: GET /${randomPath} returned ${response.statusCode()} instead of 404 (RFC 7644 §3.12)"
         }
     }
 }

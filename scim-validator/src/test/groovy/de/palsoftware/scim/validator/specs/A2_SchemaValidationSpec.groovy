@@ -1,6 +1,7 @@
 package de.palsoftware.scim.validator.specs
 
 import de.palsoftware.scim.validator.base.ScimBaseSpec
+import de.palsoftware.scim.validator.base.ScimOutput
 
 /**
  * Area 2 — Schema Validation Deep Dive
@@ -127,7 +128,7 @@ class A2_SchemaValidationSpec extends ScimBaseSpec {
         if (deptAttr != null) {
             assert deptAttr.type == "string"
         } else {
-            println "DEVIATION: Enterprise schema missing 'department' attribute (RFC 7643 §4.3)"
+            ScimOutput.println "DEVIATION: Enterprise schema missing 'department' attribute (RFC 7643 §4.3)"
         }
 
         and: "Enterprise schema should contain manager attribute (RFC 7643 §4.3)"
@@ -135,7 +136,7 @@ class A2_SchemaValidationSpec extends ScimBaseSpec {
         if (mgrAttr != null) {
             assert mgrAttr.type == "complex"
         } else {
-            println "DEVIATION: Enterprise schema missing 'manager' attribute (RFC 7643 §4.3)"
+            ScimOutput.println "DEVIATION: Enterprise schema missing 'manager' attribute (RFC 7643 §4.3)"
         }
     }
 
@@ -159,10 +160,10 @@ class A2_SchemaValidationSpec extends ScimBaseSpec {
         }
 
         and: "Log mutability map for cross-reference in Area 8"
-        println "=== Attribute Mutability Map ==="
+        ScimOutput.println "=== Attribute Mutability Map ==="
         attributes.each { attr ->
-            println "${attr.name}: mutability=${attr.mutability}, required=${attr.required}"
+            ScimOutput.println "${attr.name}: mutability=${attr.mutability}, required=${attr.required}"
         }
-        println "================================"
+        ScimOutput.println "================================"
     }
 }

@@ -1,6 +1,7 @@
 package de.palsoftware.scim.validator.specs
 
 import de.palsoftware.scim.validator.base.A5_BaseSpec
+import de.palsoftware.scim.validator.base.ScimOutput
 import io.restassured.response.Response
 
 /**
@@ -34,7 +35,7 @@ class A5_SortingSpec extends A5_BaseSpec {
         // TODO DEVIATION: api.scim.dev may not sort results when sortBy is specified
         // RFC 7644 §3.4.2.3: Sort is OPTIONAL. Servers SHOULD ignore unsupported params.
         if (userNames != sorted) {
-            println "DEVIATION: api.scim.dev does not sort by userName ascending (RFC 7644 §3.4.2.3)"
+            ScimOutput.println "DEVIATION: api.scim.dev does not sort by userName ascending (RFC 7644 §3.4.2.3)"
         }
         // Relaxed: pass regardless — sort is OPTIONAL per RFC
         true
@@ -63,7 +64,7 @@ class A5_SortingSpec extends A5_BaseSpec {
         sortedDesc.sort { String a, String b -> b.compareToIgnoreCase(a) }
         // TODO DEVIATION: api.scim.dev may not support sorting
         if (userNames != sortedDesc) {
-            println "DEVIATION: api.scim.dev does not sort by userName descending (RFC 7644 §3.4.2.3)"
+            ScimOutput.println "DEVIATION: api.scim.dev does not sort by userName descending (RFC 7644 §3.4.2.3)"
         }
         // Relaxed: pass regardless — sort is OPTIONAL per RFC
         true

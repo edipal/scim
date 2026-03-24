@@ -158,14 +158,14 @@ public class ScimUserMapper {
     public static void applyFromScimInput(ScimUser user, Map<String, Object> input) {
         applySimpleAttributes(user, input);
         applyNameAttribute(user, input.get("name"));
-        replaceCollection(user.getEmails(), input, KEY_EMAILS, item -> buildEmail(user, item));
-        replaceCollection(user.getPhoneNumbers(), input, KEY_PHONE_NUMBERS, item -> buildPhone(user, item));
-        replaceCollection(user.getAddresses(), input, KEY_ADDRESSES, item -> buildAddress(user, item));
-        replaceCollection(user.getIms(), input, "ims", item -> buildIm(user, item));
-        replaceCollection(user.getPhotos(), input, KEY_PHOTOS, item -> buildPhoto(user, item));
-        replaceCollection(user.getEntitlements(), input, KEY_ENTITLEMENTS, item -> buildEntitlement(user, item));
-        replaceCollection(user.getRoles(), input, KEY_ROLES, item -> buildRole(user, item));
-        replaceCollection(user.getX509Certificates(), input, KEY_X509_CERTIFICATES, item -> buildCertificate(user, item));
+        replaceCollection(user.getEmails(), input, KEY_EMAILS, item -> buildEmail(item));
+        replaceCollection(user.getPhoneNumbers(), input, KEY_PHONE_NUMBERS, item -> buildPhone(item));
+        replaceCollection(user.getAddresses(), input, KEY_ADDRESSES, item -> buildAddress(item));
+        replaceCollection(user.getIms(), input, "ims", item -> buildIm(item));
+        replaceCollection(user.getPhotos(), input, KEY_PHOTOS, item -> buildPhoto(item));
+        replaceCollection(user.getEntitlements(), input, KEY_ENTITLEMENTS, item -> buildEntitlement(item));
+        replaceCollection(user.getRoles(), input, KEY_ROLES, item -> buildRole(item));
+        replaceCollection(user.getX509Certificates(), input, KEY_X509_CERTIFICATES, item -> buildCertificate(item));
         applyEnterpriseExtension(user, input);
     }
 
@@ -328,9 +328,8 @@ public class ScimUserMapper {
         }
     }
 
-    public static ScimUserEmail buildEmail(ScimUser user, Map<String, Object> item) {
+    public static ScimUserEmail buildEmail(Map<String, Object> item) {
         ScimUserEmail email = new ScimUserEmail();
-        email.setUser(user);
         email.setValue((String) item.get(KEY_VALUE));
         email.setType(normalizeCanonical((String) item.get(KEY_TYPE), EMAIL_TYPES, "emails.type"));
         email.setDisplay((String) item.get(KEY_DISPLAY));
@@ -338,9 +337,8 @@ public class ScimUserMapper {
         return email;
     }
 
-    public static ScimUserPhoneNumber buildPhone(ScimUser user, Map<String, Object> item) {
+    public static ScimUserPhoneNumber buildPhone(Map<String, Object> item) {
         ScimUserPhoneNumber phone = new ScimUserPhoneNumber();
-        phone.setUser(user);
         phone.setValue((String) item.get(KEY_VALUE));
         phone.setType(normalizeCanonical((String) item.get(KEY_TYPE), PHONE_TYPES, "phoneNumbers.type"));
         phone.setDisplay((String) item.get(KEY_DISPLAY));
@@ -348,9 +346,8 @@ public class ScimUserMapper {
         return phone;
     }
 
-    public static ScimUserAddress buildAddress(ScimUser user, Map<String, Object> item) {
+    public static ScimUserAddress buildAddress(Map<String, Object> item) {
         ScimUserAddress address = new ScimUserAddress();
-        address.setUser(user);
         address.setFormatted((String) item.get(KEY_FORMATTED));
         address.setStreetAddress((String) item.get("streetAddress"));
         address.setLocality((String) item.get("locality"));
@@ -362,9 +359,8 @@ public class ScimUserMapper {
         return address;
     }
 
-    public static ScimUserIm buildIm(ScimUser user, Map<String, Object> item) {
+    public static ScimUserIm buildIm(Map<String, Object> item) {
         ScimUserIm im = new ScimUserIm();
-        im.setUser(user);
         im.setValue((String) item.get(KEY_VALUE));
         im.setType(normalizeCanonical((String) item.get(KEY_TYPE), IM_TYPES, "ims.type"));
         im.setDisplay((String) item.get(KEY_DISPLAY));
@@ -372,9 +368,8 @@ public class ScimUserMapper {
         return im;
     }
 
-    public static ScimUserPhoto buildPhoto(ScimUser user, Map<String, Object> item) {
+    public static ScimUserPhoto buildPhoto(Map<String, Object> item) {
         ScimUserPhoto photo = new ScimUserPhoto();
-        photo.setUser(user);
         photo.setValue((String) item.get(KEY_VALUE));
         photo.setType(normalizeCanonical((String) item.get(KEY_TYPE), PHOTO_TYPES, "photos.type"));
         photo.setDisplay((String) item.get(KEY_DISPLAY));
@@ -382,9 +377,8 @@ public class ScimUserMapper {
         return photo;
     }
 
-    public static ScimUserEntitlement buildEntitlement(ScimUser user, Map<String, Object> item) {
+    public static ScimUserEntitlement buildEntitlement(Map<String, Object> item) {
         ScimUserEntitlement entitlement = new ScimUserEntitlement();
-        entitlement.setUser(user);
         entitlement.setValue((String) item.get(KEY_VALUE));
         entitlement.setType((String) item.get(KEY_TYPE));
         entitlement.setDisplay((String) item.get(KEY_DISPLAY));
@@ -392,9 +386,8 @@ public class ScimUserMapper {
         return entitlement;
     }
 
-    public static ScimUserRole buildRole(ScimUser user, Map<String, Object> item) {
+    public static ScimUserRole buildRole(Map<String, Object> item) {
         ScimUserRole role = new ScimUserRole();
-        role.setUser(user);
         role.setValue((String) item.get(KEY_VALUE));
         role.setType((String) item.get(KEY_TYPE));
         role.setDisplay((String) item.get(KEY_DISPLAY));
@@ -402,9 +395,8 @@ public class ScimUserMapper {
         return role;
     }
 
-    public static ScimUserX509Certificate buildCertificate(ScimUser user, Map<String, Object> item) {
+    public static ScimUserX509Certificate buildCertificate(Map<String, Object> item) {
         ScimUserX509Certificate certificate = new ScimUserX509Certificate();
-        certificate.setUser(user);
         certificate.setValue((String) item.get(KEY_VALUE));
         certificate.setType((String) item.get(KEY_TYPE));
         certificate.setDisplay((String) item.get(KEY_DISPLAY));

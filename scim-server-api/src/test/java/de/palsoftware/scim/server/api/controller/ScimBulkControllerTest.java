@@ -4,6 +4,7 @@ import de.palsoftware.scim.server.common.model.ScimGroup;
 import de.palsoftware.scim.server.common.model.ScimUser;
 import de.palsoftware.scim.server.api.service.ScimGroupService;
 import de.palsoftware.scim.server.api.service.ScimUserService;
+import de.palsoftware.scim.server.api.scim.error.ScimException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -40,6 +41,7 @@ class ScimBulkControllerTest {
     @Test
     void testProcessBulk_EmptyOps_ThrowsException() {
         Map<String, Object> body = new HashMap<>(); // missing Operations
+        body.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:BulkRequest"));
         String workspaceIdValue = workspaceId.toString();
         Exception e = assertThrows(Exception.class,
             () -> controller.processBulk(workspaceIdValue, body, null, request));
@@ -49,6 +51,7 @@ class ScimBulkControllerTest {
     @Test
     void testProcessBulk_TooManyOps_ThrowsException() {
         Map<String, Object> body = new HashMap<>();
+        body.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:BulkRequest"));
         List<Map<String, Object>> ops = new ArrayList<>();
         for (int i = 0; i < 1001; i++) {
             ops.add(Map.of());
@@ -84,7 +87,9 @@ class ScimBulkControllerTest {
         op2.put("bulkId", "ytrewq");
         op2.put("data", Map.of("displayName", "group1", "members", List.of(Map.of("value", "bulkId:qwerty"))));
 
-        Map<String, Object> body = Map.of("Operations", List.of(op1, op2));
+        Map<String, Object> body = Map.of(
+                "schemas", List.of("urn:ietf:params:scim:api:messages:2.0:BulkRequest"),
+                "Operations", List.of(op1, op2));
 
         ResponseEntity<Map<String, Object>> response = controller.processBulk(workspaceId.toString(), body, null,
                 request);
@@ -127,7 +132,9 @@ class ScimBulkControllerTest {
         Map<String, Object> opGroupDelete = Map.of("method", "DELETE", "path", "/Groups/" + groupId);
         Map<String, Object> opInvalidMethod = Map.of("method", "INVALID", "path", "/Users/" + userId);
 
-        Map<String, Object> body = Map.of("Operations", List.of(
+        Map<String, Object> body = Map.of(
+                "schemas", List.of("urn:ietf:params:scim:api:messages:2.0:BulkRequest"),
+                "Operations", List.of(
                 opUserPut, opGroupPut, opUserPatch, opGroupPatch, opUserDelete, opGroupDelete, opInvalidMethod));
 
         ResponseEntity<Map<String, Object>> response = controller.processBulk(workspaceId.toString(), body, null,
@@ -154,12 +161,103 @@ class ScimBulkControllerTest {
         // Invalid PUT path (missing ID)
         Map<String, Object> opPutInvalid = Map.of("method", "PUT", "path", "/Users", "data", Map.of());
 
-        Map<String, Object> body = Map.of("Operations", List.of(opPostInvalid, opPutInvalid));
+        Map<String, Object> body = Map.of(
+                "schemas", List.of("urn:ietf:params:scim:api:messages:2.0:BulkRequest"),
+                "Operations", List.of(opPostInvalid, opPutInvalid));
         ResponseEntity<Map<String, Object>> response = controller.processBulk(workspaceId.toString(), body, null,
                 request);
 
         List<Map<String, Object>> results = (List<Map<String, Object>>) response.getBody().get("Operations");
         assertEquals("400", results.get(0).get("status")); // User POST invalid path
         assertEquals("400", results.get(1).get("status")); // User PUT missing ID
+    }
+
+    // ─── Tests for Fix 3: failOnErrors stops processing ─────────────────
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testProcessBulk_FailOnErrors_StopsProcessing() {
+        // 3 POST operations to invalid paths (all will error), failOnErrors=2
+        Map<String, Object> op1 = Map.of("method", "POST", "path", "/Invalid", "data", Map.of());
+        Map<String, Object> op2 = Map.of("method", "POST", "path", "/Invalid", "data", Map.of());
+        Map<String, Object> op3 = Map.of("method", "POST", "path", "/Invalid", "data", Map.of());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:BulkRequest"));
+        body.put("Operations", List.of(op1, op2, op3));
+        body.put("failOnErrors", 2);
+
+        ResponseEntity<Map<String, Object>> response = controller.processBulk(workspaceId.toString(), body, null, request);
+
+        assertEquals(200, response.getStatusCode().value());
+        List<Map<String, Object>> results = (List<Map<String, Object>>) response.getBody().get("Operations");
+        // Should stop after 2 errors (op1 + op2), never process op3
+        assertEquals(2, results.size());
+        assertEquals("400", results.get(0).get("status"));
+        assertEquals("400", results.get(1).get("status"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testProcessBulk_FailOnErrors_ZeroMeansNoLimit() {
+        // failOnErrors=0 means process all operations regardless of errors
+        Map<String, Object> op1 = Map.of("method", "POST", "path", "/Invalid", "data", Map.of());
+        Map<String, Object> op2 = Map.of("method", "POST", "path", "/Invalid", "data", Map.of());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:BulkRequest"));
+        body.put("Operations", List.of(op1, op2));
+        body.put("failOnErrors", 0);
+
+        ResponseEntity<Map<String, Object>> response = controller.processBulk(workspaceId.toString(), body, null, request);
+
+        List<Map<String, Object>> results = (List<Map<String, Object>>) response.getBody().get("Operations");
+        assertEquals(2, results.size()); // All operations processed
+    }
+
+    // ─── Tests for Fix 4: BulkRequest schema validation ─────────────────
+
+    @Test
+    void testProcessBulk_MissingSchemasThrowsException() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("Operations", List.of(Map.of("method", "POST", "path", "/Users", "data", Map.of())));
+        // No "schemas" key at all
+
+        String workspaceIdValue = workspaceId.toString();
+        ScimException e = assertThrows(ScimException.class,
+                () -> controller.processBulk(workspaceIdValue, body, null, request));
+        assertTrue(e.getMessage().contains("BulkRequest schema"));
+    }
+
+    @Test
+    void testProcessBulk_WrongSchemaThrowsException() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:PatchOp"));
+        body.put("Operations", List.of(Map.of("method", "POST", "path", "/Users", "data", Map.of())));
+
+        String workspaceIdValue = workspaceId.toString();
+        ScimException e = assertThrows(ScimException.class,
+                () -> controller.processBulk(workspaceIdValue, body, null, request));
+        assertTrue(e.getMessage().contains("BulkRequest schema"));
+    }
+
+    // ─── Tests for Fix 5: maxPayloadSize check ──────────────────────────
+
+    @Test
+    void testProcessBulk_ExceedsMaxPayloadSize_Throws413() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:BulkRequest"));
+        body.put("Operations", List.of());
+
+        // Set Content-Length to exceed 1MB
+        request.addHeader("Content-Length", "2000000");
+        request.setContentType("application/scim+json");
+        request.setContent(new byte[2000000]);
+
+        String workspaceIdValue = workspaceId.toString();
+        ScimException e = assertThrows(ScimException.class,
+                () -> controller.processBulk(workspaceIdValue, body, null, request));
+        assertEquals(413, e.getHttpStatus());
+        assertTrue(e.getMessage().contains("maxPayloadSize"));
     }
 }

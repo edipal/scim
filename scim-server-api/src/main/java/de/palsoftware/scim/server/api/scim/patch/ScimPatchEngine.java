@@ -467,14 +467,14 @@ public class ScimPatchEngine {
         }
 
         switch (attr) {
-            case ATTR_EMAILS -> addItems(items, user.getEmails(), item -> ScimUserMapper.buildEmail(user, item));
-            case ATTR_PHONE_NUMBERS -> addItems(items, user.getPhoneNumbers(), item -> ScimUserMapper.buildPhone(user, item));
-            case ATTR_ADDRESSES -> addItems(items, user.getAddresses(), item -> ScimUserMapper.buildAddress(user, item));
-            case ATTR_IMS -> addItems(items, user.getIms(), item -> ScimUserMapper.buildIm(user, item));
-            case ATTR_PHOTOS -> addItems(items, user.getPhotos(), item -> ScimUserMapper.buildPhoto(user, item));
-            case ATTR_ROLES -> addItems(items, user.getRoles(), item -> ScimUserMapper.buildRole(user, item));
-            case ATTR_ENTITLEMENTS -> addItems(items, user.getEntitlements(), item -> ScimUserMapper.buildEntitlement(user, item));
-            case ATTR_X509 -> addItems(items, user.getX509Certificates(), item -> ScimUserMapper.buildCertificate(user, item));
+            case ATTR_EMAILS -> addItems(items, user.getEmails(), ScimUserMapper::buildEmail);
+            case ATTR_PHONE_NUMBERS -> addItems(items, user.getPhoneNumbers(), ScimUserMapper::buildPhone);
+            case ATTR_ADDRESSES -> addItems(items, user.getAddresses(), ScimUserMapper::buildAddress);
+            case ATTR_IMS -> addItems(items, user.getIms(), ScimUserMapper::buildIm);
+            case ATTR_PHOTOS -> addItems(items, user.getPhotos(), ScimUserMapper::buildPhoto);
+            case ATTR_ROLES -> addItems(items, user.getRoles(), ScimUserMapper::buildRole);
+            case ATTR_ENTITLEMENTS -> addItems(items, user.getEntitlements(), ScimUserMapper::buildEntitlement);
+            case ATTR_X509 -> addItems(items, user.getX509Certificates(), ScimUserMapper::buildCertificate);
             default -> throw new ScimException(400, "noTarget", "Cannot add to attribute: " + attr);
         }
     }

@@ -67,10 +67,34 @@ abstract class ScimBaseSpec extends Specification {
     protected static void refreshConfiguration() {
         String explicitBaseUrl = System.getProperty("scim.baseUrl") ?: System.getenv("SCIM_BASE_URL")
         String configuredWorkspace = System.getProperty("scim.workspaceId") ?: System.getenv("SCIM_WORKSPACE_ID")
-        String configuredApiUrl = System.getProperty("scim.apiUrl") ?: System.getenv("SCIM_API_URL") ?: "http://localhost:8080"
+        String explicitApiUrl = System.getProperty("scim.apiUrl") ?: System.getenv("SCIM_API_URL")
+        String configuredAuthToken = System.getProperty("scim.authToken") ?: System.getenv("SCIM_AUTH_TOKEN")
+        boolean testcontainersEnabled = booleanSetting(
+            System.getProperty("scim.testcontainers.enabled") ?: System.getenv("SCIM_TESTCONTAINERS_ENABLED"),
+            true
+        )
+
+        if (!hasText(explicitBaseUrl) && !hasText(configuredWorkspace) && !hasText(explicitApiUrl) && !hasText(configuredAuthToken)) {
+            if (testcontainersEnabled) {
+                ScimValidatorEnvironment.ScimRuntimeConfiguration runtimeConfiguration = ScimValidatorEnvironment.ensureStarted()
+                workspaceId = runtimeConfiguration.workspaceId()
+                AUTH_TOKEN = runtimeConfiguration.authToken()
+                SCIM_API_URL = runtimeConfiguration.apiUrl()
+                BASE_PATH = "/ws/${workspaceId}/scim/v2"
+                BASE_URL = "${SCIM_API_URL}${BASE_PATH}"
+                return
+            }
+
+            throw new IllegalStateException(
+                "No SCIM validator target configured. Provide -Dscim.baseUrl and -Dscim.authToken " +
+                    "or -Dscim.apiUrl, -Dscim.workspaceId, and -Dscim.authToken, or leave Testcontainers enabled."
+            )
+        }
+
+        String configuredApiUrl = explicitApiUrl ?: "http://localhost:8080"
 
         workspaceId = configuredWorkspace
-        AUTH_TOKEN = System.getProperty("scim.authToken") ?: System.getenv("SCIM_AUTH_TOKEN")
+        AUTH_TOKEN = configuredAuthToken
 
         if (AUTH_TOKEN == null || AUTH_TOKEN.isBlank()) {
             throw new IllegalStateException("SCIM_AUTH_TOKEN or -Dscim.authToken must be configured for validator runs")
@@ -89,6 +113,17 @@ abstract class ScimBaseSpec extends Specification {
             BASE_PATH = "/ws/${workspaceId}/scim/v2"
             BASE_URL = "${SCIM_API_URL}${BASE_PATH}"
         }
+    }
+
+    protected static boolean hasText(String value) {
+        return value != null && !value.isBlank()
+    }
+
+    protected static boolean booleanSetting(String value, boolean defaultValue) {
+        if (!hasText(value)) {
+            return defaultValue
+        }
+        return Boolean.parseBoolean(value)
     }
 
     protected static void configureRestAssured() {
@@ -152,12 +187,17 @@ abstract class ScimBaseSpec extends Specification {
      */
     protected RequestSpecification scimRequest() {
         configureRestAssured()
-        return RestAssured.given()
+        def req = RestAssured.given()
             .header("Authorization", "Bearer ${AUTH_TOKEN}")
             .contentType(SCIM_CONTENT_TYPE)
             .accept(SCIM_CONTENT_TYPE)
-            .filter(new RequestLoggingFilter())
-            .filter(new ResponseLoggingFilter())
+
+        // Only attach RestAssured console logging when not capturing exchanges
+        if (!ScimRunContext.isCaptureEnabled()) {
+            req = req.filter(new RequestLoggingFilter()).filter(new ResponseLoggingFilter())
+        }
+
+        return req
     }
 
     /**

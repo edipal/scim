@@ -1,5 +1,6 @@
 package de.palsoftware.scim.server.api.config;
 
+import de.palsoftware.scim.server.api.PostgresIntegrationTestSupport;
 import de.palsoftware.scim.server.common.model.Workspace;
 import de.palsoftware.scim.server.common.model.WorkspaceToken;
 import de.palsoftware.scim.server.common.repository.WorkspaceRepository;
@@ -26,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestPropertySource(properties = "ACTUATOR_API_KEY=test-key")
-class SecurityConfigIntegrationTest {
+class SecurityConfigIntegrationTest extends PostgresIntegrationTestSupport {
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -65,10 +66,10 @@ class SecurityConfigIntegrationTest {
                 "/ws/" + ws.getId() + "/scim/v2/Users", HttpMethod.GET, entity, String.class);
         assertThat(usersResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // 4. Test non-existent /Me endpoint -> Expect 404 (not 403!)
+        // 4. Test /Me endpoint -> Expect 501 (Not Implemented, endpoint now exists per RFC 7644 §3.11)
         ResponseEntity<String> meResponse = restTemplate.exchange(
                 "/ws/" + ws.getId() + "/scim/v2/Me", HttpMethod.GET, entity, String.class);
-        assertThat(meResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(meResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_IMPLEMENTED);
 
         // 5. Test arbitrary unmapped UUID endpoint -> Expect 404 (not 403!)
         ResponseEntity<String> uuidResponse = restTemplate.exchange(

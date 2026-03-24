@@ -63,13 +63,13 @@ class ScimGroupControllerTest {
     void getGroupReturnsResource() {
         when(groupService.getGroup(workspaceId, groupId)).thenReturn(mockGroup);
 
-        ResponseEntity<Map<String, Object>> response = controller.getGroup(workspaceId.toString(), groupId.toString(), null, null, null, request);
+        ResponseEntity<Map<String, Object>> response = controller.getGroup(workspaceId.toString(), groupId.toString(), null, null, null, null, request);
 
         assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
         assertEquals(TEST_GROUP, response.getBody().get(DISPLAY_NAME));
         
-        response = controller.getGroup(workspaceId.toString(), groupId.toString(), DISPLAY_NAME, null, null, request);
+        response = controller.getGroup(workspaceId.toString(), groupId.toString(), DISPLAY_NAME, null, null, null, request);
         assertEquals(200, response.getStatusCode().value());
     }
 
@@ -136,5 +136,134 @@ class ScimGroupControllerTest {
         ResponseEntity<Void> response = controller.deleteGroup(workspaceId.toString(), groupId.toString(), null);
 
         assertEquals(204, response.getStatusCode().value());
+    }
+
+    // ─── Tests for Fix 1: POST /.search ─────────────────────────────────
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void searchGroupsReturnsResults() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("Resources", List.of(mockGroup));
+
+        when(groupService.listGroups(eq(workspaceId), any(), any(), any(), anyInt(), anyInt())).thenReturn(result);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("filter", "displayName eq \"Test Group\"");
+        body.put("sortBy", DISPLAY_NAME);
+        body.put("sortOrder", "ascending");
+        body.put("startIndex", 1);
+        body.put("count", 10);
+
+        ResponseEntity<Map<String, Object>> response = controller.searchGroups(workspaceId.toString(), body, null, request);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        List<Map<String, Object>> resources = (List<Map<String, Object>>) response.getBody().get("Resources");
+        assertEquals(1, resources.size());
+    }
+
+    @Test
+    void searchGroupsUsesDefaults() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("Resources", List.of(mockGroup));
+
+        when(groupService.listGroups(eq(workspaceId), any(), any(), any(), anyInt(), anyInt())).thenReturn(result);
+
+        // Empty body — should use defaults
+        Map<String, Object> body = new HashMap<>();
+
+        ResponseEntity<Map<String, Object>> response = controller.searchGroups(workspaceId.toString(), body, null, request);
+
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    // ─── Tests for Fix 7: If-None-Match / 304 ──────────────────────────
+
+    @Test
+    void getGroupIfNoneMatchReturnsNotModified() {
+        when(groupService.getGroup(workspaceId, groupId)).thenReturn(mockGroup);
+
+        String etag = "W/\"" + mockGroup.getVersion() + "\"";
+        ResponseEntity<Map<String, Object>> response = controller.getGroup(
+                workspaceId.toString(), groupId.toString(), null, null, etag, null, request);
+
+        assertEquals(304, response.getStatusCode().value());
+        assertNull(response.getBody());
+    }
+
+    @Test
+    void getGroupIfNoneMatchWildcardReturnsNotModified() {
+        when(groupService.getGroup(workspaceId, groupId)).thenReturn(mockGroup);
+
+        ResponseEntity<Map<String, Object>> response = controller.getGroup(
+                workspaceId.toString(), groupId.toString(), null, null, "*", null, request);
+
+        assertEquals(304, response.getStatusCode().value());
+        assertNull(response.getBody());
+    }
+
+    @Test
+    void getGroupIfNoneMatchMismatchReturns200() {
+        when(groupService.getGroup(workspaceId, groupId)).thenReturn(mockGroup);
+
+        ResponseEntity<Map<String, Object>> response = controller.getGroup(
+                workspaceId.toString(), groupId.toString(), null, null, "W/\"999\"", null, request);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+    }
+
+    // ─── Tests for Fix 9: Content-Location header ───────────────────────
+
+    @Test
+    void createGroupHasContentLocationHeader() {
+        when(groupService.createGroup(eq(workspaceId), any())).thenReturn(mockGroup);
+
+        Map<String, Object> body = Map.of(DISPLAY_NAME, TEST_GROUP);
+        ResponseEntity<Map<String, Object>> response = controller.createGroup(workspaceId.toString(), body, null, request);
+
+        assertEquals(201, response.getStatusCode().value());
+        assertNotNull(response.getHeaders().getFirst("Content-Location"));
+        assertTrue(response.getHeaders().getFirst("Content-Location").contains(groupId.toString()));
+    }
+
+    @Test
+    void getGroupHasContentLocationHeader() {
+        when(groupService.getGroup(workspaceId, groupId)).thenReturn(mockGroup);
+
+        ResponseEntity<Map<String, Object>> response = controller.getGroup(
+                workspaceId.toString(), groupId.toString(), null, null, null, null, request);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getHeaders().getFirst("Content-Location"));
+        assertTrue(response.getHeaders().getFirst("Content-Location").contains("/Groups/" + groupId));
+    }
+
+    @Test
+    void replaceGroupHasContentLocationHeader() {
+        when(groupService.replaceGroup(eq(workspaceId), eq(groupId), any(), any())).thenReturn(mockGroup);
+
+        Map<String, Object> body = Map.of(DISPLAY_NAME, TEST_GROUP);
+        ResponseEntity<Map<String, Object>> response = controller.replaceGroup(workspaceId.toString(), groupId.toString(), body, null, null, request);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getHeaders().getFirst("Content-Location"));
+        assertTrue(response.getHeaders().getFirst("Content-Location").contains("/Groups/" + groupId));
+    }
+
+    @Test
+    void patchGroupHasContentLocationHeader() {
+        when(groupService.patchGroup(eq(workspaceId), eq(groupId), any(), any())).thenReturn(mockGroup);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("schemas", List.of("urn:ietf:params:scim:api:messages:2.0:PatchOp"));
+        body.put("Operations", List.of(Map.of("op", "replace", "path", DISPLAY_NAME, "value", "updated")));
+
+        ResponseEntity<Map<String, Object>> response = controller.patchGroup(workspaceId.toString(), groupId.toString(), body, null, null, request);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getHeaders().getFirst("Content-Location"));
+        assertTrue(response.getHeaders().getFirst("Content-Location").contains("/Groups/" + groupId));
     }
 }
