@@ -61,7 +61,7 @@ playground service provider:
 
 | Module | Role | Port | Notes |
 | --- | --- | --- | --- |
-| `scim-server-model` | Shared JPA entities, repositories, token hashing utility | n/a | Imported by API and management modules |
+| `scim-server-common` | Shared JPA entities, repositories, and common security support | n/a | Imported by API and management modules |
 | `scim-server-api` | SCIM 2.0 provider API | `8080` | Stateless bearer-token auth per workspace |
 | `scim-server-mgmt` | Thymeleaf management UI + management REST API | `8081` | Azure OIDC login, workspace and token administration |
 | `scim-validator` | Groovy/Spock compliance suite | n/a | Builds a reusable test JAR consumed by validator-mgmt |
@@ -186,7 +186,7 @@ Some repository-specific implementation details matter if you extend the code:
 ## Tech Stack
 
 - Java 17
-- Spring Boot 3.4.2
+- Spring Boot 3.5.12
 - Spring MVC, Spring Security, Spring Data JPA, Thymeleaf
 - PostgreSQL for the main playground and validator persistence stores
 - Groovy 4 + Spock + REST Assured for validator coverage
@@ -200,10 +200,9 @@ Some repository-specific implementation details matter if you extend the code:
 .
 ├── docker/
 │   └── env/                     # Compose env files for local containers
-├── infra/                      # Reserved for infrastructure artifacts
 ├── scim-server-api/            # SCIM API application
+├── scim-server-common/         # Shared entities, repositories, and common security support
 ├── scim-server-mgmt/           # Management UI/API application
-├── scim-server-model/          # Shared entities and repositories
 ├── scim-validator/             # Validator specs and support classes
 ├── scim-validator-mgmt/        # Validator UI and persistence layer
 ├── test_results/               # Saved compatibility / run artifacts
@@ -284,37 +283,16 @@ cd scim-validator-mgmt
 mvn spring-boot:run
 ```
 
-### Run the management apps with fixed local users
+### Management app authentication
 
-For local-only development, both management apps now support a `local` profile
-that swaps Azure OIDC for Spring Security form login with three fixed users:
-
-- `local-admin` / `local-admin`
-- `local-user-1` / `local-user-1`
-- `local-user-2` / `local-user-2`
-
-Run the management UI locally:
-
-```bash
-cd scim-server-mgmt
-SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
-```
-
-Run the validator UI locally:
-
-```bash
-cd scim-validator-mgmt
-SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
-```
-
-The fixed users are also provisioned into each module's `MgmtUser` table so the
-existing ownership and display-name logic continues to work during local
-development.
+The management applications currently do not provide a dedicated local-auth
+profile with fixed users. Manual runs use Azure OIDC login and require the
+corresponding OIDC environment variables to be configured before startup.
 
 ### Manual environment variables
 
-The API needs a datasource. The management applications also require Azure OIDC
-client configuration.
+All three applications require a datasource and `ACTUATOR_API_KEY`. The
+management applications also require Azure OIDC client configuration.
 
 Example variables for manual local runs:
 
@@ -323,6 +301,7 @@ Example variables for manual local runs:
 export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/scimplayground
 export SPRING_DATASOURCE_USERNAME=postgres
 export SPRING_DATASOURCE_PASSWORD=postgres
+export ACTUATOR_API_KEY=dev-actuator-key
 
 # Management apps only
 export AZURE_CLIENT_ID=<your-client-id>
@@ -337,7 +316,9 @@ export APP_SCIM_API_BASE_URL=http://localhost:8080
 ```
 
 The `docker/env/*.env` files are local development helpers. Do not reuse those
-values unchanged for shared or production deployments.
+values unchanged for shared or production deployments. Use
+`docker/env/scim-server-api.env`, `docker/env/scim-server-mgmt.env`, and
+`docker/env/scim-validator-mgmt.env` as references for the required variables.
 
 ## First-Use Workflow
 

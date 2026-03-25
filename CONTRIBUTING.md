@@ -67,28 +67,14 @@ cd scim-validator-mgmt
 mvn spring-boot:run
 ```
 
-### Local auth shortcut for the management apps
+### Management app authentication
 
-For local development, both management modules support a `local` Spring profile
-that replaces Azure OIDC with a built-in form-login setup.
+The management modules currently use Azure OIDC for manual local runs. There is
+no dedicated `local` Spring profile with built-in form-login users.
 
-Available accounts:
-
-- `local-admin` / `local-admin`
-- `local-user-1` / `local-user-1`
-- `local-user-2` / `local-user-2`
-
-Examples:
-
-```bash
-cd scim-server-mgmt
-SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
-```
-
-```bash
-cd scim-validator-mgmt
-SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
-```
+Before starting the management apps manually, set the datasource variables,
+`ACTUATOR_API_KEY`, and the required Azure OIDC environment variables described
+in the root `README.md`.
 
 ### Validator CLI execution
 
@@ -167,7 +153,7 @@ If you change SCIM behavior, review impact across all of these areas:
 
 When you add or modify an attribute, update all relevant layers together:
 
-1. JPA entity or child entity in `scim-server-model`
+1. JPA entity or child entity in `scim-server-common`
 2. Read/write mapping in `scim-server-api`
 3. PATCH support in `ScimPatchEngine` when applicable
 4. Schema metadata in `ScimSchemaDefinitions`
