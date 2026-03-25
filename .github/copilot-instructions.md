@@ -6,7 +6,7 @@ Multi-tenant SCIM 2.0 Service Provider (RFC 7643/7644) with five Maven modules:
 
 | Module | Role | Port |
 |---|---|---|
-| `scim-server-model` | Shared JPA entities, repositories, token security utility | - |
+| `scim-server-common` | Shared JPA entities, repositories, and common security utilities | - |
 | `scim-server-api` | SCIM 2.0 API (Users, Groups, Discovery, Bulk) | 8080 |
 | `scim-server-mgmt` | Admin UI + management API (Thymeleaf + vanilla JS) | 8081 |
 | `scim-validator` | Groovy/Spock SCIM compliance suite (REST Assured) | - |
@@ -35,19 +35,19 @@ Compatibility mode is route-based and extensible:
 # Full reactor build
 mvn clean install
 
-# Build without SCIM validator module (when target server is not running)
+# Build without SCIM validator module
 mvn clean install -pl '!scim-validator'
 
-# API local mode (PostgreSQL)
+# API local mode (requires datasource env vars and ACTUATOR_API_KEY)
 cd scim-server-api && mvn spring-boot:run
 
-# Mgmt UI/API local mode
+# Mgmt UI/API local mode (requires datasource env vars, ACTUATOR_API_KEY, and Azure OIDC env vars)
 cd scim-server-mgmt && mvn spring-boot:run
 
-# Validator management local mode
+# Validator management local mode (requires datasource env vars, ACTUATOR_API_KEY, and Azure OIDC env vars)
 cd scim-validator-mgmt && mvn spring-boot:run
 
-# Docker stack (PostgreSQL 16 + API + mgmt + validator mgmt)
+# Docker stack (PostgreSQL 18 + API + mgmt + validator mgmt)
 docker compose up --build
 ```
 
@@ -60,18 +60,19 @@ Docker default ports:
 
 ## Validator Execution
 
-`scim-validator` tests require a reachable SCIM API.
+`scim-validator` can either bootstrap its own disposable target via
+Testcontainers or run against an already reachable SCIM API.
 
 ```bash
-export SCIM_API_URL=http://localhost:8080
-export SCIM_WORKSPACE_ID=<uuid-or-name>
-export SCIM_AUTH_TOKEN=<bearer-token>
 cd scim-validator && mvn test
 ```
 
 Notes from `ScimBaseSpec`:
 
+- By default, the validator can bootstrap PostgreSQL plus `edipal/scim-server-api:latest` when explicit `SCIM_*` settings are not provided.
+- Disable automatic bootstrap with `SCIM_TESTCONTAINERS_ENABLED=false` or `-Dscim.testcontainers.enabled=false` when targeting an existing environment.
 - You can alternatively set `SCIM_BASE_URL` (full path, including `/ws/{workspaceId}/scim/v2`).
+- You can also provide `SCIM_API_URL` together with `SCIM_WORKSPACE_ID`.
 - `SCIM_AUTH_TOKEN` is required for validator runs.
 - `SCIM_WORKSPACE_ID` is required unless `SCIM_BASE_URL` is provided.
 
@@ -129,7 +130,7 @@ If you modify SCIM behavior, review impact across these areas:
 
 ## Adding A New SCIM Attribute
 
-1. Extend `ScimUser`/`ScimGroup` (or add child entity in `scim-server-model` when multi-valued).
+1. Extend `ScimUser`/`ScimGroup` (or add child entity in `scim-server-common` when multi-valued).
 2. Update mapper read/write paths in `scim-server-api`.
 3. Add PATCH support in `ScimPatchEngine` when applicable.
 4. Add schema metadata in `ScimSchemaDefinitions`.
