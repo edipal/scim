@@ -472,6 +472,12 @@ async function loadLogs(showToast = false) {
 async function loadLogsPage(page, showToast = false) {
     const res = await apiFetch(`${API}/workspaces/${wsId}/logs?page=${page}&size=${PER_PAGE}`);
     if (!res.ok) {
+        const errorBody = await res.text();
+        console.error('Failed to load logs:', {
+            status: res.status,
+            statusText: res.statusText,
+            body: errorBody
+        });
         document.getElementById('logList').innerHTML = '<li class="empty-state">Failed to load logs.</li>';
         if (showToast) {
             toast('Failed to load logs');
@@ -660,6 +666,12 @@ async function loadUsersPage(page, showToast = false) {
     const query = state.usersQuery ? `&q=${encodeURIComponent(state.usersQuery)}` : '';
     const res = await apiFetch(`${API}/workspaces/${wsId}/users?page=${page}&size=${PER_PAGE}${query}`);
     if (!res.ok) {
+        const errorBody = await res.text();
+        console.error('Failed to load users:', {
+            status: res.status,
+            statusText: res.statusText,
+            body: errorBody
+        });
         document.getElementById('userList').innerHTML = '<li class="empty-state">Failed to load users.</li>';
         if (showToast) {
             toast('Failed to load users');
@@ -870,6 +882,12 @@ async function loadGroupsPage(page, showToast = false) {
     const query = state.groupsQuery ? `&q=${encodeURIComponent(state.groupsQuery)}` : '';
     const res = await apiFetch(`${API}/workspaces/${wsId}/groups?page=${page}&size=${PER_PAGE}${query}`);
     if (!res.ok) {
+        const errorBody = await res.text();
+        console.error('Failed to load groups:', {
+            status: res.status,
+            statusText: res.statusText,
+            body: errorBody
+        });
         document.getElementById('groupList').innerHTML = '<li class="empty-state">Failed to load groups.</li>';
         if (showToast) {
             toast('Failed to load groups');

@@ -690,7 +690,7 @@ public class ScimPatchEngine {
                 throw new ScimException(400, "invalidValue", fieldName + " must be an absolute URI");
             }
         } catch (java.net.URISyntaxException e) {
-            throw new ScimException(400, "invalidValue", fieldName + " must be a valid URI");
+            throw new ScimException(400, "invalidValue", fieldName + " must be a valid URI", e);
         }
     }
 
@@ -699,7 +699,7 @@ public class ScimPatchEngine {
         try {
             java.util.Base64.getDecoder().decode(value);
         } catch (IllegalArgumentException e) {
-            throw new ScimException(400, "invalidValue", fieldName + " must be base64-encoded");
+            throw new ScimException(400, "invalidValue", fieldName + " must be base64-encoded", e);
         }
     }
 

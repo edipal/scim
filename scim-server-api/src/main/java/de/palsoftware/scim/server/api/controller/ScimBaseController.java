@@ -16,7 +16,7 @@ abstract class ScimBaseController {
         try {
             return UUID.fromString(workspaceId);
         } catch (IllegalArgumentException e) {
-            throw new ScimException(404, null, "Invalid workspace ID: " + workspaceId);
+            throw new ScimException(404, null, "Invalid workspace ID: " + workspaceId, e);
         }
     }
 
@@ -24,7 +24,7 @@ abstract class ScimBaseController {
         try {
             return UUID.fromString(value);
         } catch (IllegalArgumentException e) {
-            throw new ScimException(404, null, resourceType + " not found: " + value);
+            throw new ScimException(404, null, resourceType + " not found: " + value, e);
         }
     }
 

@@ -76,7 +76,7 @@ public class ScimFilterParser {
         } catch (ScimException e) {
             throw e;
         } catch (Exception e) {
-            throw new ScimException(400, "invalidFilter", "Invalid filter expression: " + e.getMessage());
+            throw new ScimException(400, "invalidFilter", "Invalid filter expression: " + e.getMessage(), e);
         }
     }
 
@@ -98,7 +98,7 @@ public class ScimFilterParser {
         } catch (ScimException e) {
             throw e;
         } catch (Exception e) {
-            throw new ScimException(400, "invalidFilter", "Invalid filter expression: " + e.getMessage());
+            throw new ScimException(400, "invalidFilter", "Invalid filter expression: " + e.getMessage(), e);
         }
     }
 

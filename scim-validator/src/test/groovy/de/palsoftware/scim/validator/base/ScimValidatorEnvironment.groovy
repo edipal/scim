@@ -26,7 +26,7 @@ final class ScimValidatorEnvironment {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScimValidatorEnvironment)
     private static final SecureRandom SECURE_RANDOM = new SecureRandom()
 
-    private static final String DEFAULT_POSTGRES_IMAGE = "postgres:16-alpine"
+    private static final String DEFAULT_POSTGRES_IMAGE = "postgres:18-alpine3.22"
     private static final String DEFAULT_API_IMAGE = "edipal/scim-server-api:latest"
     private static final String POSTGRES_ALIAS = "validator-postgres"
     private static final String DATABASE_NAME = "scimplayground"
