@@ -495,7 +495,7 @@ public class ScimUserMapper {
         try {
             java.util.Base64.getDecoder().decode(value);
         } catch (IllegalArgumentException e) {
-            throw new ScimException(400, "invalidValue", fieldName + " must be base64-encoded");
+            throw new ScimException(400, "invalidValue", fieldName + " must be base64-encoded", e);
         }
     }
 

@@ -405,7 +405,7 @@ public class ScimAdminService {
         try {
             membership.setMemberValue(UUID.fromString(member.value().trim()));
         } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid member UUID: " + member.value());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid member UUID: " + member.value(), ex);
         }
         String memberType = normalizeOptional(member.type());
         membership.setMemberType(memberType != null ? memberType : "User");

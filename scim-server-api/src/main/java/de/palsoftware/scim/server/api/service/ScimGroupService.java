@@ -379,7 +379,7 @@ public class ScimGroupService {
         try {
             memberId = UUID.fromString(memberValue);
         } catch (IllegalArgumentException e) {
-            throw new ScimException(400, "invalidValue", "Invalid member value (must be UUID): " + memberValue);
+            throw new ScimException(400, "invalidValue", "Invalid member value (must be UUID): " + memberValue, e);
         }
 
         // Determine member type

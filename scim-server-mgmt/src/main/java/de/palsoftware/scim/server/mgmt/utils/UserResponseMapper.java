@@ -44,14 +44,14 @@ public final class UserResponseMapper {
         map.put("locale", user.getLocale());
         map.put("timezone", user.getTimezone());
         map.put("enterprise", enterpriseToMap(user));
-        map.put("emails", emailListToMap(user.getEmails()));
-        map.put("phoneNumbers", phoneListToMap(user.getPhoneNumbers()));
-        map.put("addresses", addressListToMap(user.getAddresses()));
-        map.put("entitlements", entitlementListToMap(user.getEntitlements()));
-        map.put("roles", roleListToMap(user.getRoles()));
-        map.put("ims", imListToMap(user.getIms()));
-        map.put("photos", photoListToMap(user.getPhotos()));
-        map.put("x509Certificates", certificateListToMap(user.getX509Certificates()));
+        map.put("emails", emailListToMap(safeList(user.getEmails())));
+        map.put("phoneNumbers", phoneListToMap(safeList(user.getPhoneNumbers())));
+        map.put("addresses", addressListToMap(safeList(user.getAddresses())));
+        map.put("entitlements", entitlementListToMap(safeList(user.getEntitlements())));
+        map.put("roles", roleListToMap(safeList(user.getRoles())));
+        map.put("ims", imListToMap(safeList(user.getIms())));
+        map.put("photos", photoListToMap(safeList(user.getPhotos())));
+        map.put("x509Certificates", certificateListToMap(safeList(user.getX509Certificates())));
         map.put("active", user.isActive());
         map.put(KEY_CREATED_AT, user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         map.put(KEY_LAST_MODIFIED, user.getLastModified() != null ? user.getLastModified().toString() : null);
@@ -203,6 +203,10 @@ public final class UserResponseMapper {
         map.put(KEY_DISPLAY, display);
         map.put("primary", primary);
         return map;
+    }
+
+    private static <T> List<T> safeList(List<T> values) {
+        return values == null ? List.of() : values;
     }
 
     private static Map<String, Object> metaToMap(Instant createdAt, Instant lastModified, Long version) {

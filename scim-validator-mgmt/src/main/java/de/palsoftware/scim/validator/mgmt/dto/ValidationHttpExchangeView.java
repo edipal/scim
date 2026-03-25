@@ -1,5 +1,7 @@
 package de.palsoftware.scim.validator.mgmt.dto;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.palsoftware.scim.validator.mgmt.model.ValidationHttpExchange;
 
 import java.net.URLDecoder;
@@ -18,6 +20,9 @@ public record ValidationHttpExchangeView(
         String responseHeaders,
         String responseBody,
         OffsetDateTime createdAt) {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     public String getDisplayUrl() {
         if (url == null || url.isBlank()) {
             return url;
@@ -36,10 +41,23 @@ public record ValidationHttpExchangeView(
                 exchange.getMethod(),
                 exchange.getUrl(),
                 exchange.getRequestHeaders(),
-                exchange.getRequestBody(),
+                formatJsonBody(exchange.getRequestBody()),
                 exchange.getResponseStatus(),
                 exchange.getResponseHeaders(),
-                exchange.getResponseBody(),
+                formatJsonBody(exchange.getResponseBody()),
                 exchange.getCreatedAt());
+    }
+
+    private static String formatJsonBody(String body) {
+        if (body == null || body.isBlank()) {
+            return body;
+        }
+
+        try {
+            return OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(OBJECT_MAPPER.readTree(body));
+        } catch (JsonProcessingException ex) {
+            return body;
+        }
     }
 }

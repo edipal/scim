@@ -11,7 +11,7 @@ public abstract class PostgresRepositoryTestSupport {
 
     private static final String SCHEMA = "scim_common_test";
     @SuppressWarnings("resource")
-    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18-alpine3.22")
             .withDatabaseName("scimplayground")
             .withUsername("scim_playground")
             .withPassword("scim_playground");

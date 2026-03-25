@@ -6,6 +6,8 @@ import de.palsoftware.scim.server.api.scim.error.ScimException;
 import de.palsoftware.scim.server.api.service.ScimGroupService;
 import de.palsoftware.scim.server.api.service.ScimUserService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,8 @@ import java.util.*;
 @RestController
 @RequestMapping({"/ws/{workspaceId}/scim/v2/Bulk", "/ws/{workspaceId}/scim/v2/{compat}/Bulk"})
 public class ScimBulkController extends ScimBaseController {
+
+    private static final Logger log = LoggerFactory.getLogger(ScimBulkController.class);
 
     private static final MediaType SCIM_JSON = MediaType.parseMediaType("application/scim+json");
     private static final String BULK_REQUEST_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:BulkRequest";
@@ -169,6 +173,7 @@ public class ScimBulkController extends ScimBaseController {
             result.put(KEY_RESPONSE, buildError(
                     String.valueOf(e.getHttpStatus()), e.getScimType(), e.getMessage()));
         } catch (Exception e) {
+            log.error("Unhandled bulk operation failure for method={}, path={}, bulkId={}", method, path, bulkId, e);
             result.put(KEY_STATUS, "500");
             result.put(KEY_RESPONSE, buildError("500", null, "Internal server error"));
         }

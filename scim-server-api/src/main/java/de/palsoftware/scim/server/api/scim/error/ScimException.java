@@ -14,8 +14,18 @@ public class ScimException extends RuntimeException {
         this.scimType = scimType;
     }
 
+    public ScimException(int httpStatus, String scimType, String detail, Throwable cause) {
+        super(detail, cause);
+        this.httpStatus = httpStatus;
+        this.scimType = scimType;
+    }
+
     public ScimException(int httpStatus, String detail) {
         this(httpStatus, null, detail);
+    }
+
+    public ScimException(int httpStatus, String detail, Throwable cause) {
+        this(httpStatus, null, detail, cause);
     }
 
     public int getHttpStatus() {
