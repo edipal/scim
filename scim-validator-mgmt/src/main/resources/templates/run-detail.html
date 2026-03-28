@@ -31,6 +31,25 @@
         .details-row.is-open { display: table-row; }
         .details-panel { background: #fcfdff; }
         a { color: #1d4ed8; text-decoration: none; }
+        .bmc-widget { position: fixed; right: 24px; bottom: 24px; z-index: 90; }
+        .bmc-widget summary { list-style: none; min-height: 56px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; border-radius: 999px; cursor: pointer; background: linear-gradient(180deg, #ffe066 0%, #ffd43b 100%); box-shadow: 0 18px 36px rgba(0,0,0,0.24); border: 1px solid rgba(255,255,255,0.65); }
+        .bmc-widget summary::-webkit-details-marker { display: none; }
+        .bmc-widget summary img { display: block; width: 30px; height: 30px; }
+        .bmc-widget-label { color: #172554; font-size: 13px; font-weight: 800; line-height: 1; white-space: nowrap; }
+        .bmc-panel { position: absolute; right: 0; bottom: calc(100% + 12px); width: min(168px, calc(100vw - 32px)); display: block; background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 18px 36px rgba(0,0,0,0.24); opacity: 0; transform: translateY(8px) scale(0.98); pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease; }
+        .bmc-widget[open] .bmc-panel { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .bmc-panel img { display: block; width: 100%; height: auto; }
+        .bmc-panel-copy { display: flex; align-items: center; justify-content: center; padding: 8px 10px 10px; background: #fff4b3; color: #7c2d12; text-align: center; }
+        .bmc-panel-hint { font-size: 12px; font-weight: 700; opacity: 0.85; }
+        @media (max-width: 720px) {
+            .bmc-widget { right: 16px; bottom: 16px; }
+            .bmc-widget summary { min-height: 48px; gap: 6px; padding: 10px 12px; }
+            .bmc-widget summary img { width: 26px; height: 26px; }
+            .bmc-widget-label { font-size: 11px; }
+            .bmc-panel { width: min(120px, calc(100vw - 24px)); border-radius: 18px; }
+            .bmc-panel-copy { padding: 6px 8px 8px; }
+            .bmc-panel-hint { font-size: 9px; }
+        }
     </style>
 </head>
 <body>
@@ -150,5 +169,17 @@
         });
     });
 </script>
+<details class="bmc-widget">
+    <summary aria-label="Buy me a coffee">
+        <img th:src="@{/images/buy-me-a-coffee-icon.svg}" src="/images/buy-me-a-coffee-icon.svg" alt="Buy Me a Coffee icon">
+        <span class="bmc-widget-label">Buy me a coffee</span>
+    </summary>
+    <a class="bmc-panel" href="https://buymeacoffee.com/eduard.pal" target="_blank" rel="noopener noreferrer" aria-label="Open Buy Me a Coffee">
+        <img th:src="@{/images/buy-me-a-coffee.png}" src="/images/buy-me-a-coffee.png" alt="Buy Me a Coffee QR code">
+        <span class="bmc-panel-copy">
+            <span class="bmc-panel-hint">Scan or click</span>
+        </span>
+    </a>
+</details>
 </body>
 </html>

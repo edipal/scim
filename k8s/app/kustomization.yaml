@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - database
+  - scim-server-api
+  - scim-server-mgmt
+  - scim-validator-mgmt
+
+labels:
+  - pairs:
+      app.kubernetes.io/managed-by: kustomize
+      app.kubernetes.io/part-of: scim
+      app.kubernetes.io/environment: k3s

@@ -1,0 +1,153 @@
+package de.palsoftware.scim.validator.base
+
+import groovy.yaml.YamlSlurper
+
+final class ValidatorConfiguration {
+
+    private static final String CONFIG_RESOURCE = "/application.yml"
+    private static final Config CURRENT = load()
+
+    private ValidatorConfiguration() {
+    }
+
+    static Config current() {
+        return CURRENT
+    }
+
+    private static Config load() {
+        InputStream inputStream = ValidatorConfiguration.getResourceAsStream(CONFIG_RESOURCE)
+        if (inputStream == null) {
+            throw new IllegalStateException("Missing validator configuration resource ${CONFIG_RESOURCE}")
+        }
+
+        Map<String, Object> root = (Map<String, Object>) new YamlSlurper().parse(inputStream)
+        return new Config(
+            stringValue(root, "scim.base-url"),
+            stringValue(root, "scim.api-url"),
+            stringValue(root, "scim.workspace-id"),
+            stringValue(root, "scim.auth-token"),
+            booleanValue(root, "scim.testcontainers.enabled"),
+            stringValue(root, "scim.testcontainers.postgres-image"),
+            stringValue(root, "scim.testcontainers.api-image"),
+            new PostgresConfig(
+                stringValue(root, "scim.testcontainers.postgres.alias"),
+                stringValue(root, "scim.testcontainers.postgres.database-name"),
+                stringValue(root, "scim.testcontainers.postgres.username"),
+                stringValue(root, "scim.testcontainers.postgres.password")
+            ),
+            new ApiConfig(intValue(root, "scim.testcontainers.api.port"))
+        )
+    }
+
+    private static String stringValue(Map<String, Object> root, String path) {
+        Object value = requiredValue(root, path)
+        if (!(value instanceof CharSequence) && !(value instanceof Number) && !(value instanceof Boolean)) {
+            throw new IllegalStateException("Unsupported configuration value for ${path}: ${value}")
+        }
+        return resolveValue(value.toString())
+    }
+
+    private static boolean booleanValue(Map<String, Object> root, String path) {
+        String value = stringValue(root, path)
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("Blank boolean configuration value for ${path}")
+        }
+        return Boolean.parseBoolean(value)
+    }
+
+    private static int intValue(Map<String, Object> root, String path) {
+        String value = stringValue(root, path)
+        try {
+            return Integer.parseInt(value)
+        } catch (NumberFormatException exception) {
+            throw new IllegalStateException("Invalid integer configuration value for ${path}: ${value}", exception)
+        }
+    }
+
+    private static Object requiredValue(Map<String, Object> root, String path) {
+        Object current = root
+        for (String segment : path.split("\\.")) {
+            if (!(current instanceof Map) || !((Map<?, ?>) current).containsKey(segment)) {
+                throw new IllegalStateException("Missing validator configuration key ${path}")
+            }
+            current = ((Map<?, ?>) current).get(segment)
+        }
+        return current
+    }
+
+    private static String resolveValue(String rawValue) {
+        if (rawValue == null) {
+            return null
+        }
+        def matcher = rawValue =~ /^\$\{([^:}]+)(?::([^}]*))?\}$/
+        if (!matcher.matches()) {
+            return rawValue
+        }
+
+        String variableName = matcher.group(1)
+        String defaultValue = matcher.groupCount() >= 2 ? matcher.group(2) : null
+        String systemValue = System.getProperty(variableName)
+        if (systemValue != null && !systemValue.isBlank()) {
+            return systemValue
+        }
+        String environmentValue = System.getenv(variableName)
+        if (environmentValue != null && !environmentValue.isBlank()) {
+            return environmentValue
+        }
+        return defaultValue
+    }
+
+    static final class Config {
+        final String baseUrl
+        final String apiUrl
+        final String workspaceId
+        final String authToken
+        final boolean testcontainersEnabled
+        final String postgresImage
+        final String apiImage
+        final PostgresConfig postgres
+        final ApiConfig api
+
+        Config(String baseUrl,
+               String apiUrl,
+               String workspaceId,
+               String authToken,
+               boolean testcontainersEnabled,
+               String postgresImage,
+               String apiImage,
+               PostgresConfig postgres,
+               ApiConfig api) {
+            this.baseUrl = baseUrl
+            this.apiUrl = apiUrl
+            this.workspaceId = workspaceId
+            this.authToken = authToken
+            this.testcontainersEnabled = testcontainersEnabled
+            this.postgresImage = postgresImage
+            this.apiImage = apiImage
+            this.postgres = postgres
+            this.api = api
+        }
+    }
+
+    static final class PostgresConfig {
+        final String alias
+        final String databaseName
+        final String username
+        final String password
+
+        PostgresConfig(String alias, String databaseName, String username, String password) {
+            this.alias = alias
+            this.databaseName = databaseName
+            this.username = username
+            this.password = password
+        }
+    }
+
+    static final class ApiConfig {
+        final int port
+
+        ApiConfig(int port) {
+            this.port = port
+        }
+    }
+}

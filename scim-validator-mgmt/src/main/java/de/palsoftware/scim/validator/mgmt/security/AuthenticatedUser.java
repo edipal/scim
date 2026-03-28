@@ -2,6 +2,7 @@ package de.palsoftware.scim.validator.mgmt.security;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 public final class AuthenticatedUser {
@@ -16,6 +17,12 @@ public final class AuthenticatedUser {
         Object principal = authentication.getPrincipal();
         if (principal instanceof OidcUser oidcUser) {
             String resolved = resolveOidcUsername(oidcUser);
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+        if (principal instanceof Jwt jwt) {
+            String resolved = resolveJwtUsername(jwt);
             if (resolved != null) {
                 return resolved;
             }
@@ -47,6 +54,26 @@ public final class AuthenticatedUser {
         return null;
     }
 
+    private static String resolveJwtUsername(Jwt jwt) {
+        String preferredUsername = jwt.getClaimAsString("preferred_username");
+        if (preferredUsername != null && !preferredUsername.isBlank()) {
+            return preferredUsername;
+        }
+        String upn = jwt.getClaimAsString("upn");
+        if (upn != null && !upn.isBlank()) {
+            return upn;
+        }
+        String email = jwt.getClaimAsString("email");
+        if (email != null && !email.isBlank()) {
+            return email;
+        }
+        String sub = jwt.getSubject();
+        if (sub != null && !sub.isBlank()) {
+            return sub;
+        }
+        return null;
+    }
+
     public static String userId(Authentication authentication) {
         if (authentication == null) {
             throw new IllegalStateException("Missing authentication");
@@ -55,6 +82,12 @@ public final class AuthenticatedUser {
         Object principal = authentication.getPrincipal();
         if (principal instanceof OidcUser oidcUser) {
             String sub = oidcUser.getSubject();
+            if (sub != null && !sub.isBlank()) {
+                return sub;
+            }
+        }
+        if (principal instanceof Jwt jwt) {
+            String sub = jwt.getSubject();
             if (sub != null && !sub.isBlank()) {
                 return sub;
             }
@@ -74,6 +107,12 @@ public final class AuthenticatedUser {
         Object principal = authentication.getPrincipal();
         if (principal instanceof OidcUser oidcUser) {
             String email = oidcUser.getEmail();
+            if (email != null && !email.isBlank()) {
+                return email;
+            }
+        }
+        if (principal instanceof Jwt jwt) {
+            String email = jwt.getClaimAsString("email");
             if (email != null && !email.isBlank()) {
                 return email;
             }

@@ -1,6 +1,18 @@
+server:
+  servlet:
+    session:
+      cookie:
+        name: SCIM_SERVER_MGMT_SESSION
+
 spring:
   application:
     name: scim-server-mgmt
+  flyway:
+    locations:
+      - classpath:db/migration
+      - classpath:db/common
+  profiles:
+    default: azure
   jpa:
     hibernate:
       ddl-auto: validate
@@ -31,17 +43,6 @@ logging:
     "[org.springframework.security.web.csrf]": TRACE
     "[org.springframework.security.web.FilterChainProxy]": DEBUG
 
-app:
-  scim-api:
-    base:
-      url: ${APP_SCIM_API_BASE_URL:http://localhost:8080}
-
-server:
-  servlet:
-    session:
-      cookie:
-        name: SCIM_SERVER_MGMT_SESSION
-
 management:
   endpoint:
     health:
@@ -57,3 +58,25 @@ management:
       enabled: false
     diskspace:
       enabled: false
+
+
+app:
+  security:
+    actuator:
+      api-key: ${ACTUATOR_API_KEY}
+    azure:
+      role-claim: ${APP_SECURITY_AZURE_ROLE_CLAIM:roles}
+    oidc:
+      admin-role: ${APP_SECURITY_OIDC_ADMIN_ROLE:admin}
+      user-role: ${APP_SECURITY_OIDC_USER_ROLE:user}
+    cloudflare:
+      role-claim: ${APP_SECURITY_CLOUDFLARE_ROLE_CLAIM:roles}
+      issuer-uri: ${CLOUDFLARE_ACCESS_ISSUER_URI}
+      audience: ${CLOUDFLARE_ACCESS_AUDIENCE}
+      jwk-set-uri: ${CLOUDFLARE_ACCESS_JWK_SET_URI:}
+      logout-url: ${CLOUDFLARE_ACCESS_LOGOUT_URL:/}
+      token-header: ${CLOUDFLARE_ACCESS_TOKEN_HEADER:Cf-Access-Jwt-Assertion}
+
+  scim-api:
+    base:
+      url: ${APP_SCIM_API_BASE_URL:http://localhost:8080}

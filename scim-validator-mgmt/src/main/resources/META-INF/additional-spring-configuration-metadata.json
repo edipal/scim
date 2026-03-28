@@ -1,0 +1,75 @@
+{
+  "groups": [
+    {
+      "name": "app",
+      "type": "java.lang.Object"
+    },
+    {
+      "name": "app.security",
+      "type": "java.lang.Object"
+    },
+    {
+      "name": "app.security.actuator",
+      "type": "java.lang.Object"
+    },
+    {
+      "name": "app.security.azure",
+      "type": "java.lang.Object"
+    },
+    {
+      "name": "app.security.oidc",
+      "type": "java.lang.Object"
+    },
+    {
+      "name": "app.security.cloudflare",
+      "type": "java.lang.Object"
+    }
+  ],
+  "properties": [
+    {
+      "name": "app.security.actuator.api-key",
+      "type": "java.lang.String",
+      "description": "Actuator API key used by the management filter."
+    },
+    {
+      "name": "app.security.azure.role-claim",
+      "type": "java.lang.String",
+      "description": "OIDC role claim used when Azure profile is active."
+    },
+    {
+      "name": "app.security.oidc.admin-role",
+      "type": "java.lang.String",
+      "description": "Configured Azure admin role name."
+    },
+    {
+      "name": "app.security.oidc.user-role",
+      "type": "java.lang.String",
+      "description": "Configured Azure user role name."
+    },
+    {
+      "name": "app.security.cloudflare.role-claim",
+      "type": "java.lang.String",
+      "description": "JWT claim used when Cloudflare profile is active."
+    },
+    {
+      "name": "app.security.cloudflare.issuer-uri",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.security.cloudflare.audience",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.security.cloudflare.jwk-set-uri",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.security.cloudflare.logout-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.security.cloudflare.token-header",
+      "type": "java.lang.String"
+    }
+  ]
+}

@@ -28,8 +28,8 @@ public class WorkspaceCleanupService {
     public WorkspaceCleanupService(WorkspaceRepository workspaceRepository,
             TransactionOperations transactionOperations,
             Clock clock,
-            @Value("${app.cleanup.workspace.enabled:true}") boolean cleanupEnabled,
-            @Value("${app.cleanup.workspace.stale-after:P3M}") String staleAfterValue) {
+            @Value("${app.cleanup.workspace.enabled}") boolean cleanupEnabled,
+            @Value("${app.cleanup.workspace.stale-after}") String staleAfterValue) {
         this.workspaceRepository = workspaceRepository;
         this.transactionOperations = transactionOperations;
         this.clock = clock;
@@ -37,7 +37,7 @@ public class WorkspaceCleanupService {
         this.staleAfter = Period.parse(staleAfterValue);
     }
 
-    @Scheduled(cron = "${app.cleanup.workspace.cron:0 0 */2 * * *}", zone = "${app.cleanup.workspace.zone:UTC}")
+    @Scheduled(cron = "${app.cleanup.workspace.cron}", zone = "${app.cleanup.workspace.zone}")
     public void deleteStaleWorkspacesOnSchedule() {
         if (!cleanupEnabled) {
             return;

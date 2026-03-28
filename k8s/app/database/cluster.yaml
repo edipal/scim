@@ -1,0 +1,37 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: scim-postgres
+spec:
+  description: SCIM PostgreSQL cluster for k3s
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
+  instances: 1
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: scim-postgres-superuser
+  affinity:
+    enablePodAntiAffinity: false
+  enablePDB: false
+  bootstrap:
+    initdb:
+      database: scimplayground
+      owner: scim_playground
+      secret:
+        name: scim-postgres-playground
+  managed:
+    roles:      
+      - name: scim_validator
+        ensure: present
+        login: true
+        passwordSecret:
+          name: scim-postgres-validator
+  storage:
+    storageClass: local-path-custom
+    size: 50Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi

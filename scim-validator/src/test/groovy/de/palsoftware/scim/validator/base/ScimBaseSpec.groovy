@@ -65,14 +65,12 @@ abstract class ScimBaseSpec extends Specification {
     }
 
     protected static void refreshConfiguration() {
-        String explicitBaseUrl = System.getProperty("scim.baseUrl") ?: System.getenv("SCIM_BASE_URL")
-        String configuredWorkspace = System.getProperty("scim.workspaceId") ?: System.getenv("SCIM_WORKSPACE_ID")
-        String explicitApiUrl = System.getProperty("scim.apiUrl") ?: System.getenv("SCIM_API_URL")
-        String configuredAuthToken = System.getProperty("scim.authToken") ?: System.getenv("SCIM_AUTH_TOKEN")
-        boolean testcontainersEnabled = booleanSetting(
-            System.getProperty("scim.testcontainers.enabled") ?: System.getenv("SCIM_TESTCONTAINERS_ENABLED"),
-            true
-        )
+        ValidatorConfiguration.Config configuration = ValidatorConfiguration.current()
+        String explicitBaseUrl = configuration.baseUrl
+        String configuredWorkspace = configuration.workspaceId
+        String explicitApiUrl = configuration.apiUrl
+        String configuredAuthToken = configuration.authToken
+        boolean testcontainersEnabled = configuration.testcontainersEnabled
 
         if (!hasText(explicitBaseUrl) && !hasText(configuredWorkspace) && !hasText(explicitApiUrl) && !hasText(configuredAuthToken)) {
             if (testcontainersEnabled) {
@@ -91,7 +89,7 @@ abstract class ScimBaseSpec extends Specification {
             )
         }
 
-        String configuredApiUrl = explicitApiUrl ?: "http://localhost:8080"
+        String configuredApiUrl = explicitApiUrl
 
         workspaceId = configuredWorkspace
         AUTH_TOKEN = configuredAuthToken
@@ -117,13 +115,6 @@ abstract class ScimBaseSpec extends Specification {
 
     protected static boolean hasText(String value) {
         return value != null && !value.isBlank()
-    }
-
-    protected static boolean booleanSetting(String value, boolean defaultValue) {
-        if (!hasText(value)) {
-            return defaultValue
-        }
-        return Boolean.parseBoolean(value)
     }
 
     protected static void configureRestAssured() {

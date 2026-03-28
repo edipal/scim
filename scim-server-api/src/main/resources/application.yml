@@ -3,13 +3,17 @@ server:
 spring:
   application:
     name: scim-server-api
+  flyway:
+    locations:
+      - classpath:db/migration
+      - classpath:db/common
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
-        default_batch_fetch_size: 100
+        "[default_batch_fetch_size]": 100
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -37,6 +41,9 @@ management:
       enabled: false
 
 app:
+  security:
+    actuator:
+      api-key: ${ACTUATOR_API_KEY}
   cleanup:
     workspace:
       enabled: true

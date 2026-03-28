@@ -45,6 +45,12 @@
             <artifactId>groovy-json</artifactId>
             <version>${groovy.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-yaml</artifactId>
+            <version>${groovy.version}</version>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Spock Framework -->
         <dependency>

@@ -1,0 +1,10 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: scim-postgres-scimvalidation
+spec:
+  cluster:
+    name: scim-postgres
+  name: scimvalidation
+  owner: scim_validator
+  databaseReclaimPolicy: retain

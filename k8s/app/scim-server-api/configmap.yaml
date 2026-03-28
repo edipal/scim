@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scim-server-api-k3s-config
+data:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://scim-postgres-rw:5432/scimplayground
+  SPRING_DATASOURCE_USERNAME: scim_playground

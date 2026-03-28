@@ -29,6 +29,26 @@ Compatibility mode is route-based and extensible:
 	- converts selected `primary` booleans to string values
 	- adds flattened enterprise manager alias key
 
+Management security is profile-based:
+
+- Default profile is `azure`, using interactive Azure OIDC login.
+- `cloudflare` profile switches the management apps to JWT resource-server mode.
+- Cloudflare mode reads the token from `Cf-Access-Jwt-Assertion` by default and maps roles from a configurable claim.
+- Shared helpers live in `scim-server-common` (`AzureOidcSecuritySupport`, `CloudflareJwtSecuritySupport`, `MgmtSecuritySupport`).
+
+Kubernetes support is split into two trees:
+
+- `k8s/app/**` deploys the namespaced SCIM stack in `scim`:
+	- CloudNativePG PostgreSQL cluster
+	- validator database resource
+	- API, management, and validator-mgmt Deployments and Services
+- `k8s/cluster/**` deploys supporting cluster resources:
+	- local-path storage configuration and `local-path-custom` `StorageClass`
+	- `cloudflared` in its own namespace
+
+Kubernetes secrets are stored as `*.sops.yaml` files and rendered through `ksops`.
+The root `.sops.yaml` defines the active age recipient.
+
 ## Build And Run
 
 ```bash
@@ -41,14 +61,25 @@ mvn clean install -pl '!scim-validator'
 # API local mode (requires datasource env vars and ACTUATOR_API_KEY)
 cd scim-server-api && mvn spring-boot:run
 
-# Mgmt UI/API local mode (requires datasource env vars, ACTUATOR_API_KEY, and Azure OIDC env vars)
+# Mgmt UI/API local mode (defaults to Azure profile; requires datasource env vars,
+# ACTUATOR_API_KEY, and Azure OIDC env vars unless you explicitly set SPRING_PROFILES_ACTIVE=cloudflare)
 cd scim-server-mgmt && mvn spring-boot:run
 
-# Validator management local mode (requires datasource env vars, ACTUATOR_API_KEY, and Azure OIDC env vars)
+# Validator management local mode (defaults to Azure profile; requires datasource env vars,
+# ACTUATOR_API_KEY, and Azure OIDC env vars unless you explicitly set SPRING_PROFILES_ACTIVE=cloudflare)
 cd scim-validator-mgmt && mvn spring-boot:run
 
-# Docker stack (PostgreSQL 18 + API + mgmt + validator mgmt)
+# Docker stack
 docker compose up --build
+
+# Docker stack plus local cloudflared sidecar
+docker compose --profile cloudflare up --build
+
+# Kubernetes support resources (requires kubectl, kustomize, ksops, sops, and SOPS_AGE_KEY_FILE)
+kustomize build --enable-alpha-plugins --enable-exec k8s/cluster | kubectl apply -f -
+
+# Kubernetes application stack
+kustomize build --enable-alpha-plugins --enable-exec k8s/app | kubectl apply -f -
 ```
 
 Docker default ports:
@@ -57,6 +88,12 @@ Docker default ports:
 - Mgmt `:8081`
 - Validator Mgmt `:8082`
 - PostgreSQL `:5432`
+
+Operational notes:
+
+- `docker-compose.yml` loads `docker/env/cloudflare.env` into the management apps.
+- Kubernetes manifests set `SPRING_PROFILES_ACTIVE=cloudflare` for the management apps.
+- Application services in Kubernetes are `ClusterIP`; Cloudflare tunnel is the external-access path in this branch.
 
 ## Validator Execution
 
@@ -84,9 +121,13 @@ Notes from `ScimBaseSpec`:
 - SCIM mapping code uses static utility classes (`ScimUserMapper`, `ScimGroupMapper`, `MsScimUserMapper`).
 - Java records are used in DTO layers (notably in mgmt and validator-mgmt modules).
 - `@Transactional` appears on service classes and on selected controller classes/methods. Preserve existing boundaries unless intentionally refactoring.
+- Flyway migrations are split by concern:
+	- shared schema migrations under `db/common`
+	- validator schema migrations under `db/validator`
+	- module-specific migrations under `db/migration`
 - Content types:
-	- SCIM endpoints: `application/scim+json`
-	- Mgmt endpoints: standard JSON (`application/json`)
+  - SCIM endpoints: `application/scim+json`
+  - Mgmt endpoints: standard JSON (`application/json`)
 
 ## Data Model Patterns
 
@@ -127,6 +168,14 @@ If you modify SCIM behavior, review impact across these areas:
 4. Filter and patch engines
 5. Schema definitions and ServiceProviderConfig flags
 6. Validator specs (`A1` through `A9`) and compatibility expectations
+
+If you modify management authentication or deployment behavior, also review:
+
+1. Both management modules' `AzureSecurityConfig` and `CloudflareSecurityConfig`
+2. Shared helpers in `scim-server-common/src/main/java/.../security`
+3. `docker-compose.yml` and `docker/env/*.env`
+4. `k8s/app/**` and `k8s/cluster/**`
+5. `.sops.yaml` and `age/rotate_sops_age_key.py`
 
 ## Adding A New SCIM Attribute
 

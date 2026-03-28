@@ -22,6 +22,7 @@ services:
       - "8081:8081"
     env_file:
       - ./docker/env/scim-server-mgmt.env
+      - ./docker/env/cloudflare.env
     environment:
       - SERVER_PORT=8081
     depends_on:
@@ -37,11 +38,30 @@ services:
       - "8082:8082"
     env_file:
       - ./docker/env/scim-validator-mgmt.env
+      - ./docker/env/cloudflare.env
     environment:
       - SERVER_PORT=8082
     depends_on:
       postgres-validator:
         condition: service_healthy
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.3.0
+    profiles:
+      - cloudflare
+    env_file:
+      - ./docker/env/cloudflare.env
+    command:
+      - tunnel
+      - run
+    depends_on:
+      scim-server-api:
+        condition: service_started
+      scim-server-mgmt:
+        condition: service_started
+      scim-validator-mgmt:
+        condition: service_started
     restart: unless-stopped
 
   postgres-playground:
