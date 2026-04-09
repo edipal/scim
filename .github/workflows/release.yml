@@ -55,9 +55,20 @@ jobs:
       - name: Set Maven version
         run: mvn versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
 
+      - name: Update Kubernetes image tags
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          sed -Ei "s|(image: edipal/scim-server-api:).*|\\1${VERSION}|" k8s/app/scim-server-api/deployment.yaml
+          sed -Ei "s|(image: edipal/scim-server-mgmt:).*|\\1${VERSION}|" k8s/app/scim-server-mgmt/deployment.yaml
+          sed -Ei "s|(image: edipal/scim-validator-mgmt:).*|\\1${VERSION}|" k8s/app/scim-validator-mgmt/deployment.yaml
+
       - name: Commit version changes
         run: |
           git add $(find . -name "pom.xml" -not -path "*/target/*")
+          git add \
+            k8s/app/scim-server-api/deployment.yaml \
+            k8s/app/scim-server-mgmt/deployment.yaml \
+            k8s/app/scim-validator-mgmt/deployment.yaml
           git commit -m "chore(release): v${{ steps.version.outputs.version }}"
 
       - name: Create and push tag
