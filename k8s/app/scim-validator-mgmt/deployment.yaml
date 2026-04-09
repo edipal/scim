@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scim-validator-mgmt
+  labels:
+    app.kubernetes.io/name: scim-validator-mgmt
+    app.kubernetes.io/component: validator-mgmt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: scim-validator-mgmt
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: scim-validator-mgmt
+        app.kubernetes.io/component: validator-mgmt
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: scim-validator-mgmt
+          image: edipal/scim-validator-mgmt:1.0.6
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: scim-validator-mgmt-k3s-config
+            - secretRef:
+                name: scim-validator-mgmt-k3s-secrets
+          env:
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: scim-postgres-validator
+                  key: password
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              ephemeral-storage: 256Mi
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              ephemeral-storage: 1Gi
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

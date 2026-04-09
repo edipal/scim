@@ -1,6 +1,11 @@
 spring:
   application:
     name: scim-validator-mgmt
+  flyway:
+    locations:
+      - classpath:db/validator
+  profiles:
+    default: azure
   jpa:
     hibernate:
       ddl-auto: validate
@@ -48,3 +53,29 @@ logging:
     "[org.springframework.security]": DEBUG
     "[org.springframework.security.web.csrf]": TRACE
     "[org.springframework.security.web.FilterChainProxy]": DEBUG
+
+app:
+  security:
+    actuator:
+      api-key: ${ACTUATOR_API_KEY}
+    azure:
+      role-claim: ${APP_SECURITY_AZURE_ROLE_CLAIM:roles}
+    oidc:
+      admin-role: ${APP_SECURITY_OIDC_ADMIN_ROLE:admin}
+      user-role: ${APP_SECURITY_OIDC_USER_ROLE:user}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: cloudflare
+
+app:
+  security:
+    cloudflare:
+      role-claim: ${APP_SECURITY_CLOUDFLARE_ROLE_CLAIM:roles}
+      issuer-uri: ${CLOUDFLARE_ACCESS_ISSUER_URI}
+      audience: ${CLOUDFLARE_ACCESS_AUDIENCE}
+      jwk-set-uri: ${CLOUDFLARE_ACCESS_JWK_SET_URI:}
+      logout-url: ${CLOUDFLARE_ACCESS_LOGOUT_URL:/}
+      token-header: ${CLOUDFLARE_ACCESS_TOKEN_HEADER:Cf-Access-Jwt-Assertion}

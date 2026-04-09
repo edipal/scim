@@ -7,7 +7,6 @@ import de.palsoftware.scim.validator.mgmt.service.MgmtUserService;
 import de.palsoftware.scim.validator.mgmt.service.ValidationRunService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -106,11 +105,10 @@ public class ValidationController {
     }
 
     private String resolveDisplayName(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof OidcUser oidcUser) {
-            String sub = oidcUser.getSubject();
-            String fallback = AuthenticatedUser.displayName(authentication);
-            return mgmtUserService.resolveDisplayName(sub, fallback);
+        if (authentication == null) {
+            return null;
         }
-        return AuthenticatedUser.displayName(authentication);
+        String fallback = AuthenticatedUser.displayName(authentication);
+        return mgmtUserService.resolveDisplayName(AuthenticatedUser.userId(authentication), fallback);
     }
 }

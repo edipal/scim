@@ -28,7 +28,7 @@ public class SecurityConfig {
     public SecurityConfig(WorkspaceTokenRepository tokenRepository,
                           ObjectMapper objectMapper,
                           RequestResponseLoggingFilter loggingFilter,
-                          @Value("${ACTUATOR_API_KEY}") String actuatorApiKey) {
+                          @Value("${app.security.actuator.api-key}") String actuatorApiKey) {
         this.tokenRepository = tokenRepository;
         this.objectMapper = objectMapper;
         this.loggingFilter = loggingFilter;

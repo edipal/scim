@@ -26,14 +26,6 @@ final class ScimValidatorEnvironment {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScimValidatorEnvironment)
     private static final SecureRandom SECURE_RANDOM = new SecureRandom()
 
-    private static final String DEFAULT_POSTGRES_IMAGE = "postgres:18-alpine3.22"
-    private static final String DEFAULT_API_IMAGE = "edipal/scim-server-api:latest"
-    private static final String POSTGRES_ALIAS = "validator-postgres"
-    private static final String DATABASE_NAME = "scimplayground"
-    private static final String DATABASE_USERNAME = "scim_playground"
-    private static final String DATABASE_PASSWORD = "scim_playground"
-    private static final int API_PORT = 8080
-
     private static Network network
     private static PostgreSQLContainer<?> postgres
     private static GenericContainer<?> api
@@ -48,42 +40,38 @@ final class ScimValidatorEnvironment {
         }
 
         try {
+            ValidatorConfiguration.Config configuration = ValidatorConfiguration.current()
+            ValidatorConfiguration.PostgresConfig postgresConfiguration = configuration.postgres
+            ValidatorConfiguration.ApiConfig apiConfiguration = configuration.api
+
             network = Network.newNetwork()
 
-            postgres = new PostgreSQLContainer<>(dockerImageName(
-                "scim.validator.postgresImage",
-                "SCIM_VALIDATOR_POSTGRES_IMAGE",
-                DEFAULT_POSTGRES_IMAGE
-            ))
-                .withDatabaseName(DATABASE_NAME)
-                .withUsername(DATABASE_USERNAME)
-                .withPassword(DATABASE_PASSWORD)
+            postgres = new PostgreSQLContainer<>(DockerImageName.parse(configuration.postgresImage))
+                .withDatabaseName(postgresConfiguration.databaseName)
+                .withUsername(postgresConfiguration.username)
+                .withPassword(postgresConfiguration.password)
                 .withNetwork(network)
-                .withNetworkAliases(POSTGRES_ALIAS)
+                .withNetworkAliases(postgresConfiguration.alias)
             postgres.start()
 
             String actuatorApiKey = randomToken(32)
-            api = new GenericContainer<>(dockerImageName(
-                "scim.validator.apiImage",
-                "SCIM_VALIDATOR_API_IMAGE",
-                DEFAULT_API_IMAGE
-            ))
+            api = new GenericContainer<>(DockerImageName.parse(configuration.apiImage))
                 .withNetwork(network)
-                .withExposedPorts(API_PORT)
-                .withEnv("SERVER_PORT", Integer.toString(API_PORT))
-                .withEnv("SPRING_DATASOURCE_URL", "jdbc:postgresql://${POSTGRES_ALIAS}:5432/${DATABASE_NAME}")
-                .withEnv("SPRING_DATASOURCE_USERNAME", DATABASE_USERNAME)
-                .withEnv("SPRING_DATASOURCE_PASSWORD", DATABASE_PASSWORD)
+                .withExposedPorts(apiConfiguration.port)
+                .withEnv("SERVER_PORT", Integer.toString(apiConfiguration.port))
+                .withEnv("SPRING_DATASOURCE_URL", "jdbc:postgresql://${postgresConfiguration.alias}:5432/${postgresConfiguration.databaseName}")
+                .withEnv("SPRING_DATASOURCE_USERNAME", postgresConfiguration.username)
+                .withEnv("SPRING_DATASOURCE_PASSWORD", postgresConfiguration.password)
                 .withEnv("ACTUATOR_API_KEY", actuatorApiKey)
                 .waitingFor(Wait.forHttp("/actuator/health")
-                    .forPort(API_PORT)
+                    .forPort(apiConfiguration.port)
                     .withHeader("X-API-KEY", actuatorApiKey)
                     .forStatusCode(200))
                 .withStartupTimeout(Duration.ofMinutes(3))
             api.start()
 
             SeededTenant seededTenant = seedTenant()
-            String apiUrl = "http://${api.getHost()}:${api.getMappedPort(API_PORT)}"
+            String apiUrl = "http://${api.getHost()}:${api.getMappedPort(apiConfiguration.port)}"
             runtimeConfiguration = new ScimRuntimeConfiguration(apiUrl, seededTenant.workspaceId, seededTenant.authToken)
 
             Runtime.runtime.addShutdownHook(new Thread(ScimValidatorEnvironment::shutdown))
@@ -101,9 +89,10 @@ final class ScimValidatorEnvironment {
         Instant now = Instant.now()
         String rawToken = randomToken(64)
         String tokenHash = sha256Hex(rawToken)
+        ValidatorConfiguration.PostgresConfig postgresConfiguration = ValidatorConfiguration.current().postgres
 
         try (Connection connection = DriverManager.getConnection(
-            postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())) {
+            postgres.getJdbcUrl(), postgresConfiguration.username, postgresConfiguration.password)) {
             insertWorkspace(connection, workspaceId, now)
             insertWorkspaceToken(connection, tokenId, workspaceId, tokenHash, now)
         }
@@ -142,17 +131,6 @@ final class ScimValidatorEnvironment {
             statement.setTimestamp(9, Timestamp.from(now))
             statement.executeUpdate()
         }
-    }
-
-    private static DockerImageName dockerImageName(String systemPropertyName, String environmentVariableName, String defaultImage) {
-        String imageName = System.getProperty(systemPropertyName)
-        if (imageName == null || imageName.isBlank()) {
-            imageName = System.getenv(environmentVariableName)
-        }
-        if (imageName == null || imageName.isBlank()) {
-            imageName = defaultImage
-        }
-        return DockerImageName.parse(imageName)
     }
 
     private static String randomToken(int bytes) {

@@ -9,6 +9,7 @@ COPY scim-validator/pom.xml scim-validator/
 COPY scim-validator-mgmt/pom.xml scim-validator-mgmt/
 RUN mvn -pl scim-validator-mgmt -am -DskipTests dependency:go-offline -B
 
+COPY scim-server-common/src scim-server-common/src
 COPY scim-validator/src scim-validator/src
 COPY scim-validator-mgmt/src scim-validator-mgmt/src
 RUN mvn -pl scim-validator-mgmt -am -DskipTests package -B

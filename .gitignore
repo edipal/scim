@@ -80,6 +80,21 @@ generated/
 temp/
 *.tmp
 
+# SOPS / age
+*.agekey
+sops-age.txt
+*.decrypted.yaml
+*.decrypted.yml
+*.dec.yaml
+*.dec.yml
+/.config/sops/
+
 # Misc
 *.swp
 *~
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+# pytest cache
+.pytest_cache/

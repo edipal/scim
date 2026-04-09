@@ -17,7 +17,7 @@ public class ActuatorApiKeyAuthFilter extends OncePerRequestFilter {
 
     public ActuatorApiKeyAuthFilter(String actuatorApiKey) {
         if (actuatorApiKey == null || actuatorApiKey.isBlank()) {
-            throw new IllegalArgumentException("ACTUATOR_API_KEY must be configured");
+            throw new IllegalArgumentException("Actuator API key must be configured");
         }
         this.actuatorApiKey = actuatorApiKey;
     }

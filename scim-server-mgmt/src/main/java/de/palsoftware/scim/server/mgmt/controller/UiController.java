@@ -4,7 +4,6 @@ import de.palsoftware.scim.server.mgmt.security.AuthenticatedUser;
 import de.palsoftware.scim.server.mgmt.service.MgmtUserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,13 +45,11 @@ public class UiController {
     }
 
     private String resolveDisplayName(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof OidcUser oidcUser) {
-            String sub = oidcUser.getSubject();
-            if (sub != null) {
-                return mgmtUserService.findEmailById(sub)
-                        .orElseGet(() -> AuthenticatedUser.displayName(authentication));
-            }
+        if (authentication == null) {
+            return null;
         }
-        return AuthenticatedUser.displayName(authentication);
+        String fallback = AuthenticatedUser.displayName(authentication);
+        return mgmtUserService.findEmailById(AuthenticatedUser.userId(authentication))
+                .orElse(fallback);
     }
 }

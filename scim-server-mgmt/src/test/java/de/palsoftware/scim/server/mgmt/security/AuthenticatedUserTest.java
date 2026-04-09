@@ -1,14 +1,18 @@
 package de.palsoftware.scim.server.mgmt.security;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -69,6 +73,16 @@ class AuthenticatedUserTest {
     }
 
     @Test
+    void username_jwt_emailFallback() {
+        Authentication auth = new TestingAuthenticationToken(jwt(Map.of(
+                "sub", "jwt-sub",
+                "email", "jwt@example.com"
+        )), "n/a");
+
+        assertThat(AuthenticatedUser.username(auth)).isEqualTo("jwt@example.com");
+    }
+
+    @Test
     void username_nonOidc_fallsBackToName() {
         Authentication auth = mock(Authentication.class);
         when(auth.getPrincipal()).thenReturn("not-oidc");
@@ -85,6 +99,16 @@ class AuthenticatedUserTest {
 
         assertThatThrownBy(() -> AuthenticatedUser.username(auth))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void userId_jwtPrincipal_returnsSubject() {
+        Authentication auth = new TestingAuthenticationToken(jwt(Map.of(
+                "sub", "jwt-sub-123",
+                "email", "jwt@example.com"
+        )), "n/a");
+
+        assertThat(AuthenticatedUser.userId(auth)).isEqualTo("jwt-sub-123");
     }
 
     // ─── displayName ────────────────────────────────────────────────────
@@ -112,6 +136,16 @@ class AuthenticatedUserTest {
         Authentication auth = mockAuthWithPrincipal(oidcUser);
 
         assertThat(AuthenticatedUser.displayName(auth)).isEqualTo("preferred");
+    }
+
+    @Test
+    void displayName_jwt_returnsEmail() {
+        Authentication auth = new TestingAuthenticationToken(jwt(Map.of(
+                "sub", "jwt-sub",
+                "email", "display@example.com"
+        )), "n/a");
+
+        assertThat(AuthenticatedUser.displayName(auth)).isEqualTo("display@example.com");
     }
 
     // ─── isAdmin ────────────────────────────────────────────────────────
@@ -157,5 +191,10 @@ class AuthenticatedUserTest {
         Authentication auth = mock(Authentication.class);
         when(auth.getPrincipal()).thenReturn(principal);
         return auth;
+    }
+
+    private Jwt jwt(Map<String, Object> claims) {
+        Instant issuedAt = Instant.now();
+        return new Jwt("token-value", issuedAt, issuedAt.plusSeconds(3600), Map.of("alg", "none"), claims);
     }
 }

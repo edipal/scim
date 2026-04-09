@@ -7,6 +7,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -76,6 +77,18 @@ class AuthenticatedUserTest {
     }
 
     @Test
+    void userId_jwtPrincipal_returnsSub() {
+        Authentication auth = new TestingAuthenticationToken(buildJwt(Map.of(
+            "sub", "jwt-sub-789",
+            "email", "jwt@example.com"
+        )), "n/a");
+
+        String result = AuthenticatedUser.userId(auth);
+
+        assertThat(result).isEqualTo("jwt-sub-789");
+    }
+
+    @Test
     void displayName_nullAuthentication_returnsNull() {
         String result = AuthenticatedUser.displayName(null);
 
@@ -91,6 +104,18 @@ class AuthenticatedUserTest {
         String result = AuthenticatedUser.displayName(auth);
 
         assertThat(result).isEqualTo(expectedDisplayName);
+    }
+
+    @Test
+    void displayName_jwtClaims_returnExpectedDisplayName() {
+        Authentication auth = new TestingAuthenticationToken(buildJwt(Map.of(
+            "sub", "jwt-sub-123",
+            "email", "display@example.com"
+        )), "n/a");
+
+        String result = AuthenticatedUser.displayName(auth);
+
+        assertThat(result).isEqualTo("display@example.com");
     }
 
     @Test
@@ -134,6 +159,12 @@ class AuthenticatedUserTest {
         Instant expiresAt = issuedAt.plusSeconds(3600);
         OidcIdToken idToken = new OidcIdToken("token-value", issuedAt, expiresAt, claims);
         return new DefaultOidcUser(Collections.emptyList(), idToken);
+    }
+
+    private static Jwt buildJwt(Map<String, Object> claims) {
+        Instant issuedAt = Instant.now();
+        Instant expiresAt = issuedAt.plusSeconds(3600);
+        return new Jwt("token-value", issuedAt, expiresAt, Map.of("alg", "none"), claims);
     }
 
     private static Stream<Arguments> usernameOidcCases() {

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scim-server-mgmt-k3s-config
+data:
+  SERVER_PORT: "8081"
+  SPRING_PROFILES_ACTIVE: cloudflare
+  SPRING_DATASOURCE_URL: jdbc:postgresql://scim-postgres-rw:5432/scimplayground
+  SPRING_DATASOURCE_USERNAME: scim_playground
+  APP_SCIM_API_BASE_URL: http://scim-server-api:8080
+  APP_SECURITY_CLOUDFLARE_ROLE_CLAIM: https://scimsandbox.net/roles
+  APP_SECURITY_OIDC_ADMIN_ROLE: admin
+  APP_SECURITY_OIDC_USER_ROLE: user
+  CLOUDFLARE_ACCESS_ISSUER_URI: https://scimsandbox.cloudflareaccess.com
+  CLOUDFLARE_ACCESS_AUDIENCE: 5a682d5f1eb4ec59c07c916f28fe4420660b186656c5f1ae16fb231d012ec914
+  CLOUDFLARE_ACCESS_JWK_SET_URI: https://scimsandbox.cloudflareaccess.com/cdn-cgi/access/certs
+  CLOUDFLARE_ACCESS_LOGOUT_URL: https://scimsandbox.cloudflareaccess.com/cdn-cgi/access/logout
+  CLOUDFLARE_ACCESS_TOKEN_HEADER: Cf-Access-Jwt-Assertion
