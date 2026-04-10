@@ -6,7 +6,8 @@ metadata:
     app.kubernetes.io/name: scim-server-api
     app.kubernetes.io/component: api
 spec:
-  replicas: 1
+  replicas: 2
+  minReadySeconds: 10
   selector:
     matchLabels:
       app.kubernetes.io/name: scim-server-api
@@ -16,7 +17,43 @@ spec:
         app.kubernetes.io/name: scim-server-api
         app.kubernetes.io/component: api
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: scim-server-api
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: scim-server-api
       automountServiceAccountToken: false
+      initContainers:
+        - name: wait-for-postgres
+          image: ghcr.io/cloudnative-pg/postgresql:18.1-standard-trixie
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - until pg_isready -h scim-postgres-rw -p 5432 -d scimplayground; do echo waiting for postgres; sleep 2; done
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       containers:
         - name: scim-server-api
           image: edipal/scim-server-api:1.0.8
@@ -61,13 +98,13 @@ spec:
             failureThreshold: 6
           resources:
             requests:
-              cpu: 100m
+              cpu: 750m
               ephemeral-storage: 256Mi
-              memory: 512Mi
+              memory: 1536Mi
             limits:
-              cpu: "1"
+              cpu: 750m
               ephemeral-storage: 1Gi
-              memory: 1Gi
+              memory: 1536Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
