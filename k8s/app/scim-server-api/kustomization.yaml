@@ -6,6 +6,8 @@ namespace: scim
 resources:
   - configmap.yaml
   - deployment.yaml
+  - hpa.yaml
+  - pdb.yaml
   - service.yaml
 
 generators:
