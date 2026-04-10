@@ -30,6 +30,11 @@ spec:
             - secretRef:
                 name: scim-server-mgmt-k3s-secrets
           env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: scim-postgres-playground
+                  key: username
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:

@@ -4,7 +4,16 @@ import groovy.yaml.YamlSlurper
 
 final class ValidatorConfiguration {
 
-    private static final String CONFIG_RESOURCE = "/application.yml"
+    private static final String CONFIG_RESOURCE = "/validator-application.yml"
+    private static final Map<String, String> SYSTEM_PROPERTY_ALIASES = Map.of(
+        "SCIM_BASE_URL", "scim.baseUrl",
+        "SCIM_API_URL", "scim.apiUrl",
+        "SCIM_WORKSPACE_ID", "scim.workspaceId",
+        "SCIM_AUTH_TOKEN", "scim.authToken",
+        "SCIM_TESTCONTAINERS_ENABLED", "scim.testcontainers.enabled",
+        "SCIM_VALIDATOR_POSTGRES_IMAGE", "scim.testcontainers.postgresImage",
+        "SCIM_VALIDATOR_API_IMAGE", "scim.testcontainers.apiImage"
+    )
     private static final Config CURRENT = load()
 
     private ValidatorConfiguration() {
@@ -90,11 +99,23 @@ final class ValidatorConfiguration {
         if (systemValue != null && !systemValue.isBlank()) {
             return systemValue
         }
+        String aliasedSystemValue = aliasedSystemPropertyValue(variableName)
+        if (aliasedSystemValue != null && !aliasedSystemValue.isBlank()) {
+            return aliasedSystemValue
+        }
         String environmentValue = System.getenv(variableName)
         if (environmentValue != null && !environmentValue.isBlank()) {
             return environmentValue
         }
         return defaultValue
+    }
+
+    private static String aliasedSystemPropertyValue(String variableName) {
+        String propertyName = SYSTEM_PROPERTY_ALIASES.get(variableName)
+        if (propertyName == null) {
+            return null
+        }
+        return System.getProperty(propertyName)
     }
 
     static final class Config {

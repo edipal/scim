@@ -48,8 +48,7 @@ public class UiController {
         if (authentication == null) {
             return null;
         }
-        String fallback = AuthenticatedUser.displayName(authentication);
-        return mgmtUserService.findEmailById(AuthenticatedUser.userId(authentication))
-                .orElse(fallback);
+        return mgmtUserService.resolveDisplayName(AuthenticatedUser.email(authentication))
+                .orElseGet(() -> AuthenticatedUser.displayName(authentication));
     }
 }

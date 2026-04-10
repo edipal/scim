@@ -6,8 +6,7 @@ data:
   SERVER_PORT: "8081"
   SPRING_PROFILES_ACTIVE: cloudflare
   SPRING_DATASOURCE_URL: jdbc:postgresql://scim-postgres-rw:5432/scimplayground
-  SPRING_DATASOURCE_USERNAME: scim_playground
-  APP_SCIM_API_BASE_URL: http://scim-server-api:8080
+  APP_SCIM_API_BASE_URL: https://api.scimsandbox.net
   APP_SECURITY_CLOUDFLARE_ROLE_CLAIM: https://scimsandbox.net/roles
   APP_SECURITY_OIDC_ADMIN_ROLE: admin
   APP_SECURITY_OIDC_USER_ROLE: user

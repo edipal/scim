@@ -72,12 +72,12 @@ abstract class ScimBaseSpec extends Specification {
         String configuredAuthToken = configuration.authToken
         boolean testcontainersEnabled = configuration.testcontainersEnabled
 
-        if (!hasText(explicitBaseUrl) && !hasText(configuredWorkspace) && !hasText(explicitApiUrl) && !hasText(configuredAuthToken)) {
+        if (ValidatorTargetConfiguration.shouldBootstrap(configuration)) {
             if (testcontainersEnabled) {
                 ScimValidatorEnvironment.ScimRuntimeConfiguration runtimeConfiguration = ScimValidatorEnvironment.ensureStarted()
-                workspaceId = runtimeConfiguration.workspaceId()
-                AUTH_TOKEN = runtimeConfiguration.authToken()
-                SCIM_API_URL = runtimeConfiguration.apiUrl()
+                workspaceId = runtimeConfiguration.workspaceId
+                AUTH_TOKEN = runtimeConfiguration.authToken
+                SCIM_API_URL = runtimeConfiguration.apiUrl
                 BASE_PATH = "/ws/${workspaceId}/scim/v2"
                 BASE_URL = "${SCIM_API_URL}${BASE_PATH}"
                 return
@@ -88,8 +88,6 @@ abstract class ScimBaseSpec extends Specification {
                     "or -Dscim.apiUrl, -Dscim.workspaceId, and -Dscim.authToken, or leave Testcontainers enabled."
             )
         }
-
-        String configuredApiUrl = explicitApiUrl
 
         workspaceId = configuredWorkspace
         AUTH_TOKEN = configuredAuthToken
@@ -107,7 +105,7 @@ abstract class ScimBaseSpec extends Specification {
             if (workspaceId == null || workspaceId.isBlank()) {
                 throw new IllegalStateException("SCIM_WORKSPACE_ID or -Dscim.workspaceId must be configured when SCIM_BASE_URL is not set")
             }
-            SCIM_API_URL = configuredApiUrl
+            SCIM_API_URL = explicitApiUrl
             BASE_PATH = "/ws/${workspaceId}/scim/v2"
             BASE_URL = "${SCIM_API_URL}${BASE_PATH}"
         }

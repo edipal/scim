@@ -2,9 +2,11 @@ package de.palsoftware.scim.validator.mgmt.security;
 
 import de.palsoftware.scim.server.common.security.CloudflareJwtSecuritySupport;
 import de.palsoftware.scim.server.common.security.MgmtSecuritySupport;
+import de.palsoftware.scim.validator.mgmt.service.MgmtUserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -27,14 +29,17 @@ public class CloudflareSecurityConfig {
     private final String userRole;
     private final String roleClaim;
     private final String actuatorApiKey;
+    private final MgmtUserService mgmtUserService;
 
     public CloudflareSecurityConfig(@Value("${app.security.oidc.admin-role}") String adminRole,
                                     @Value("${app.security.oidc.user-role}") String userRole,
                                     @Value("${app.security.cloudflare.role-claim}") String roleClaim,
+                                    @Lazy MgmtUserService mgmtUserService,
                                     @Value("${app.security.actuator.api-key}") String actuatorApiKey) {
         this.adminRole = adminRole;
         this.userRole = userRole;
         this.roleClaim = roleClaim;
+        this.mgmtUserService = mgmtUserService;
         this.actuatorApiKey = actuatorApiKey;
     }
 
@@ -72,6 +77,10 @@ public class CloudflareSecurityConfig {
 
     @Bean
     public Converter<Jwt, AbstractAuthenticationToken> cloudflareJwtAuthenticationConverter() {
-        return CloudflareJwtSecuritySupport.createJwtAuthenticationConverter(roleClaim, adminRole, userRole);
+        return CloudflareJwtSecuritySupport.createJwtAuthenticationConverter(
+                roleClaim,
+                adminRole,
+                userRole,
+                mgmtUserService::provisionUser);
     }
 }

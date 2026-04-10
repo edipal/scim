@@ -21,94 +21,90 @@ import static org.mockito.Mockito.when;
 
 class AuthenticatedUserTest {
 
-    // ─── username ───────────────────────────────────────────────────────
+    // ─── email ──────────────────────────────────────────────────────────
 
     @Test
-    void username_nullAuth_throws() {
-        assertThatThrownBy(() -> AuthenticatedUser.username(null))
+    void email_nullAuth_throws() {
+        assertThatThrownBy(() -> AuthenticatedUser.email(null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Missing authentication");
     }
 
     @Test
-    void username_oidcUser_preferredUsername() {
+    void email_oidcUser_preferredUsernameEmail() {
         OidcUser oidcUser = mock(OidcUser.class);
-        when(oidcUser.getPreferredUsername()).thenReturn("preferred");
+        when(oidcUser.getEmail()).thenReturn(null);
+        when(oidcUser.getClaimAsString("upn")).thenReturn(null);
+        when(oidcUser.getClaimAsString("unique_name")).thenReturn(null);
+        when(oidcUser.getPreferredUsername()).thenReturn("Preferred.User@example.com");
         Authentication auth = mockAuthWithPrincipal(oidcUser);
 
-        assertThat(AuthenticatedUser.username(auth)).isEqualTo("preferred");
+        assertThat(AuthenticatedUser.email(auth)).isEqualTo("preferred.user@example.com");
     }
 
     @Test
-    void username_oidcUser_upnFallback() {
+    void email_oidcUser_upnFallback() {
         OidcUser oidcUser = mock(OidcUser.class);
         when(oidcUser.getPreferredUsername()).thenReturn(null);
         when(oidcUser.getClaimAsString("upn")).thenReturn("user@domain.com");
         Authentication auth = mockAuthWithPrincipal(oidcUser);
 
-        assertThat(AuthenticatedUser.username(auth)).isEqualTo("user@domain.com");
+        assertThat(AuthenticatedUser.email(auth)).isEqualTo("user@domain.com");
     }
 
     @Test
-    void username_oidcUser_emailFallback() {
+    void email_oidcUser_emailFallback() {
         OidcUser oidcUser = mock(OidcUser.class);
         when(oidcUser.getPreferredUsername()).thenReturn(null);
         when(oidcUser.getClaimAsString("upn")).thenReturn(null);
+        when(oidcUser.getClaimAsString("unique_name")).thenReturn(null);
         when(oidcUser.getEmail()).thenReturn("email@test.com");
         Authentication auth = mockAuthWithPrincipal(oidcUser);
 
-        assertThat(AuthenticatedUser.username(auth)).isEqualTo("email@test.com");
+        assertThat(AuthenticatedUser.email(auth)).isEqualTo("email@test.com");
     }
 
     @Test
-    void username_oidcUser_subFallback() {
+    void email_oidcUser_missingEmail_throws() {
         OidcUser oidcUser = mock(OidcUser.class);
         when(oidcUser.getPreferredUsername()).thenReturn(null);
         when(oidcUser.getClaimAsString("upn")).thenReturn(null);
+        when(oidcUser.getClaimAsString("unique_name")).thenReturn(null);
         when(oidcUser.getEmail()).thenReturn(null);
-        when(oidcUser.getSubject()).thenReturn("sub-123");
         Authentication auth = mockAuthWithPrincipal(oidcUser);
 
-        assertThat(AuthenticatedUser.username(auth)).isEqualTo("sub-123");
+        assertThatThrownBy(() -> AuthenticatedUser.email(auth))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("missing an email");
     }
 
     @Test
-    void username_jwt_emailFallback() {
+    void email_jwt_emailFallback() {
         Authentication auth = new TestingAuthenticationToken(jwt(Map.of(
                 "sub", "jwt-sub",
                 "email", "jwt@example.com"
         )), "n/a");
 
-        assertThat(AuthenticatedUser.username(auth)).isEqualTo("jwt@example.com");
+        assertThat(AuthenticatedUser.email(auth)).isEqualTo("jwt@example.com");
     }
 
     @Test
-    void username_nonOidc_fallsBackToName() {
+    void email_nonOidc_fallsBackToName() {
         Authentication auth = mock(Authentication.class);
         when(auth.getPrincipal()).thenReturn("not-oidc");
         when(auth.getName()).thenReturn("fallback-name");
 
-        assertThat(AuthenticatedUser.username(auth)).isEqualTo("fallback-name");
+        assertThat(AuthenticatedUser.email(auth)).isEqualTo("fallback-name");
     }
 
     @Test
-    void username_noIdentifier_throws() {
+    void email_noIdentifier_throws() {
         Authentication auth = mock(Authentication.class);
         when(auth.getPrincipal()).thenReturn("not-oidc");
         when(auth.getName()).thenReturn(null);
 
-        assertThatThrownBy(() -> AuthenticatedUser.username(auth))
+        assertThatThrownBy(() -> AuthenticatedUser.email(auth))
                 .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
-    void userId_jwtPrincipal_returnsSubject() {
-        Authentication auth = new TestingAuthenticationToken(jwt(Map.of(
-                "sub", "jwt-sub-123",
-                "email", "jwt@example.com"
-        )), "n/a");
-
-        assertThat(AuthenticatedUser.userId(auth)).isEqualTo("jwt-sub-123");
     }
 
     // ─── displayName ────────────────────────────────────────────────────
@@ -122,20 +118,24 @@ class AuthenticatedUserTest {
     void displayName_oidcUser_returnsEmail() {
         OidcUser oidcUser = mock(OidcUser.class);
         when(oidcUser.getEmail()).thenReturn("display@test.com");
-        when(oidcUser.getPreferredUsername()).thenReturn("preferred");
+        when(oidcUser.getClaimAsString("upn")).thenReturn(null);
+        when(oidcUser.getClaimAsString("unique_name")).thenReturn(null);
+        when(oidcUser.getPreferredUsername()).thenReturn("preferred@example.com");
         Authentication auth = mockAuthWithPrincipal(oidcUser);
 
         assertThat(AuthenticatedUser.displayName(auth)).isEqualTo("display@test.com");
     }
 
     @Test
-    void displayName_oidcUser_noEmail_fallsBackToUsername() {
+    void displayName_oidcUser_noEmail_usesPreferredUsernameEmail() {
         OidcUser oidcUser = mock(OidcUser.class);
         when(oidcUser.getEmail()).thenReturn(null);
-        when(oidcUser.getPreferredUsername()).thenReturn("preferred");
+        when(oidcUser.getClaimAsString("upn")).thenReturn(null);
+        when(oidcUser.getClaimAsString("unique_name")).thenReturn(null);
+        when(oidcUser.getPreferredUsername()).thenReturn("preferred@example.com");
         Authentication auth = mockAuthWithPrincipal(oidcUser);
 
-        assertThat(AuthenticatedUser.displayName(auth)).isEqualTo("preferred");
+        assertThat(AuthenticatedUser.displayName(auth)).isEqualTo("preferred@example.com");
     }
 
     @Test

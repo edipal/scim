@@ -7,7 +7,6 @@ data:
   SPRING_PROFILES_ACTIVE: cloudflare
   SPRING_DATASOURCE_URL: jdbc:postgresql://scim-postgres-rw:5432/scimvalidation
   SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-  SPRING_DATASOURCE_USERNAME: scim_validator
   APP_SECURITY_CLOUDFLARE_ROLE_CLAIM: https://scimsandbox.net/roles
   APP_SECURITY_OIDC_ADMIN_ROLE: admin
   APP_SECURITY_OIDC_USER_ROLE: user

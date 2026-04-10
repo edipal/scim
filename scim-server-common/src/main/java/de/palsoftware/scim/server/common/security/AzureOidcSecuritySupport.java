@@ -2,6 +2,7 @@ package de.palsoftware.scim.server.common.security;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
@@ -9,7 +10,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public final class AzureOidcSecuritySupport {
 
@@ -19,8 +20,15 @@ public final class AzureOidcSecuritySupport {
     public static OidcUserService createOidcUserService(String roleClaim,
                                                         String adminRole,
                                                         String userRole,
-                                                        BiConsumer<String, String> userProvisioner) {
-        OidcUserService delegate = new OidcUserService();
+                                                        Consumer<String> userProvisioner) {
+        return createOidcUserService(roleClaim, adminRole, userRole, userProvisioner, new OidcUserService());
+    }
+
+    static OidcUserService createOidcUserService(String roleClaim,
+                                                 String adminRole,
+                                                 String userRole,
+                                                 Consumer<String> userProvisioner,
+                                                 OidcUserService delegate) {
         return new OidcUserService() {
             @Override
             public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
@@ -33,24 +41,19 @@ public final class AzureOidcSecuritySupport {
                         adminRole,
                         userRole);
 
-                String sub = oidcUser.getSubject();
-                String email = resolveEmail(oidcUser);
-                if (sub != null && !sub.isBlank()) {
-                    userProvisioner.accept(sub, email);
-                }
+                userProvisioner.accept(requireEmail(oidcUser));
 
                 return new DefaultOidcUser(mappedAuthorities, oidcUser.getIdToken(), oidcUser.getUserInfo());
             }
         };
     }
 
-    private static String resolveEmail(OidcUser oidcUser) {
-        String email = oidcUser.getEmail();
-        if (email != null && !email.isBlank()) return email;
-        String upn = oidcUser.getClaimAsString("upn");
-        if (upn != null && !upn.isBlank()) return upn;
-        String unique = oidcUser.getClaimAsString("unique_name");
-        if (unique != null && !unique.isBlank()) return unique;
-        return oidcUser.getPreferredUsername();
+    private static String requireEmail(OidcUser oidcUser) {
+        String email = PrincipalEmailSupport.resolveEmail(oidcUser);
+        if (email != null) {
+            return email;
+        }
+        throw new OAuth2AuthenticationException(
+                new OAuth2Error("invalid_token", "An email claim is required for management access", null));
     }
 }

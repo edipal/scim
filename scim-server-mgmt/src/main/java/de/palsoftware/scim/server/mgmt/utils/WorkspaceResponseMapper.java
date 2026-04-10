@@ -30,7 +30,7 @@ public final class WorkspaceResponseMapper {
                 .distinct()
                 .toList();
         Map<String, String> ownerEmails = mgmtUserRepository.findAllById(ownerIds).stream()
-                .collect(Collectors.toMap(MgmtUser::getId, MgmtUser::getEmail));
+            .collect(Collectors.toMap(MgmtUser::getEmail, MgmtUser::getEmail));
         return workspaces.stream()
                 .map(workspace -> workspaceToMap(workspace, ownerEmails))
                 .toList();
@@ -40,7 +40,7 @@ public final class WorkspaceResponseMapper {
         String ownerName = workspace.getCreatedByUsername() != null
                 ? mgmtUserRepository.findById(workspace.getCreatedByUsername())
                         .map(MgmtUser::getEmail)
-                        .orElse(null)
+                .orElse(workspace.getCreatedByUsername())
                 : null;
         return buildWorkspaceMap(workspace, ownerName);
     }
@@ -104,7 +104,7 @@ public final class WorkspaceResponseMapper {
 
     private static Map<String, Object> workspaceToMap(Workspace workspace, Map<String, String> ownerEmails) {
         String ownerName = workspace.getCreatedByUsername() != null
-                ? ownerEmails.get(workspace.getCreatedByUsername())
+                ? ownerEmails.getOrDefault(workspace.getCreatedByUsername(), workspace.getCreatedByUsername())
                 : null;
         return buildWorkspaceMap(workspace, ownerName);
     }

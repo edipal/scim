@@ -50,7 +50,7 @@ public class ApiUsersController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String q,
             Authentication authentication) {
-        String username = AuthenticatedUser.username(authentication);
+        String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
         int safeSize = Math.max(1, Math.min(size, 200));
         int safePage = Math.max(1, page);
@@ -60,7 +60,7 @@ public class ApiUsersController {
                     UUID.fromString(workspaceId),
                     q,
                     pageRequest,
-                    username,
+                    actorEmail,
                     admin);
             return ResponseEntity.ok(PagedResponseMapper.pagedResponse(
                     users,
@@ -68,7 +68,7 @@ public class ApiUsersController {
                     safePage,
                     safeSize));
         } catch (RuntimeException ex) {
-            throw failListUsers(new UserListFailureContext("list", workspaceId, safePage, safeSize, q, username, admin), ex);
+            throw failListUsers(new UserListFailureContext("list", workspaceId, safePage, safeSize, q, actorEmail, admin), ex);
         }
     }
 
@@ -78,7 +78,7 @@ public class ApiUsersController {
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "50") int size,
             Authentication authentication) {
-        String username = AuthenticatedUser.username(authentication);
+        String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
         int safeSize = Math.max(1, Math.min(size, 200));
         PageRequest pageRequest = PageRequest.of(0, safeSize, Sort.by(KEY_USER_NAME).ascending());
@@ -87,11 +87,11 @@ public class ApiUsersController {
                     UUID.fromString(workspaceId),
                     q,
                     pageRequest,
-                    username,
+                    actorEmail,
                     admin);
             return ResponseEntity.ok(users.stream().map(UserResponseMapper::userLookupToMap).toList());
         } catch (RuntimeException ex) {
-            throw failListUsers(new UserListFailureContext("lookup", workspaceId, 0, safeSize, q, username, admin), ex);
+            throw failListUsers(new UserListFailureContext("lookup", workspaceId, 0, safeSize, q, actorEmail, admin), ex);
         }
     }
 
@@ -101,7 +101,7 @@ public class ApiUsersController {
                 + ", page=" + context.page()
                 + ", size=" + context.size()
                 + ", query=" + context.query()
-                + ", actor=" + context.username()
+            + ", actor=" + context.actorEmail()
                 + ", admin=" + context.admin();
         log.error(message, ex);
         if (ex instanceof ResponseStatusException responseStatusException) {
@@ -116,16 +116,16 @@ public class ApiUsersController {
             int page,
             int size,
             String query,
-            String username,
+                String actorEmail,
             boolean admin) {
     }
 
     @DeleteMapping("/workspaces/{workspaceId}/users")
     public ResponseEntity<Void> clearUsers(@PathVariable String workspaceId,
             Authentication authentication) {
-        String username = AuthenticatedUser.username(authentication);
+        String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
-        scimAdminService.deleteAllUsers(UUID.fromString(workspaceId), username, admin);
+        scimAdminService.deleteAllUsers(UUID.fromString(workspaceId), actorEmail, admin);
         return ResponseEntity.noContent().build();
     }
 
@@ -134,12 +134,12 @@ public class ApiUsersController {
             @PathVariable String workspaceId,
             @RequestBody UserUpsertRequest request,
             Authentication authentication) {
-        String username = AuthenticatedUser.username(authentication);
+        String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
         ScimUser user = scimAdminService.createUser(
                 UUID.fromString(workspaceId),
                 request,
-                username,
+            actorEmail,
                 admin);
         return ResponseEntity.status(201).body(UserResponseMapper.userToMap(user));
     }
@@ -150,13 +150,13 @@ public class ApiUsersController {
             @PathVariable String userId,
             @RequestBody UserUpsertRequest request,
             Authentication authentication) {
-        String username = AuthenticatedUser.username(authentication);
+        String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
         ScimUser user = scimAdminService.updateUser(
                 UUID.fromString(workspaceId),
                 UUID.fromString(userId),
                 request,
-                username,
+            actorEmail,
                 admin);
         return ResponseEntity.ok(UserResponseMapper.userToMap(user));
     }
@@ -166,12 +166,12 @@ public class ApiUsersController {
             @PathVariable String workspaceId,
             @PathVariable String userId,
             Authentication authentication) {
-        String username = AuthenticatedUser.username(authentication);
+        String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
         scimAdminService.deleteUser(
                 UUID.fromString(workspaceId),
                 UUID.fromString(userId),
-                username,
+            actorEmail,
                 admin);
         return ResponseEntity.noContent().build();
     }

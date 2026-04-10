@@ -3,6 +3,7 @@ package de.palsoftware.scim.validator.mgmt.controller;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationRunForm;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationRunView;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationTestResultView;
+import de.palsoftware.scim.validator.mgmt.model.ValidationMgmtUser;
 import de.palsoftware.scim.validator.mgmt.model.ValidationRun;
 import de.palsoftware.scim.validator.mgmt.service.MgmtUserService;
 import de.palsoftware.scim.validator.mgmt.service.ValidationRunService;
@@ -103,6 +104,7 @@ class ValidationControllerTest {
         run.setTargetUrl("http://example.com/scim");
         run.setExecutedAt(OffsetDateTime.now());
         run.setStatus("PASSED");
+        run.setCreatedByUser(new ValidationMgmtUser("user@example.com", OffsetDateTime.now()));
         run.setTotalTests(5);
         run.setPassedTests(5);
         run.setFailedTests(0);
@@ -115,12 +117,12 @@ class ValidationControllerTest {
             throw new RuntimeException(e);
         }
 
-        when(validationRunService.executeRun(eq(form), anyString(), anyString())).thenReturn(run);
+        when(validationRunService.executeRun(eq(form), anyString())).thenReturn(run);
 
         String view = controller.execute(form, bindingResult, model, authentication);
 
         assertThat(view).startsWith("redirect:/runs/");
-        verify(validationRunService).executeRun(eq(form), anyString(), anyString());
+        verify(validationRunService).executeRun(eq(form), anyString());
     }
 
     @Test

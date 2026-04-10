@@ -80,15 +80,15 @@ public class ValidationRunService {
     }
 
     @Transactional
-    public ValidationRun executeRun(ValidationRunForm form, String actorUserId, String actorDisplayName) {
+    public ValidationRun executeRun(ValidationRunForm form, String actorEmail) {
         ValidationRun run = new ValidationRun();
         run.setName(form.name().trim());
         run.setTargetUrl(form.baseUrl().trim());
         run.setExecutedAt(OffsetDateTime.now());
         run.setStatus("RUNNING");
-        ValidationMgmtUser owner = mgmtUserRepository.findById(actorUserId).orElse(null);
+        ValidationMgmtUser owner = mgmtUserRepository.findById(actorEmail)
+                .orElseThrow(() -> new IllegalStateException("Authenticated management user must exist"));
         run.setCreatedByUser(owner);
-        run.setCreatedByUsername(actorDisplayName);
         run.setTotalTests(0);
         run.setPassedTests(0);
         run.setFailedTests(0);
@@ -125,13 +125,13 @@ public class ValidationRunService {
         return runRepository.save(run);
     }
 
-    public List<ValidationRunView> listRuns(String actorUserId, boolean admin) {
+    public List<ValidationRunView> listRuns(String actorEmail, boolean admin) {
         List<ValidationRun> runs;
         Sort sort = Sort.by(Sort.Direction.DESC, "executedAt");
         if (admin) {
             runs = runRepository.findAll(sort);
         } else {
-            runs = runRepository.findOwnedRuns(actorUserId, sort);
+            runs = runRepository.findOwnedRuns(actorEmail, sort);
         }
         return runs
                 .stream()
@@ -139,13 +139,13 @@ public class ValidationRunService {
                 .toList();
     }
 
-    public ValidationRunView getRun(UUID runId, String actorUserId, boolean admin) {
-        ValidationRun run = requireRunAccess(runId, actorUserId, admin);
+    public ValidationRunView getRun(UUID runId, String actorEmail, boolean admin) {
+        ValidationRun run = requireRunAccess(runId, actorEmail, admin);
         return ValidationRunView.from(run);
     }
 
-    public List<ValidationTestResultView> getTestResults(UUID runId, String actorUserId, boolean admin) {
-        requireRunAccess(runId, actorUserId, admin);
+    public List<ValidationTestResultView> getTestResults(UUID runId, String actorEmail, boolean admin) {
+        requireRunAccess(runId, actorEmail, admin);
         List<ValidationTestResult> testResults = testResultRepository.findByRunIdOrderByStartedAtAsc(runId);
         return testResults.stream()
                 .map(testResult -> {
@@ -160,17 +160,17 @@ public class ValidationRunService {
     }
 
     @Transactional
-    public void deleteRun(UUID runId, String actorUserId, boolean admin) {
-        requireRunAccess(runId, actorUserId, admin);
+    public void deleteRun(UUID runId, String actorEmail, boolean admin) {
+        requireRunAccess(runId, actorEmail, admin);
         runRepository.deleteById(runId);
     }
 
-    private ValidationRun requireRunAccess(UUID runId, String actorUserId, boolean admin) {
+    private ValidationRun requireRunAccess(UUID runId, String actorEmail, boolean admin) {
         if (admin) {
             return runRepository.findById(runId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Validation run not found"));
         }
-        return runRepository.findAccessibleById(runId, actorUserId)
+        return runRepository.findAccessibleById(runId, actorEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Validation run not found"));
     }
 
