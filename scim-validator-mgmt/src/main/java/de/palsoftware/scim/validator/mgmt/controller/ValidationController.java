@@ -41,7 +41,7 @@ public class ValidationController {
         if (!model.containsAttribute("runForm")) {
             model.addAttribute("runForm", new ValidationRunForm("", "", ""));
         }
-        model.addAttribute("runs", validationRunService.listRuns(actorUserId(authentication), isAdmin(authentication)));
+        model.addAttribute("runs", validationRunService.listRuns(actorEmail(authentication), isAdmin(authentication)));
         model.addAttribute(ATTR_CURRENT_USER, resolveDisplayName(authentication));
         model.addAttribute(ATTR_CURRENT_USER_ROLE, currentUserRole(authentication));
         return "index";
@@ -54,7 +54,7 @@ public class ValidationController {
             Authentication authentication) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("runs",
-                    validationRunService.listRuns(actorUserId(authentication), isAdmin(authentication)));
+                validationRunService.listRuns(actorEmail(authentication), isAdmin(authentication)));
             model.addAttribute(ATTR_CURRENT_USER, resolveDisplayName(authentication));
             model.addAttribute(ATTR_CURRENT_USER_ROLE, currentUserRole(authentication));
             return "index";
@@ -62,8 +62,7 @@ public class ValidationController {
 
         ValidationRunView run = ValidationRunView.from(validationRunService.executeRun(
                 runForm,
-                actorUserId(authentication),
-                resolveDisplayName(authentication)));
+            actorEmail(authentication)));
         return "redirect:/runs/" + run.id();
     }
 
@@ -71,9 +70,9 @@ public class ValidationController {
     public String detail(@PathVariable UUID runId, Model model, Authentication authentication) {
         try {
             model.addAttribute("run",
-                    validationRunService.getRun(runId, actorUserId(authentication), isAdmin(authentication)));
+                    validationRunService.getRun(runId, actorEmail(authentication), isAdmin(authentication)));
             model.addAttribute("tests",
-                    validationRunService.getTestResults(runId, actorUserId(authentication), isAdmin(authentication)));
+                    validationRunService.getTestResults(runId, actorEmail(authentication), isAdmin(authentication)));
         } catch (ResponseStatusException e) {
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 model.addAttribute("runNotFound", true);
@@ -88,12 +87,12 @@ public class ValidationController {
 
     @PostMapping("/runs/{runId}/delete")
     public String deleteRun(@PathVariable UUID runId, Authentication authentication) {
-        validationRunService.deleteRun(runId, actorUserId(authentication), isAdmin(authentication));
+        validationRunService.deleteRun(runId, actorEmail(authentication), isAdmin(authentication));
         return "redirect:/";
     }
 
-    private String actorUserId(Authentication authentication) {
-        return AuthenticatedUser.userId(authentication);
+    private String actorEmail(Authentication authentication) {
+        return AuthenticatedUser.email(authentication);
     }
 
     private boolean isAdmin(Authentication authentication) {
@@ -109,6 +108,6 @@ public class ValidationController {
             return null;
         }
         String fallback = AuthenticatedUser.displayName(authentication);
-        return mgmtUserService.resolveDisplayName(AuthenticatedUser.userId(authentication), fallback);
+        return mgmtUserService.resolveDisplayName(AuthenticatedUser.email(authentication), fallback);
     }
 }

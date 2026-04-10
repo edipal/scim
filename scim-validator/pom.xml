@@ -163,10 +163,6 @@
                 <configuration>
                     <skipTests>${skipTests}</skipTests>
                     <useFile>false</useFile>
-                    <environmentVariables>
-                        <DOCKER_HOST>${docker.host}</DOCKER_HOST>
-                        <TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>${testcontainers.docker.socket.override}</TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>
-                    </environmentVariables>
                     <includes>
                         <include>**/*Spec.java</include>
                         <include>**/*Spec.groovy</include>
@@ -196,7 +192,7 @@
                 <version>3.4.2</version>
                 <executions>
                     <execution>
-                        <phase>compile</phase>
+                        <phase>test-compile</phase>
                         <goals>
                             <goal>test-jar</goal>
                         </goals>

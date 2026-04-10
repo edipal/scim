@@ -17,7 +17,7 @@ public class Workspace {
 
     private String description;
 
-    @Column(name = "created_by_username", length = 255)
+    @Column(name = "created_by_username", length = 500)
     private String createdByUsername;
 
     @Column(name = "created_at", nullable = false, updatable = false)

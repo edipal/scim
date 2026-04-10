@@ -1,5 +1,6 @@
 package de.palsoftware.scim.validator.mgmt.service;
 
+import de.palsoftware.scim.server.common.security.PrincipalEmailSupport;
 import de.palsoftware.scim.validator.mgmt.model.ValidationMgmtUser;
 import de.palsoftware.scim.validator.mgmt.repo.ValidationMgmtUserRepository;
 import org.springframework.stereotype.Service;
@@ -18,22 +19,33 @@ public class MgmtUserService {
     }
 
     @Transactional
-    public void provisionUser(String sub, String email) {
-        ValidationMgmtUser user = mgmtUserRepository.findById(sub)
-                .orElseGet(() -> new ValidationMgmtUser(sub, email, OffsetDateTime.now(ZoneOffset.UTC)));
-        user.setEmail(email);
-        user.setLastLoginAt(OffsetDateTime.now(ZoneOffset.UTC));
+    public void provisionUser(String email) {
+        String normalizedEmail = requireEmail(email);
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        ValidationMgmtUser user = mgmtUserRepository.findById(normalizedEmail)
+                .orElseGet(() -> new ValidationMgmtUser(normalizedEmail, now));
+        user.setEmail(normalizedEmail);
+        user.setLastLoginAt(now);
         mgmtUserRepository.save(user);
     }
 
     @Transactional(readOnly = true)
-    public String resolveDisplayName(String sub, String fallbackDisplayName) {
-        if (sub == null || sub.isBlank()) {
+    public String resolveDisplayName(String email, String fallbackDisplayName) {
+        String normalizedEmail = PrincipalEmailSupport.normalizeEmail(email);
+        if (normalizedEmail == null) {
             return fallbackDisplayName;
         }
-        return mgmtUserRepository.findById(sub)
+        return mgmtUserRepository.findById(normalizedEmail)
                 .map(ValidationMgmtUser::getEmail)
-                .filter(email -> email != null && !email.isBlank())
+            .filter(storedEmail -> storedEmail != null && !storedEmail.isBlank())
                 .orElse(fallbackDisplayName);
+    }
+
+    private String requireEmail(String email) {
+        String normalizedEmail = PrincipalEmailSupport.normalizeEmail(email);
+        if (normalizedEmail == null) {
+            throw new IllegalArgumentException("Management user email is required");
+        }
+        return normalizedEmail;
     }
 }

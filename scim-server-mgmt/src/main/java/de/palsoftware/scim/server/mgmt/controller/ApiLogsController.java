@@ -43,9 +43,9 @@ public class ApiLogsController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             Authentication authentication) {
-        String username = AuthenticatedUser.username(authentication);
+        String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
-        UUID wsId = workspaceService.requireWorkspaceId(workspaceId, username, admin);
+        UUID wsId = workspaceService.requireWorkspaceId(workspaceId, actorEmail, admin);
         int safeSize = Math.max(1, Math.min(size, 200));
         int safePage = Math.max(1, page);
         PageRequest pageRequest = PageRequest.of(safePage - 1, safeSize, Sort.by(KEY_CREATED_AT).descending());
@@ -60,9 +60,9 @@ public class ApiLogsController {
     @DeleteMapping("/workspaces/{workspaceId}/logs")
     public ResponseEntity<Void> clearLogs(@PathVariable String workspaceId,
             Authentication authentication) {
-        String username = AuthenticatedUser.username(authentication);
+        String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
-        UUID wsId = workspaceService.requireWorkspaceId(workspaceId, username, admin);
+        UUID wsId = workspaceService.requireWorkspaceId(workspaceId, actorEmail, admin);
         logService.clearLogs(wsId);
         return ResponseEntity.noContent().build();
     }

@@ -56,30 +56,30 @@ public class ApiWorkspacesController {
                 Workspace workspace = workspaceService.createWorkspace(
                                 name,
                                 description,
-                                AuthenticatedUser.username(authentication));
+                                AuthenticatedUser.email(authentication));
                 return ResponseEntity.status(201)
                                 .body(WorkspaceResponseMapper.workspaceToMap(workspace, mgmtUserRepository));
         }
 
         @GetMapping("/workspaces")
         public ResponseEntity<List<Map<String, Object>>> listWorkspaces(Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
                 boolean admin = AuthenticatedUser.isAdmin(authentication);
-                List<Workspace> workspaces = workspaceService.listWorkspaces(username, admin);
+                List<Workspace> workspaces = workspaceService.listWorkspaces(actorEmail, admin);
                 return ResponseEntity.ok(WorkspaceResponseMapper.workspaceListToMaps(workspaces, mgmtUserRepository));
         }
 
         @GetMapping("/workspaces/{workspaceId}")
         public ResponseEntity<Map<String, Object>> getWorkspace(@PathVariable String workspaceId,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
                 boolean admin = AuthenticatedUser.isAdmin(authentication);
                 UUID wsId = UUID.fromString(workspaceId);
-                return workspaceService.getWorkspace(wsId, username, admin)
+                return workspaceService.getWorkspace(wsId, actorEmail, admin)
                                 .map(workspace -> {
                                         WorkspaceDataStats stats = workspaceService.getWorkspaceDataStats(
                                                         wsId,
-                                                        username,
+                                                        actorEmail,
                                                         admin);
                                         return ResponseEntity.ok(
                                                         WorkspaceResponseMapper.workspaceDetailToMap(workspace, stats,
@@ -91,11 +91,11 @@ public class ApiWorkspacesController {
         @GetMapping("/workspaces/{workspaceId}/stats")
         public ResponseEntity<Map<String, Object>> getWorkspaceStats(@PathVariable String workspaceId,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
                 boolean admin = AuthenticatedUser.isAdmin(authentication);
                 WorkspaceDataStats stats = workspaceService.getWorkspaceDataStats(
                                 UUID.fromString(workspaceId),
-                                username,
+                                actorEmail,
                                 admin);
                 return ResponseEntity.ok(WorkspaceResponseMapper.workspaceStatsToMap(stats));
         }
@@ -103,9 +103,9 @@ public class ApiWorkspacesController {
         @DeleteMapping("/workspaces/{workspaceId}")
         public ResponseEntity<Void> deleteWorkspace(@PathVariable String workspaceId,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
                 boolean admin = AuthenticatedUser.isAdmin(authentication);
-                workspaceService.deleteWorkspace(UUID.fromString(workspaceId), username, admin);
+                workspaceService.deleteWorkspace(UUID.fromString(workspaceId), actorEmail, admin);
                 return ResponseEntity.noContent().build();
         }
 
@@ -114,7 +114,7 @@ public class ApiWorkspacesController {
                         @PathVariable String workspaceId,
                         @RequestBody(required = false) Map<String, String> body,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
                 boolean admin = AuthenticatedUser.isAdmin(authentication);
                 String name = body != null ? body.get(KEY_NAME) : null;
                 String description = body != null ? body.get(KEY_DESCRIPTION) : null;
@@ -122,7 +122,7 @@ public class ApiWorkspacesController {
                                 UUID.fromString(workspaceId),
                                 name,
                                 description,
-                                username,
+                                actorEmail,
                                 admin);
 
                 Map<String, Object> response = new LinkedHashMap<>();
@@ -133,11 +133,11 @@ public class ApiWorkspacesController {
         @GetMapping("/workspaces/{workspaceId}/tokens")
         public ResponseEntity<List<Map<String, Object>>> listTokens(@PathVariable String workspaceId,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
                 boolean admin = AuthenticatedUser.isAdmin(authentication);
                 List<WorkspaceToken> tokens = workspaceService.listTokens(
                                 UUID.fromString(workspaceId),
-                                username,
+                                actorEmail,
                                 admin);
                 return ResponseEntity.ok(WorkspaceResponseMapper.tokenListToMaps(tokens));
         }
@@ -147,12 +147,12 @@ public class ApiWorkspacesController {
                         @PathVariable String workspaceId,
                         @PathVariable String tokenId,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
                 boolean admin = AuthenticatedUser.isAdmin(authentication);
                 workspaceService.revokeToken(
                                 UUID.fromString(workspaceId),
                                 UUID.fromString(tokenId),
-                                username,
+                                actorEmail,
                                 admin);
                 return ResponseEntity.noContent().build();
         }
@@ -163,29 +163,29 @@ public class ApiWorkspacesController {
                         @PathVariable String kind,
                         @RequestBody(required = false) GenerateDataRequest request,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
                 boolean admin = AuthenticatedUser.isAdmin(authentication);
-                UUID wsId = workspaceService.requireWorkspaceId(workspaceId, username, admin);
+                UUID wsId = workspaceService.requireWorkspaceId(workspaceId, actorEmail, admin);
                 DataGeneratorService.GenerationSummary summary = switch (kind.toLowerCase()) {
                         case "users" -> workspaceDataGeneratorService.generateUsers(
                                         wsId,
                                         request != null ? request.count() : null,
-                                        username,
+                                        actorEmail,
                                         admin);
                         case "groups" -> workspaceDataGeneratorService.generateGroups(
                                         wsId,
                                         request != null ? request.count() : null,
-                                        username,
+                                        actorEmail,
                                         admin);
                         case "relations" -> workspaceDataGeneratorService.generateRelations(
                                         wsId,
                                         request != null ? request.count() : null,
-                                        username,
+                                        actorEmail,
                                         admin);
                         case "all" -> workspaceDataGeneratorService.generateAll(
                                         wsId,
                                         request != null ? request.count() : null,
-                                        username,
+                                        actorEmail,
                                         admin);
                         default -> throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
                                         "Unsupported generator kind: " + kind);

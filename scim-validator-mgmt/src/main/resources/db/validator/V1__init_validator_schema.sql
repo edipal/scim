@@ -1,6 +1,5 @@
 CREATE TABLE validator_mgmt_users (
-    id VARCHAR(500) PRIMARY KEY,
-    email VARCHAR(500),
+    email VARCHAR(500) PRIMARY KEY,
     last_login_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
@@ -10,16 +9,15 @@ CREATE TABLE validation_run (
     target_url VARCHAR(500) NOT NULL,
     executed_at TIMESTAMP WITH TIME ZONE NOT NULL,
     status VARCHAR(20) NOT NULL,
-    created_by_user_id VARCHAR(500),
-    created_by_username VARCHAR(255),
+    created_by_email VARCHAR(500) NOT NULL,
     total_tests INTEGER NOT NULL,
     passed_tests INTEGER NOT NULL,
     failed_tests INTEGER NOT NULL,
     CONSTRAINT fk_validation_run_created_by_user
-        FOREIGN KEY (created_by_user_id) REFERENCES validator_mgmt_users (id)
+        FOREIGN KEY (created_by_email) REFERENCES validator_mgmt_users (email)
 );
 
-CREATE INDEX idx_validation_run_created_by_user_id ON validation_run (created_by_user_id);
+CREATE INDEX idx_validation_run_created_by_email ON validation_run (created_by_email);
 CREATE INDEX idx_validation_run_executed_at ON validation_run (executed_at DESC);
 
 CREATE TABLE validation_test_result (

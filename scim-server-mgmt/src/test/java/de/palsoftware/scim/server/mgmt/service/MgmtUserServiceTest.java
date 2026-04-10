@@ -13,7 +13,9 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,64 +31,59 @@ class MgmtUserServiceTest {
     // ─── provisionUser ──────────────────────────────────────────────────
 
     @Test
-    void provisionUser_newUser_createsAndSaves() {
-        when(mgmtUserRepository.findById("sub-123")).thenReturn(Optional.empty());
+    void provisionUser_newUser_createsAndSavesNormalizedEmail() {
+        when(mgmtUserRepository.findById("user@test.com")).thenReturn(Optional.empty());
         when(mgmtUserRepository.save(any(MgmtUser.class))).thenAnswer(i -> i.getArgument(0));
 
-        service.provisionUser("sub-123", "user@test.com");
+        service.provisionUser(" User@Test.com ");
 
-        verify(mgmtUserRepository).save(any(MgmtUser.class));
+        verify(mgmtUserRepository).save(argThat(user -> "user@test.com".equals(user.getEmail())
+                && user.getLastLoginAt() != null));
     }
 
     @Test
-    void provisionUser_existingUser_updatesEmailAndLogin() {
-        MgmtUser existing = new MgmtUser("sub-123", "old@test.com", OffsetDateTime.now(ZoneOffset.UTC));
-        when(mgmtUserRepository.findById("sub-123")).thenReturn(Optional.of(existing));
+    void provisionUser_existingUser_updatesLoginTime() {
+        MgmtUser existing = new MgmtUser("user@test.com", OffsetDateTime.now(ZoneOffset.UTC).minusDays(1));
+        when(mgmtUserRepository.findById("user@test.com")).thenReturn(Optional.of(existing));
         when(mgmtUserRepository.save(any(MgmtUser.class))).thenAnswer(i -> i.getArgument(0));
 
-        service.provisionUser("sub-123", "new@test.com");
+        service.provisionUser("USER@Test.com");
 
-        assertThat(existing.getEmail()).isEqualTo("new@test.com");
+        assertThat(existing.getEmail()).isEqualTo("user@test.com");
         verify(mgmtUserRepository).save(existing);
     }
 
-    // ─── findEmailById ──────────────────────────────────────────────────
+    @Test
+    void provisionUser_missingEmail_throws() {
+        assertThatThrownBy(() -> service.provisionUser("not-an-email"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("email is required");
+    }
+
+    // ─── resolveDisplayName ─────────────────────────────────────────────
 
     @Test
-    void findEmailById_found() {
-        MgmtUser user = new MgmtUser("sub-123", "user@test.com", OffsetDateTime.now(ZoneOffset.UTC));
-        when(mgmtUserRepository.findById("sub-123")).thenReturn(Optional.of(user));
+    void resolveDisplayName_found() {
+        MgmtUser user = new MgmtUser("user@test.com", OffsetDateTime.now(ZoneOffset.UTC));
+        when(mgmtUserRepository.findById("user@test.com")).thenReturn(Optional.of(user));
 
-        Optional<String> result = service.findEmailById("sub-123");
+        Optional<String> result = service.resolveDisplayName("User@Test.com");
 
         assertThat(result).contains("user@test.com");
     }
 
     @Test
-    void findEmailById_notFound() {
-        when(mgmtUserRepository.findById("sub-999")).thenReturn(Optional.empty());
+    void resolveDisplayName_notFound() {
+        when(mgmtUserRepository.findById("missing@test.com")).thenReturn(Optional.empty());
 
-        Optional<String> result = service.findEmailById("sub-999");
-
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void findEmailById_blankEmail_returnsEmpty() {
-        MgmtUser user = new MgmtUser("sub-123", "  ", OffsetDateTime.now(ZoneOffset.UTC));
-        when(mgmtUserRepository.findById("sub-123")).thenReturn(Optional.of(user));
-
-        Optional<String> result = service.findEmailById("sub-123");
+        Optional<String> result = service.resolveDisplayName("missing@test.com");
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    void findEmailById_nullEmail_returnsEmpty() {
-        MgmtUser user = new MgmtUser("sub-123", null, OffsetDateTime.now(ZoneOffset.UTC));
-        when(mgmtUserRepository.findById("sub-123")).thenReturn(Optional.of(user));
-
-        Optional<String> result = service.findEmailById("sub-123");
+    void resolveDisplayName_invalidEmail_returnsEmpty() {
+        Optional<String> result = service.resolveDisplayName("not-an-email");
 
         assertThat(result).isEmpty();
     }

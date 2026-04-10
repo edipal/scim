@@ -1,0 +1,36 @@
+USER-SUPPLIED VALUES:
+global:
+  cluster: netcup-scim
+  licenseKey: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  lowDataMode: true
+k8s-agents-operator:
+  enabled: true
+kube-state-metrics:
+  enabled: true
+  image:
+    tag: v2.13.0
+kubeEvents:
+  enabled: true
+logging:
+  enabled: true
+newrelic-logging:
+  lowDataMode: true
+  fluentBit:
+    config:
+      inputs: |
+        [INPUT]
+            Name tail
+            Path /var/log/containers/*.log
+            Exclude_Path /var/log/containers/*_newrelic_*.log
+            Tag kube.*
+            Mem_Buf_Limit 7MB
+            Skip_Long_Lines On
+newrelic-prometheus-agent:
+  config:
+    kubernetes:
+      integrations_filter:
+        enabled: false
+  enabled: true
+  lowDataMode: true
+nr-ebpf-agent:
+  enabled: true

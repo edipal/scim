@@ -39,12 +39,9 @@ public class ValidationRun {
     @Column(nullable = false, length = 20)
     private String status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "created_by_email", nullable = false)
     private ValidationMgmtUser createdByUser;
-
-    @Column(length = 255)
-    private String createdByUsername;
 
     @Column(nullable = false)
     private int totalTests;
@@ -125,14 +122,6 @@ public class ValidationRun {
 
     public void setFailedTests(int failedTests) {
         this.failedTests = failedTests;
-    }
-
-    public String getCreatedByUsername() {
-        return createdByUsername;
-    }
-
-    public void setCreatedByUsername(String createdByUsername) {
-        this.createdByUsername = createdByUsername;
     }
 
     public List<ValidationTestResult> getTestResults() {

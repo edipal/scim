@@ -2,6 +2,7 @@ package de.palsoftware.scim.server.mgmt.service;
 
 import de.palsoftware.scim.server.mgmt.model.MgmtUser;
 import de.palsoftware.scim.server.mgmt.repository.MgmtUserRepository;
+import de.palsoftware.scim.server.common.security.PrincipalEmailSupport;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,18 +21,32 @@ public class MgmtUserService {
     }
 
     @Transactional
-    public void provisionUser(String sub, String email) {
-        MgmtUser user = mgmtUserRepository.findById(sub)
-                .orElseGet(() -> new MgmtUser(sub, email, OffsetDateTime.now(ZoneOffset.UTC)));
-        user.setEmail(email);
-        user.setLastLoginAt(OffsetDateTime.now(ZoneOffset.UTC));
+    public void provisionUser(String email) {
+        String normalizedEmail = requireEmail(email);
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        MgmtUser user = mgmtUserRepository.findById(normalizedEmail)
+                .orElseGet(() -> new MgmtUser(normalizedEmail, now));
+        user.setEmail(normalizedEmail);
+        user.setLastLoginAt(now);
         mgmtUserRepository.save(user);
     }
 
-    public Optional<String> findEmailById(String sub) {
-        return mgmtUserRepository.findById(sub)
+    public Optional<String> resolveDisplayName(String email) {
+        String normalizedEmail = PrincipalEmailSupport.normalizeEmail(email);
+        if (normalizedEmail == null) {
+            return Optional.empty();
+        }
+        return mgmtUserRepository.findById(normalizedEmail)
                 .map(MgmtUser::getEmail)
                 .filter(e -> e != null && !e.isBlank());
+    }
+
+    private String requireEmail(String email) {
+        String normalizedEmail = PrincipalEmailSupport.normalizeEmail(email);
+        if (normalizedEmail == null) {
+            throw new IllegalArgumentException("Management user email is required");
+        }
+        return normalizedEmail;
     }
 }
 

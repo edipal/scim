@@ -65,7 +65,7 @@ class LazyLoadingIntegrationTest extends PostgresIntegrationTestSupport {
     @WithMockUser(username = "admin-user", roles = {"ADMIN"})
     void testListUsersAndGroups_generatesNoLazyInitializationException() throws Exception {
         // Create an admin user for workspace ownership and request context
-        MgmtUser mgmtUser = new MgmtUser("admin-user", "admin@example.com", OffsetDateTime.now(ZoneOffset.UTC));
+        MgmtUser mgmtUser = new MgmtUser("admin@example.com", OffsetDateTime.now(ZoneOffset.UTC));
         mgmtUserRepository.save(mgmtUser);
 
         // Create workspace

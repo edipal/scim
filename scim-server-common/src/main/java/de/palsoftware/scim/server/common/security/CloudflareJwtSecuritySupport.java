@@ -3,8 +3,9 @@ package de.palsoftware.scim.server.common.security;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -17,8 +18,11 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenResolv
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public final class CloudflareJwtSecuritySupport {
+
+    private static final String INVALID_TOKEN_CODE = "invalid_token";
 
     private CloudflareJwtSecuritySupport() {
     }
@@ -44,7 +48,8 @@ public final class CloudflareJwtSecuritySupport {
 
     public static Converter<Jwt, AbstractAuthenticationToken> createJwtAuthenticationConverter(String roleClaim,
                                                                                                String adminRole,
-                                                                                               String userRole) {
+                                                                                               String userRole,
+                                                                                               Consumer<String> userProvisioner) {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setPrincipalClaimName("sub");
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
@@ -57,7 +62,16 @@ public final class CloudflareJwtSecuritySupport {
                     userRole);
             return mappedAuthorities;
         });
-        return converter;
+        return jwt -> {
+            String email = requireEmail(jwt);
+            AbstractAuthenticationToken authentication = converter.convert(jwt);
+            if (authentication == null) {
+                throw new OAuth2AuthenticationException(
+                        new OAuth2Error(INVALID_TOKEN_CODE, "Unable to authenticate Cloudflare token", null));
+            }
+            userProvisioner.accept(email);
+            return authentication;
+        };
     }
 
     private static Object resolveRoleClaimValue(Jwt jwt, String roleClaim) {
@@ -77,7 +91,7 @@ public final class CloudflareJwtSecuritySupport {
             return OAuth2TokenValidatorResult.success();
         }
         return OAuth2TokenValidatorResult.failure(
-                new OAuth2Error("invalid_token", "The required audience is missing", null));
+            new OAuth2Error(INVALID_TOKEN_CODE, "The required audience is missing", null));
     }
 
     private static String resolveJwkSetUri(String issuerUri, String jwkSetUri) {
@@ -88,5 +102,14 @@ public final class CloudflareJwtSecuritySupport {
             return issuerUri + "cdn-cgi/access/certs";
         }
         return issuerUri + "/cdn-cgi/access/certs";
+    }
+
+    private static String requireEmail(Jwt jwt) {
+        String email = PrincipalEmailSupport.resolveEmail(jwt);
+        if (email != null) {
+            return email;
+        }
+        throw new OAuth2AuthenticationException(
+                new OAuth2Error(INVALID_TOKEN_CODE, "An email claim is required for management access", null));
     }
 }

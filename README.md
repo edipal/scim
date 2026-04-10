@@ -32,8 +32,9 @@ combines:
   SOPS-encrypted secrets, and Cloudflare Tunnel integration
 
 The design centers on workspace isolation. Every SCIM request is scoped to a
-workspace via `/ws/{workspaceId}/scim/v2/**`, and every core SCIM entity is
-stored with a `workspace_id` foreign key.
+workspace via `/ws/{workspaceId}/scim/v2/**`; the current implementation
+requires `workspaceId` to be a UUID, and every core SCIM entity is stored with
+a `workspace_id` foreign key.
 
 ## What It Implements
 
@@ -68,15 +69,16 @@ playground service provider:
 
 ### Request model
 
-1. A client calls a SCIM endpoint under `/ws/{workspaceId}/scim/v2/**`.
-2. `BearerTokenAuthFilter` extracts the workspace identifier from the path.
-3. The filter accepts either a workspace UUID or a workspace name.
+1. A client calls a SCIM endpoint under `/ws/{workspaceId}/scim/v2/**` using a
+  workspace UUID.
+2. `BearerTokenAuthFilter` extracts the workspace UUID from the path.
+3. Non-UUID workspace identifiers are rejected with a SCIM `404` response.
 4. The bearer token is hashed with SHA-256 and looked up through
    `WorkspaceTokenRepository.findByTokenHashAndNotRevoked(...)`.
 5. If the token belongs to the resolved workspace and is not expired or
-   revoked, `WorkspaceContext` is populated for downstream services.
-6. After authentication, the SCIM controllers and services operate only inside
-   that workspace boundary.
+  revoked, the request is allowed through the filter chain.
+6. The SCIM controllers resolve the workspace UUID from the route and pass it
+  explicitly into services; there is no workspace ThreadLocal context.
 7. `RequestResponseLoggingFilter` captures the request and response payloads for
    later inspection in the management UI.
 
@@ -84,7 +86,7 @@ playground service provider:
 
 Multi-tenancy is workspace-based rather than host-based:
 
-- workspace identity comes from the route, not from JWT claims
+- workspace identity comes from the route UUID, not from JWT claims
 - the same bearer-token model works across all SCIM resources
 - uniqueness constraints are scoped by workspace
 - request logs and statistics are workspace-scoped
@@ -131,16 +133,16 @@ Key capabilities:
 Main routes:
 
 - UI root: `/`
-- Workspace UI: `/ui/workspaces/{workspaceId}`
-- Management API root: `/api/management/**`
+- Workspace UI: `/workspaces/{workspaceId}`
+- Management API root: `/api/**`
 
 Representative management API endpoints:
 
-- `POST /api/management/workspaces`
-- `GET /api/management/workspaces`
-- `POST /api/management/workspaces/{workspaceId}/tokens`
-- `GET /api/management/workspaces/{workspaceId}/logs`
-- `POST /api/management/workspaces/{workspaceId}/generate/{kind}`
+- `POST /api/workspaces`
+- `GET /api/workspaces`
+- `POST /api/workspaces/{workspaceId}/tokens`
+- `GET /api/workspaces/{workspaceId}/logs`
+- `POST /api/workspaces/{workspaceId}/generate/{kind}`
 
 Supported generator kinds:
 
@@ -196,8 +198,10 @@ Some repository-specific implementation details matter if you extend the code:
 
 - `ScimUser` flattens `name.*` and enterprise extension manager fields into
   columns.
-- multi-valued user attributes are modeled as dedicated child entities with
-  `cascade = ALL` and `orphanRemoval = true`.
+- multi-valued user attributes are stored as JSON columns on `scim_users`,
+  backed by list fields on `ScimUser`; Flyway
+  `V2__migrate_user_collections_to_json.sql` removed the old dedicated child
+  tables.
 - `ScimUser` and `ScimGroup` use optimistic locking through `@Version`, which is
   surfaced as weak SCIM `ETag` values.
 - group membership uses a polymorphic `memberValue` identifier, so delete flows
@@ -207,7 +211,7 @@ Some repository-specific implementation details matter if you extend the code:
 ## Tech Stack
 
 - Java 17
-- Spring Boot 3.5.12
+- Spring Boot 3.5.13
 - Spring MVC, Spring Security, Spring Data JPA, Thymeleaf
 - PostgreSQL for the main playground and validator persistence stores
 - CloudNativePG for Kubernetes PostgreSQL clustering
@@ -343,7 +347,7 @@ Notes:
 - The management deployments set `SPRING_PROFILES_ACTIVE=cloudflare`.
 - The API deployment stays on its regular bearer-token model.
 - The manifests reference published container images such as
-  `edipal/scim-server-api:1.0.6`.
+  `edipal/scim-server-api:1.0.8`.
 
 ### Kubernetes secrets and age rotation
 
@@ -464,18 +468,18 @@ token is only shown once. At rest, only the SHA-256 hash is stored.
 
 ### 5. Call the SCIM API
 
-Use the workspace UUID or workspace name in the route.
+Use the workspace UUID in the route.
 
 Example discovery request:
 
 ```bash
 export SCIM_TOKEN=<workspace-token>
-export WORKSPACE_ID=<workspace-uuid-or-name>
+export WORKSPACE_UUID=<workspace-uuid>
 
 curl \
   -H "Authorization: Bearer ${SCIM_TOKEN}" \
   -H "Accept: application/scim+json" \
-  http://localhost:8080/ws/${WORKSPACE_ID}/scim/v2/ServiceProviderConfig
+  http://localhost:8080/ws/${WORKSPACE_UUID}/scim/v2/ServiceProviderConfig
 ```
 
 Example user creation:
@@ -486,7 +490,7 @@ curl \
   -H "Authorization: Bearer ${SCIM_TOKEN}" \
   -H "Content-Type: application/scim+json" \
   -H "Accept: application/scim+json" \
-  http://localhost:8080/ws/${WORKSPACE_ID}/scim/v2/Users \
+  http://localhost:8080/ws/${WORKSPACE_UUID}/scim/v2/Users \
   -d '{
     "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
     "userName": "alice@example.com",
@@ -540,7 +544,7 @@ pass the SCIM target via CLI properties:
 cd scim-validator
 mvn test \
   -Dscim.testcontainers.enabled=false \
-  -Dscim.baseUrl=http://localhost:8080/ws/<workspace-id-or-name>/scim/v2 \
+  -Dscim.baseUrl=http://localhost:8080/ws/<workspace-uuid>/scim/v2 \
   -Dscim.authToken=<workspace-token>
 ```
 
@@ -551,14 +555,14 @@ cd scim-validator
 mvn test \
   -Dscim.testcontainers.enabled=false \
   -Dscim.apiUrl=http://localhost:8080 \
-  -Dscim.workspaceId=<workspace-id-or-name> \
+  -Dscim.workspaceId=<workspace-uuid> \
   -Dscim.authToken=<workspace-token>
 ```
 
 Environment variables remain supported as well:
 
 ```bash
-export SCIM_BASE_URL=http://localhost:8080/ws/<workspace-id-or-name>/scim/v2
+export SCIM_BASE_URL=http://localhost:8080/ws/<workspace-uuid>/scim/v2
 export SCIM_AUTH_TOKEN=<workspace-token>
 
 cd scim-validator
@@ -569,7 +573,7 @@ Alternative environment model:
 
 ```bash
 export SCIM_API_URL=http://localhost:8080
-export SCIM_WORKSPACE_ID=<workspace-id-or-name>
+export SCIM_WORKSPACE_ID=<workspace-uuid>
 export SCIM_AUTH_TOKEN=<workspace-token>
 
 cd scim-validator
@@ -577,7 +581,8 @@ mvn test
 ```
 
 The validator will derive the full base path from `SCIM_API_URL` and
-`SCIM_WORKSPACE_ID` if `SCIM_BASE_URL` is not provided.
+`SCIM_WORKSPACE_ID` if `SCIM_BASE_URL` is not provided. `SCIM_WORKSPACE_ID`
+must be the workspace UUID used by the API route.
 
 Mode selection:
 
@@ -586,8 +591,8 @@ Mode selection:
 
 Advanced overrides for the automatic bootstrap:
 
-- `SCIM_VALIDATOR_API_IMAGE` or `-Dscim.validator.apiImage=...`
-- `SCIM_VALIDATOR_POSTGRES_IMAGE` or `-Dscim.validator.postgresImage=...`
+- `SCIM_VALIDATOR_API_IMAGE` or `-Dscim.testcontainers.apiImage=...`
+- `SCIM_VALIDATOR_POSTGRES_IMAGE` or `-Dscim.testcontainers.postgresImage=...`
 
 ## CI/CD and Release Automation
 

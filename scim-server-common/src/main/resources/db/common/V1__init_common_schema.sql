@@ -2,7 +2,7 @@ CREATE TABLE workspaces (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     description VARCHAR(255),
-    created_by_username VARCHAR(255),
+    created_by_username VARCHAR(500),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
@@ -12,8 +12,7 @@ CREATE INDEX idx_workspaces_updated_at ON workspaces (updated_at);
 CREATE INDEX idx_workspaces_created_at ON workspaces (created_at DESC);
 
 CREATE TABLE mgmt_users (
-    id VARCHAR(500) PRIMARY KEY,
-    email VARCHAR(500),
+    email VARCHAR(500) PRIMARY KEY,
     last_login_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 

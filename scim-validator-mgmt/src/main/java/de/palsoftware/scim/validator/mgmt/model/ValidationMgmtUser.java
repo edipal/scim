@@ -13,9 +13,6 @@ public class ValidationMgmtUser {
 
     @Id
     @Column(length = 500, nullable = false)
-    private String id;
-
-    @Column(length = 500)
     private String email;
 
     @Column(name = "last_login_at", columnDefinition = "TIMESTAMP WITH TIME ZONE", nullable = false)
@@ -24,18 +21,9 @@ public class ValidationMgmtUser {
     public ValidationMgmtUser() {
     }
 
-    public ValidationMgmtUser(String id, String email, OffsetDateTime lastLoginAt) {
-        this.id = id;
+    public ValidationMgmtUser(String email, OffsetDateTime lastLoginAt) {
         this.email = email;
         this.lastLoginAt = lastLoginAt;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getEmail() {

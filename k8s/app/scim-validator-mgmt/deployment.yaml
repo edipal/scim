@@ -30,6 +30,11 @@ spec:
             - secretRef:
                 name: scim-validator-mgmt-k3s-secrets
           env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: scim-postgres-validator
+                  key: username
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:

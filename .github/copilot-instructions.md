@@ -12,11 +12,12 @@ Multi-tenant SCIM 2.0 Service Provider (RFC 7643/7644) with five Maven modules:
 | `scim-validator` | Groovy/Spock SCIM compliance suite (REST Assured) | - |
 | `scim-validator-mgmt` | Validator run/inspection management service | 8082 |
 
-Multi-tenancy is workspace-based. SCIM routes are scoped to `/ws/{workspaceId}/scim/v2/**`.
+Multi-tenancy is workspace-based. SCIM routes are scoped to `/ws/{workspaceId}/scim/v2/**`,
+and the current implementation expects `workspaceId` to be a UUID.
 
-- `BearerTokenAuthFilter` resolves workspace by UUID or name from the path.
+- `BearerTokenAuthFilter` extracts the workspace UUID from the path and validates that the token belongs to that workspace.
 - Bearer tokens are validated via SHA-256 hash lookup (`WorkspaceTokenRepository.findByTokenHashAndNotRevoked`).
-- `WorkspaceContext` (ThreadLocal) carries workspace/token for downstream services.
+- There is no `WorkspaceContext` ThreadLocal anymore; controllers resolve the workspace UUID from the route and pass it explicitly into services.
 - All core SCIM entities are workspace-scoped with `workspace_id` foreign keys.
 
 Compatibility mode is route-based and extensible:
@@ -34,6 +35,8 @@ Management security is profile-based:
 - Default profile is `azure`, using interactive Azure OIDC login.
 - `cloudflare` profile switches the management apps to JWT resource-server mode.
 - Cloudflare mode reads the token from `Cf-Access-Jwt-Assertion` by default and maps roles from a configurable claim.
+- Management user persistence is email-based in both management modules; resolved emails are normalized and stored as the primary key.
+- Management access now expects a usable email claim from OIDC/JWT principals.
 - Shared helpers live in `scim-server-common` (`AzureOidcSecuritySupport`, `CloudflareJwtSecuritySupport`, `MgmtSecuritySupport`).
 
 Kubernetes support is split into two trees:
@@ -55,8 +58,8 @@ The root `.sops.yaml` defines the active age recipient.
 # Full reactor build
 mvn clean install
 
-# Build without SCIM validator module
-mvn clean install -pl '!scim-validator'
+# Full reactor build without running validator specs
+mvn clean install -Dskip.validator.tests=true
 
 # API local mode (requires datasource env vars and ACTUATOR_API_KEY)
 cd scim-server-api && mvn spring-boot:run
@@ -87,13 +90,15 @@ Docker default ports:
 - API `:8080`
 - Mgmt `:8081`
 - Validator Mgmt `:8082`
-- PostgreSQL `:5432`
+- Playground PostgreSQL `:5432`
+- Validator PostgreSQL `:5433`
 
 Operational notes:
 
 - `docker-compose.yml` loads `docker/env/cloudflare.env` into the management apps.
 - Kubernetes manifests set `SPRING_PROFILES_ACTIVE=cloudflare` for the management apps.
 - Application services in Kubernetes are `ClusterIP`; Cloudflare tunnel is the external-access path in this branch.
+- No repository-specific `DOCKER_HOST` or `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` overrides are required for local Testcontainers runs; use the default local Docker Desktop / Docker Engine setup.
 
 ## Validator Execution
 
@@ -107,11 +112,15 @@ cd scim-validator && mvn test
 Notes from `ScimBaseSpec`:
 
 - By default, the validator can bootstrap PostgreSQL plus `edipal/scim-server-api:latest` when explicit `SCIM_*` settings are not provided.
+- Bootstrap selection is based on whether a usable target is configured, not on the presence of the default `SCIM_API_URL` placeholder value.
 - Disable automatic bootstrap with `SCIM_TESTCONTAINERS_ENABLED=false` or `-Dscim.testcontainers.enabled=false` when targeting an existing environment.
 - You can alternatively set `SCIM_BASE_URL` (full path, including `/ws/{workspaceId}/scim/v2`).
 - You can also provide `SCIM_API_URL` together with `SCIM_WORKSPACE_ID`.
 - `SCIM_AUTH_TOKEN` is required for validator runs.
 - `SCIM_WORKSPACE_ID` is required unless `SCIM_BASE_URL` is provided.
+- Validator config is loaded from `validator-application.yml` in test resources to avoid `application.yml` collisions when the validator test JAR is consumed by `scim-validator-mgmt`.
+- `ValidatorConfiguration` accepts both `SCIM_*` placeholders and dotted JVM properties such as `scim.baseUrl`, `scim.authToken`, `scim.apiUrl`, and `scim.workspaceId`, because `scim-validator-mgmt` sets dotted properties before loading validator specs.
+- The validator `tests` classifier JAR is packaged after test resources are copied (`test-compile`) so downstream consumers receive `validator-application.yml`.
 
 ## Code Conventions
 
@@ -136,17 +145,23 @@ Notes from `ScimBaseSpec`:
 - Workspace-scoped uniqueness:
 	- `scim_users`: `(workspace_id, user_name)`
 	- `scim_groups`: `(workspace_id, display_name)`
+- Management ownership data is email-keyed:
+	- `mgmt_users.email` is the primary key
+	- `validator_mgmt_users.email` is the primary key
+	- `validation_run.created_by_email` is a foreign key to `validator_mgmt_users(email)`
+- `workspaces.created_by_username` is sized for email-style owner values (`VARCHAR(500)`).
 - `ScimUser` flattens `name.*` and enterprise extension sub-attributes into columns.
-- Multi-valued user attributes are dedicated child entities with `@OneToMany(cascade = ALL, orphanRemoval = true)`:
+
+- Multi-valued user attributes on `ScimUser` are JSON-backed lists, not `@OneToMany` child entities:
 	- `emails`, `phoneNumbers`, `addresses`, `entitlements`, `roles`, `ims`, `photos`, `x509Certificates`
 
 ## Key SCIM Components
 
-- `ScimFilterParser` (`~378` lines): recursive-descent filter parser to JPA `Specification<T>`.
+- `ScimFilterParser`: recursive-descent filter parser to JPA `Specification<T>`.
 	- operators: `eq ne co sw ew pr gt ge lt le`
 	- logic: `and or not`, grouping with parentheses
 	- supports `name.*`, `meta.*`, and enterprise extension attribute paths
-- `ScimPatchEngine` (`~850` lines): RFC 7644 PATCH processing with path parsing and filtered multi-valued operations.
+- `ScimPatchEngine`: RFC 7644 PATCH processing with path parsing and filtered multi-valued operations.
 - `ScimSchemaDefinitions`: source of truth for discovery/schema responses.
 
 When adding or changing attributes, keep parser, mapper, patch, and schema definitions aligned.
@@ -179,7 +194,7 @@ If you modify management authentication or deployment behavior, also review:
 
 ## Adding A New SCIM Attribute
 
-1. Extend `ScimUser`/`ScimGroup` (or add child entity in `scim-server-common` when multi-valued).
+1. Extend `ScimUser`/`ScimGroup` (or add a JSON-backed value object and list field in `scim-server-common` when the attribute is multi-valued).
 2. Update mapper read/write paths in `scim-server-api`.
 3. Add PATCH support in `ScimPatchEngine` when applicable.
 4. Add schema metadata in `ScimSchemaDefinitions`.

@@ -3,6 +3,7 @@ package de.palsoftware.scim.validator.mgmt.service;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationRunView;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationTestResultView;
 import de.palsoftware.scim.validator.mgmt.model.ValidationHttpExchange;
+import de.palsoftware.scim.validator.mgmt.model.ValidationMgmtUser;
 import de.palsoftware.scim.validator.mgmt.model.ValidationRun;
 import de.palsoftware.scim.validator.mgmt.model.ValidationTestResult;
 import de.palsoftware.scim.validator.mgmt.repo.ValidationMgmtUserRepository;
@@ -38,6 +39,7 @@ class ValidationRunServiceTest {
 
     private static final String BASE_URL_PROPERTY = "scim.baseUrl";
     private static final String AUTH_TOKEN_PROPERTY = "scim.authToken";
+    private static final String TESTCONTAINERS_ENABLED_PROPERTY = "SCIM_TESTCONTAINERS_ENABLED";
 
     @Mock
     private ValidationRunRepository runRepository;
@@ -64,7 +66,7 @@ class ValidationRunServiceTest {
         sampleRun.setTargetUrl("http://example.com/scim");
         sampleRun.setExecutedAt(OffsetDateTime.now());
         sampleRun.setStatus("PASSED");
-        sampleRun.setCreatedByUsername("user@example.com");
+        sampleRun.setCreatedByUser(new ValidationMgmtUser("user@example.com", OffsetDateTime.now()));
         sampleRun.setTotalTests(10);
         sampleRun.setPassedTests(10);
         sampleRun.setFailedTests(0);
@@ -84,9 +86,11 @@ class ValidationRunServiceTest {
     void buildRequestLoadsValidatorSpecsFromRuntimeClasspath() throws Exception {
         String previousBaseUrl = System.getProperty(BASE_URL_PROPERTY);
         String previousAuthToken = System.getProperty(AUTH_TOKEN_PROPERTY);
+        String previousTestcontainersEnabled = System.getProperty(TESTCONTAINERS_ENABLED_PROPERTY);
 
         System.setProperty(BASE_URL_PROPERTY, "http://localhost:8080/ws/test/scim/v2");
         System.setProperty(AUTH_TOKEN_PROPERTY, "test-token");
+        System.setProperty(TESTCONTAINERS_ENABLED_PROPERTY, "false");
 
         Method buildRequest = ValidationRunService.class.getDeclaredMethod("buildRequest");
         buildRequest.setAccessible(true);
@@ -97,6 +101,7 @@ class ValidationRunServiceTest {
         } finally {
             restoreProperty(BASE_URL_PROPERTY, previousBaseUrl);
             restoreProperty(AUTH_TOKEN_PROPERTY, previousAuthToken);
+            restoreProperty(TESTCONTAINERS_ENABLED_PROPERTY, previousTestcontainersEnabled);
         }
     }
 
@@ -106,7 +111,7 @@ class ValidationRunServiceTest {
     void listRuns_admin_returnsAllRuns() {
         when(runRepository.findAll(any(Sort.class))).thenReturn(List.of(sampleRun));
 
-        List<ValidationRunView> result = service.listRuns("user-id", true);
+        List<ValidationRunView> result = service.listRuns("user@example.com", true);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).name()).isEqualTo("Test Run");
@@ -115,20 +120,20 @@ class ValidationRunServiceTest {
 
     @Test
     void listRuns_nonAdmin_returnsOwnedRuns() {
-        when(runRepository.findOwnedRuns(eq("user-id"), any(Sort.class)))
+        when(runRepository.findOwnedRuns(eq("user@example.com"), any(Sort.class)))
                 .thenReturn(List.of(sampleRun));
 
-        List<ValidationRunView> result = service.listRuns("user-id", false);
+        List<ValidationRunView> result = service.listRuns("user@example.com", false);
 
         assertThat(result).hasSize(1);
-        verify(runRepository).findOwnedRuns(eq("user-id"), any(Sort.class));
+        verify(runRepository).findOwnedRuns(eq("user@example.com"), any(Sort.class));
     }
 
     @Test
     void listRuns_empty_returnsEmptyList() {
         when(runRepository.findAll(any(Sort.class))).thenReturn(Collections.emptyList());
 
-        List<ValidationRunView> result = service.listRuns("user-id", true);
+        List<ValidationRunView> result = service.listRuns("user@example.com", true);
 
         assertThat(result).isEmpty();
     }
@@ -139,7 +144,7 @@ class ValidationRunServiceTest {
     void getRun_admin_found() {
         when(runRepository.findById(runId)).thenReturn(Optional.of(sampleRun));
 
-        ValidationRunView result = service.getRun(runId, "user-id", true);
+        ValidationRunView result = service.getRun(runId, "user@example.com", true);
 
         assertThat(result.id()).isEqualTo(runId);
         assertThat(result.name()).isEqualTo("Test Run");
@@ -149,26 +154,26 @@ class ValidationRunServiceTest {
     void getRun_admin_notFound_throws() {
         when(runRepository.findById(runId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.getRun(runId, "user-id", true))
+        assertThatThrownBy(() -> service.getRun(runId, "user@example.com", true))
                 .isInstanceOf(ResponseStatusException.class);
     }
 
     @Test
     void getRun_nonAdmin_accessible() {
-        when(runRepository.findAccessibleById(runId, "user-id"))
+        when(runRepository.findAccessibleById(runId, "user@example.com"))
                 .thenReturn(Optional.of(sampleRun));
 
-        ValidationRunView result = service.getRun(runId, "user-id", false);
+        ValidationRunView result = service.getRun(runId, "user@example.com", false);
 
         assertThat(result.id()).isEqualTo(runId);
     }
 
     @Test
     void getRun_nonAdmin_notAccessible_throws() {
-        when(runRepository.findAccessibleById(runId, "user-id"))
+        when(runRepository.findAccessibleById(runId, "user@example.com"))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.getRun(runId, "user-id", false))
+        assertThatThrownBy(() -> service.getRun(runId, "user@example.com", false))
                 .isInstanceOf(ResponseStatusException.class);
     }
 
@@ -217,7 +222,7 @@ class ValidationRunServiceTest {
         when(exchangeRepository.findByTestResultIdOrderBySequenceNumberAsc(testResult.getId()))
                 .thenReturn(List.of(exchange));
 
-        List<ValidationTestResultView> results = service.getTestResults(runId, "user-id", true);
+        List<ValidationTestResultView> results = service.getTestResults(runId, "user@example.com", true);
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).displayName()).isEqualTo("Test 1");
@@ -231,7 +236,7 @@ class ValidationRunServiceTest {
         when(testResultRepository.findByRunIdOrderByStartedAtAsc(runId))
                 .thenReturn(Collections.emptyList());
 
-        List<ValidationTestResultView> results = service.getTestResults(runId, "user-id", true);
+        List<ValidationTestResultView> results = service.getTestResults(runId, "user@example.com", true);
 
         assertThat(results).isEmpty();
     }
@@ -242,27 +247,27 @@ class ValidationRunServiceTest {
     void deleteRun_admin_deletesById() {
         when(runRepository.findById(runId)).thenReturn(Optional.of(sampleRun));
 
-        service.deleteRun(runId, "user-id", true);
+        service.deleteRun(runId, "user@example.com", true);
 
         verify(runRepository).deleteById(runId);
     }
 
     @Test
     void deleteRun_nonAdmin_accessible_deletes() {
-        when(runRepository.findAccessibleById(runId, "user-id"))
+        when(runRepository.findAccessibleById(runId, "user@example.com"))
                 .thenReturn(Optional.of(sampleRun));
 
-        service.deleteRun(runId, "user-id", false);
+        service.deleteRun(runId, "user@example.com", false);
 
         verify(runRepository).deleteById(runId);
     }
 
     @Test
     void deleteRun_nonAdmin_notAccessible_throws() {
-        when(runRepository.findAccessibleById(runId, "user-id"))
+        when(runRepository.findAccessibleById(runId, "user@example.com"))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.deleteRun(runId, "user-id", false))
+        assertThatThrownBy(() -> service.deleteRun(runId, "user@example.com", false))
                 .isInstanceOf(ResponseStatusException.class);
     }
 

@@ -24,68 +24,52 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AuthenticatedUserTest {
 
     @Test
-    void username_nullAuthentication_throws() {
-        assertThatThrownBy(() -> AuthenticatedUser.username(null))
+    void email_nullAuthentication_throws() {
+        assertThatThrownBy(() -> AuthenticatedUser.email(null))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Missing authentication");
     }
 
     @Test
-    void username_nonOidcPrincipal_returnsAuthName() {
+    void email_nonOidcPrincipal_returnsAuthName() {
         Authentication auth = new TestingAuthenticationToken("john", "pass");
 
-        String result = AuthenticatedUser.username(auth);
+        String result = AuthenticatedUser.email(auth);
 
         assertThat(result).isEqualTo("john");
     }
 
     @ParameterizedTest
     @MethodSource("usernameOidcCases")
-    void username_oidcClaims_returnExpectedUsername(Map<String, Object> claims, String expectedUsername) {
+    void email_oidcClaims_returnExpectedEmail(Map<String, Object> claims, String expectedEmail) {
         OidcUser oidcUser = buildOidcUser(claims);
         Authentication auth = new TestingAuthenticationToken(oidcUser, "n/a");
 
-        String result = AuthenticatedUser.username(auth);
+        String result = AuthenticatedUser.email(auth);
 
-        assertThat(result).isEqualTo(expectedUsername);
+        assertThat(result).isEqualTo(expectedEmail);
     }
 
     @Test
-    void userId_nullAuthentication_throws() {
-        assertThatThrownBy(() -> AuthenticatedUser.userId(null))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("Missing authentication");
-    }
-
-    @Test
-    void userId_nonOidcPrincipal_returnsAuthName() {
-        Authentication auth = new TestingAuthenticationToken("user-id-123", "pass");
-
-        String result = AuthenticatedUser.userId(auth);
-
-        assertThat(result).isEqualTo("user-id-123");
-    }
-
-    @Test
-    void userId_oidcPrincipal_returnsSub() {
-        OidcUser oidcUser = buildOidcUser(Map.of("sub", "oidc-sub-789"));
+    void email_oidcPrincipal_returnsEmail() {
+        OidcUser oidcUser = buildOidcUser(Map.of("sub", "oidc-sub-789", "email", "user@example.com"));
         Authentication auth = new TestingAuthenticationToken(oidcUser, "n/a");
 
-        String result = AuthenticatedUser.userId(auth);
+        String result = AuthenticatedUser.email(auth);
 
-        assertThat(result).isEqualTo("oidc-sub-789");
+        assertThat(result).isEqualTo("user@example.com");
     }
 
     @Test
-    void userId_jwtPrincipal_returnsSub() {
+    void email_jwtPrincipal_returnsEmail() {
         Authentication auth = new TestingAuthenticationToken(buildJwt(Map.of(
             "sub", "jwt-sub-789",
             "email", "jwt@example.com"
         )), "n/a");
 
-        String result = AuthenticatedUser.userId(auth);
+        String result = AuthenticatedUser.email(auth);
 
-        assertThat(result).isEqualTo("jwt-sub-789");
+        assertThat(result).isEqualTo("jwt@example.com");
     }
 
     @Test
@@ -169,17 +153,17 @@ class AuthenticatedUserTest {
 
     private static Stream<Arguments> usernameOidcCases() {
         return Stream.of(
-            Arguments.of(Map.of("sub", "sub-123", "preferred_username", "preferred.user"), "preferred.user"),
+            Arguments.of(Map.of("sub", "sub-123", "preferred_username", "preferred.user@example.com"), "preferred.user@example.com"),
             Arguments.of(Map.of("sub", "sub-123", "upn", "user@contoso.com"), "user@contoso.com"),
             Arguments.of(Map.of("sub", "sub-123", "email", "user@example.com"), "user@example.com"),
-            Arguments.of(Map.of("sub", "sub-456"), "sub-456")
+            Arguments.of(Map.of("sub", "sub-456", "unique_name", "unique@example.com"), "unique@example.com")
         );
     }
 
     private static Stream<Arguments> displayNameOidcCases() {
         return Stream.of(
             Arguments.of(Map.of("sub", "sub-123", "email", "display@example.com"), "display@example.com"),
-            Arguments.of(Map.of("sub", "sub-123", "preferred_username", "fallback.user"), "fallback.user")
+            Arguments.of(Map.of("sub", "sub-123", "preferred_username", "fallback.user@example.com"), "fallback.user@example.com")
         );
     }
 }

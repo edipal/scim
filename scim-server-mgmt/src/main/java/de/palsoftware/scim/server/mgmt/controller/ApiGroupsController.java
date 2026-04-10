@@ -45,7 +45,7 @@ public class ApiGroupsController {
                         @RequestParam(defaultValue = "20") int size,
                         @RequestParam(required = false) String q,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
                 int safeSize = Math.max(1, Math.min(size, 200));
                 int safePage = Math.max(1, page);
@@ -54,7 +54,7 @@ public class ApiGroupsController {
                                 UUID.fromString(workspaceId),
                                 q,
                                 pageRequest,
-                                username,
+                                actorEmail,
                                 admin);
                 return ResponseEntity.ok(PagedResponseMapper.pagedResponse(
                                 groups,
@@ -69,7 +69,7 @@ public class ApiGroupsController {
                         @RequestParam(required = false) String q,
                         @RequestParam(defaultValue = "50") int size,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
                 int safeSize = Math.max(1, Math.min(size, 200));
                 PageRequest pageRequest = PageRequest.of(0, safeSize, Sort.by(KEY_DISPLAY_NAME).ascending());
@@ -77,7 +77,7 @@ public class ApiGroupsController {
                                 UUID.fromString(workspaceId),
                                 q,
                                 pageRequest,
-                                username,
+                                actorEmail,
                                 admin);
                 return ResponseEntity.ok(groups.stream().map(GroupResponseMapper::groupLookupToMap).toList());
         }
@@ -85,9 +85,9 @@ public class ApiGroupsController {
         @DeleteMapping("/workspaces/{workspaceId}/groups")
         public ResponseEntity<Void> clearGroups(@PathVariable String workspaceId,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
-                scimAdminService.deleteAllGroups(UUID.fromString(workspaceId), username, admin);
+                scimAdminService.deleteAllGroups(UUID.fromString(workspaceId), actorEmail, admin);
                 return ResponseEntity.noContent().build();
         }
 
@@ -96,12 +96,12 @@ public class ApiGroupsController {
                         @PathVariable String workspaceId,
                         @RequestBody GroupUpsertRequest request,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
                 ScimGroup group = scimAdminService.createGroup(
                                 UUID.fromString(workspaceId),
                                 request,
-                                username,
+                                actorEmail,
                                 admin);
                 return ResponseEntity.status(201).body(GroupResponseMapper.groupToMap(group));
         }
@@ -112,13 +112,13 @@ public class ApiGroupsController {
                         @PathVariable String groupId,
                         @RequestBody GroupUpsertRequest request,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
                 ScimGroup group = scimAdminService.updateGroup(
                                 UUID.fromString(workspaceId),
                                 UUID.fromString(groupId),
                                 request,
-                                username,
+                                actorEmail,
                                 admin);
                 return ResponseEntity.ok(GroupResponseMapper.groupToMap(group));
         }
@@ -128,12 +128,12 @@ public class ApiGroupsController {
                         @PathVariable String workspaceId,
                         @PathVariable String groupId,
                         Authentication authentication) {
-                String username = AuthenticatedUser.username(authentication);
+                String actorEmail = AuthenticatedUser.email(authentication);
         boolean admin = AuthenticatedUser.isAdmin(authentication);
                 scimAdminService.deleteGroup(
                                 UUID.fromString(workspaceId),
                                 UUID.fromString(groupId),
-                                username,
+                                actorEmail,
                                 admin);
                 return ResponseEntity.noContent().build();
         }
