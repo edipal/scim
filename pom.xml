@@ -6,7 +6,7 @@
 
     <groupId>de.pal-software.scim</groupId>
     <artifactId>scim-playground</artifactId>
-    <version>1.0.8</version>
+    <version>1.0.9</version>
     <packaging>pom</packaging>
 
     <name>SCIM 2.0 Playground</name>
