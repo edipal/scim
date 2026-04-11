@@ -7,7 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 public class ActuatorApiKeyAuthFilter extends OncePerRequestFilter {
 
@@ -31,7 +32,9 @@ public class ActuatorApiKeyAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String providedApiKey = request.getHeader(API_KEY_HEADER);
-        if (!Objects.equals(actuatorApiKey, providedApiKey)) {
+        if (providedApiKey == null || !MessageDigest.isEqual(
+                actuatorApiKey.getBytes(StandardCharsets.UTF_8),
+                providedApiKey.getBytes(StandardCharsets.UTF_8))) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing or invalid actuator API key");
             return;
         }

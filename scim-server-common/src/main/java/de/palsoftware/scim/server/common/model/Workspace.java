@@ -5,14 +5,18 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "workspaces")
+@Table(
+    name = "workspaces",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_workspaces_created_by_username_name",
+        columnNames = {"created_by_username", "name"}))
 public class Workspace {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String name;
 
     private String description;

@@ -1,11 +1,14 @@
 CREATE TABLE workspaces (
     id UUID PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
     description VARCHAR(255),
     created_by_username VARCHAR(500),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
+
+ALTER TABLE workspaces
+    ADD CONSTRAINT uk_workspaces_created_by_username_name UNIQUE (created_by_username, name);
 
 CREATE INDEX idx_workspaces_created_by_username ON workspaces (created_by_username);
 CREATE INDEX idx_workspaces_updated_at ON workspaces (updated_at);
@@ -45,6 +48,14 @@ CREATE TABLE scim_users (
     enterprise_manager_value VARCHAR(255),
     enterprise_manager_ref VARCHAR(255),
     enterprise_manager_display VARCHAR(255),
+    emails JSON,
+    phone_numbers JSON,
+    addresses JSON,
+    entitlements JSON,
+    roles JSON,
+    ims JSON,
+    photos JSON,
+    x509_certificates JSON,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     last_modified TIMESTAMP WITH TIME ZONE NOT NULL,
     version BIGINT,
@@ -69,122 +80,6 @@ CREATE TABLE scim_groups (
 );
 
 CREATE INDEX idx_group_external_id ON scim_groups (workspace_id, external_id);
-
-CREATE TABLE scim_user_emails (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    workspace_id UUID NOT NULL,
-    attr_value VARCHAR(255),
-    type VARCHAR(255),
-    display VARCHAR(255),
-    primary_flag BOOLEAN NOT NULL,
-    CONSTRAINT fk_scim_user_emails_user FOREIGN KEY (user_id, workspace_id)
-        REFERENCES scim_users (id, workspace_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_user_emails_workspace_user_id ON scim_user_emails (workspace_id, user_id);
-
-CREATE TABLE scim_user_phone_numbers (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    workspace_id UUID NOT NULL,
-    attr_value VARCHAR(255),
-    type VARCHAR(255),
-    display VARCHAR(255),
-    primary_flag BOOLEAN NOT NULL,
-    CONSTRAINT fk_scim_user_phone_numbers_user FOREIGN KEY (user_id, workspace_id)
-        REFERENCES scim_users (id, workspace_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_user_phone_numbers_workspace_user_id ON scim_user_phone_numbers (workspace_id, user_id);
-
-CREATE TABLE scim_user_addresses (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    workspace_id UUID NOT NULL,
-    formatted VARCHAR(255),
-    street_address VARCHAR(255),
-    locality VARCHAR(255),
-    region VARCHAR(255),
-    postal_code VARCHAR(255),
-    country VARCHAR(255),
-    type VARCHAR(255),
-    primary_flag BOOLEAN NOT NULL,
-    CONSTRAINT fk_scim_user_addresses_user FOREIGN KEY (user_id, workspace_id)
-        REFERENCES scim_users (id, workspace_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_user_addresses_workspace_user_id ON scim_user_addresses (workspace_id, user_id);
-
-CREATE TABLE scim_user_entitlements (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    workspace_id UUID NOT NULL,
-    attr_value VARCHAR(255),
-    type VARCHAR(255),
-    display VARCHAR(255),
-    primary_flag BOOLEAN NOT NULL,
-    CONSTRAINT fk_scim_user_entitlements_user FOREIGN KEY (user_id, workspace_id)
-        REFERENCES scim_users (id, workspace_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_user_entitlements_workspace_user_id ON scim_user_entitlements (workspace_id, user_id);
-
-CREATE TABLE scim_user_roles (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    workspace_id UUID NOT NULL,
-    attr_value VARCHAR(255),
-    type VARCHAR(255),
-    display VARCHAR(255),
-    primary_flag BOOLEAN NOT NULL,
-    CONSTRAINT fk_scim_user_roles_user FOREIGN KEY (user_id, workspace_id)
-        REFERENCES scim_users (id, workspace_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_user_roles_workspace_user_id ON scim_user_roles (workspace_id, user_id);
-
-CREATE TABLE scim_user_ims (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    workspace_id UUID NOT NULL,
-    attr_value VARCHAR(255),
-    type VARCHAR(255),
-    display VARCHAR(255),
-    primary_flag BOOLEAN NOT NULL,
-    CONSTRAINT fk_scim_user_ims_user FOREIGN KEY (user_id, workspace_id)
-        REFERENCES scim_users (id, workspace_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_user_ims_workspace_user_id ON scim_user_ims (workspace_id, user_id);
-
-CREATE TABLE scim_user_photos (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    workspace_id UUID NOT NULL,
-    attr_value VARCHAR(255),
-    type VARCHAR(255),
-    display VARCHAR(255),
-    primary_flag BOOLEAN NOT NULL,
-    CONSTRAINT fk_scim_user_photos_user FOREIGN KEY (user_id, workspace_id)
-        REFERENCES scim_users (id, workspace_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_user_photos_workspace_user_id ON scim_user_photos (workspace_id, user_id);
-
-CREATE TABLE scim_user_x509_certificates (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    workspace_id UUID NOT NULL,
-    attr_value TEXT,
-    type VARCHAR(255),
-    display VARCHAR(255),
-    primary_flag BOOLEAN NOT NULL,
-    CONSTRAINT fk_scim_user_x509_certificates_user FOREIGN KEY (user_id, workspace_id)
-        REFERENCES scim_users (id, workspace_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_user_x509_certificates_workspace_user_id ON scim_user_x509_certificates (workspace_id, user_id);
 
 CREATE TABLE scim_group_memberships (
     id UUID PRIMARY KEY,

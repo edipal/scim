@@ -69,7 +69,11 @@ public class ScimPatchEngine {
         }
 
         for (Map<String, Object> op : operations) {
-            String opType = ((String) op.get("op")).toLowerCase();
+            Object rawOp = op.get("op");
+            if (!(rawOp instanceof String)) {
+                throw new ScimException(400, "invalidValue", "PATCH operation must include a string 'op' field");
+            }
+            String opType = ((String) rawOp).toLowerCase();
             String path = (String) op.get("path");
             Object value = op.get(KEY_VALUE);
 

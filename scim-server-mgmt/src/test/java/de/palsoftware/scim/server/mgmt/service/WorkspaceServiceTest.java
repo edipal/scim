@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -52,6 +53,7 @@ class WorkspaceServiceTest {
 
     @Test
     void createWorkspace_success() {
+        when(workspaceRepository.existsByNameAndCreatedByUsername("WS", "owner")).thenReturn(false);
         when(workspaceRepository.save(any(Workspace.class))).thenAnswer(i -> {
             Workspace ws = i.getArgument(0);
             ws.setId(workspaceId);
@@ -63,6 +65,17 @@ class WorkspaceServiceTest {
         assertThat(result.getName()).isEqualTo("WS");
         assertThat(result.getDescription()).isEqualTo("desc");
         verify(workspaceRepository).save(any(Workspace.class));
+    }
+
+    @Test
+    void createWorkspace_duplicateNameForOwner_throwsConflict() {
+        when(workspaceRepository.existsByNameAndCreatedByUsername("WS", "owner")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.createWorkspace("WS", "desc", "owner"))
+                .isInstanceOfSatisfying(ResponseStatusException.class, ex -> {
+                    assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(ex.getReason()).contains("Workspace with name 'WS' already exists");
+                });
     }
 
     // ─── listWorkspaces ─────────────────────────────────────────────────
@@ -201,14 +214,4 @@ class WorkspaceServiceTest {
                 .isInstanceOf(ResponseStatusException.class);
     }
 
-    // ─── getWorkspaceByName ─────────────────────────────────────────────
-
-    @Test
-    void getWorkspaceByName_found() {
-        when(workspaceRepository.findByName("test")).thenReturn(Optional.of(workspace));
-
-        Optional<Workspace> result = service.getWorkspaceByName("test");
-
-        assertThat(result).isPresent();
-    }
 }

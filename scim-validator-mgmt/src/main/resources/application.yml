@@ -4,8 +4,6 @@ spring:
   flyway:
     locations:
       - classpath:db/validator
-  profiles:
-    default: azure
   jpa:
     hibernate:
       ddl-auto: validate
@@ -14,16 +12,15 @@ spring:
     oauth2:
       client:
         registration:
-          azure:
-            client-id: ${AZURE_CLIENT_ID}
-            client-secret: ${AZURE_CLIENT_SECRET}
-            scope: ${AZURE_SCOPES}
+          auth0:
+            client-id: ${AUTH0_CLIENT_ID}
+            client-secret: ${AUTH0_CLIENT_SECRET}
+            scope: openid,profile,email
             authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-            client-name: Azure
+            redirect-uri: ${AUTH0_REDIRECT_URI}
         provider:
-          azure:
-            issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
+          auth0:
+            issuer-uri: ${AUTH0_ISSUER_URI}
 
 server:
   servlet:
@@ -49,33 +46,14 @@ management:
 
 logging:
   level:
-    "[com.scimplayground]": DEBUG
-    "[org.springframework.security]": DEBUG
-    "[org.springframework.security.web.csrf]": TRACE
-    "[org.springframework.security.web.FilterChainProxy]": DEBUG
+    "[de.palsoftware.scim]": DEBUG
+    "[org.springframework.security]": WARN
 
 app:
   security:
     actuator:
       api-key: ${ACTUATOR_API_KEY}
-    azure:
-      role-claim: ${APP_SECURITY_AZURE_ROLE_CLAIM:roles}
     oidc:
+      role-claim: ${APP_SECURITY_OIDC_ROLE_CLAIM:https://scimplayground.dev/roles}
       admin-role: ${APP_SECURITY_OIDC_ADMIN_ROLE:admin}
       user-role: ${APP_SECURITY_OIDC_USER_ROLE:user}
-
----
-spring:
-  config:
-    activate:
-      on-profile: cloudflare
-
-app:
-  security:
-    cloudflare:
-      role-claim: ${APP_SECURITY_CLOUDFLARE_ROLE_CLAIM:roles}
-      issuer-uri: ${CLOUDFLARE_ACCESS_ISSUER_URI}
-      audience: ${CLOUDFLARE_ACCESS_AUDIENCE}
-      jwk-set-uri: ${CLOUDFLARE_ACCESS_JWK_SET_URI:}
-      logout-url: ${CLOUDFLARE_ACCESS_LOGOUT_URL:/}
-      token-header: ${CLOUDFLARE_ACCESS_TOKEN_HEADER:Cf-Access-Jwt-Assertion}

@@ -14,13 +14,34 @@ final class ValidatorConfiguration {
         "SCIM_VALIDATOR_POSTGRES_IMAGE", "scim.testcontainers.postgresImage",
         "SCIM_VALIDATOR_API_IMAGE", "scim.testcontainers.apiImage"
     )
-    private static final Config CURRENT = load()
+    private static final Config DEFAULT_CONFIG = load()
+    private static final InheritableThreadLocal<Config> CURRENT_OVERRIDE = new InheritableThreadLocal<>()
 
     private ValidatorConfiguration() {
     }
 
     static Config current() {
-        return CURRENT
+        Config override = CURRENT_OVERRIDE.get()
+        return override != null ? override : DEFAULT_CONFIG
+    }
+
+    static void useRunOverrides(String baseUrl, String authToken) {
+        Config base = DEFAULT_CONFIG
+        CURRENT_OVERRIDE.set(new Config(
+            hasText(baseUrl) ? baseUrl.trim() : base.baseUrl,
+            base.apiUrl,
+            base.workspaceId,
+            hasText(authToken) ? authToken.trim() : base.authToken,
+            base.testcontainersEnabled,
+            base.postgresImage,
+            base.apiImage,
+            base.postgres,
+            base.api
+        ))
+    }
+
+    static void clearRunOverrides() {
+        CURRENT_OVERRIDE.remove()
     }
 
     private static Config load() {
@@ -116,6 +137,10 @@ final class ValidatorConfiguration {
             return null
         }
         return System.getProperty(propertyName)
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank()
     }
 
     static final class Config {

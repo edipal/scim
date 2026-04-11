@@ -10,17 +10,13 @@ public final class TokenSecurityUtil {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    // We enforce a minimum of 64 bytes (512 bits) for strong cryptographic tokens.
-    private static final int MIN_TOKEN_BYTES = 64;
+    private static final int WORKSPACE_TOKEN_BYTES = 64;
 
     private TokenSecurityUtil() {
     }
 
-    public static String generateUrlSafeToken(int randomBytesLength) {
-        if (randomBytesLength < MIN_TOKEN_BYTES) {
-            throw new IllegalArgumentException("Token length must be at least " + MIN_TOKEN_BYTES + " bytes for security reasons.");
-        }
-        byte[] randomBytes = new byte[randomBytesLength];
+    public static String generateSecureToken() {
+        byte[] randomBytes = new byte[WORKSPACE_TOKEN_BYTES];
         SECURE_RANDOM.nextBytes(randomBytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }

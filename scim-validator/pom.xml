@@ -147,6 +147,7 @@
                 <version>3.0.2</version>
                 <executions>
                     <execution>
+                        <?m2e ignore?>
                         <phase>compile</phase>
                         <goals>
                             <goal>compileTests</goal>
@@ -192,6 +193,7 @@
                 <version>3.4.2</version>
                 <executions>
                     <execution>
+                        <?m2e ignore?>
                         <phase>test-compile</phase>
                         <goals>
                             <goal>test-jar</goal>

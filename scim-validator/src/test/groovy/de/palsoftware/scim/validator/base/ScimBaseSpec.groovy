@@ -20,13 +20,24 @@ import spock.lang.Specification
  */
 abstract class ScimBaseSpec extends Specification {
 
-    // ─── Configuration ───────────────────────────────────────────────────
-    static String SCIM_API_URL
+    private static final InheritableThreadLocal<RuntimeState> STATE = new InheritableThreadLocal<>()
 
-    @Shared static String BASE_URL
-    @Shared static String BASE_PATH
-    @Shared static String AUTH_TOKEN
-    @Shared static String workspaceId
+    // ─── Configuration ───────────────────────────────────────────────────
+    static String getBASE_URL() {
+        return state().baseUrl
+    }
+
+    static String getBASE_PATH() {
+        return state().basePath
+    }
+
+    static String getAUTH_TOKEN() {
+        return state().authToken
+    }
+
+    static String getWorkspaceId() {
+        return state().workspaceId
+    }
 
     static {
         refreshConfiguration()
@@ -42,13 +53,33 @@ abstract class ScimBaseSpec extends Specification {
     static final String SPC_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"
 
     // ─── Service Provider Config (loaded once) ───────────────────────────
-    @Shared static boolean spcLoaded = false
-    @Shared static boolean patchSupported = false
-    @Shared static boolean bulkSupported = false
-    @Shared static int bulkMaxOperations = 0
-    @Shared static int filterMaxResults = 0
-    @Shared static boolean etagSupported = false
-    @Shared static boolean sortSupported = false
+    static boolean isSpcLoaded() {
+        return state().spcLoaded
+    }
+
+    static boolean isPatchSupported() {
+        return state().patchSupported
+    }
+
+    static boolean isBulkSupported() {
+        return state().bulkSupported
+    }
+
+    static int getBulkMaxOperations() {
+        return state().bulkMaxOperations
+    }
+
+    static int getFilterMaxResults() {
+        return state().filterMaxResults
+    }
+
+    static boolean isEtagSupported() {
+        return state().etagSupported
+    }
+
+    static boolean isSortSupported() {
+        return state().sortSupported
+    }
 
 
     // ─── Dynamic data generator ──────────────────────────────────────────
@@ -64,7 +95,12 @@ abstract class ScimBaseSpec extends Specification {
         loadServiceProviderConfig()
     }
 
+    static void resetRunState() {
+        STATE.remove()
+    }
+
     protected static void refreshConfiguration() {
+        RuntimeState currentState = state()
         ValidatorConfiguration.Config configuration = ValidatorConfiguration.current()
         String explicitBaseUrl = configuration.baseUrl
         String configuredWorkspace = configuration.workspaceId
@@ -75,11 +111,11 @@ abstract class ScimBaseSpec extends Specification {
         if (ValidatorTargetConfiguration.shouldBootstrap(configuration)) {
             if (testcontainersEnabled) {
                 ScimValidatorEnvironment.ScimRuntimeConfiguration runtimeConfiguration = ScimValidatorEnvironment.ensureStarted()
-                workspaceId = runtimeConfiguration.workspaceId
-                AUTH_TOKEN = runtimeConfiguration.authToken
-                SCIM_API_URL = runtimeConfiguration.apiUrl
-                BASE_PATH = "/ws/${workspaceId}/scim/v2"
-                BASE_URL = "${SCIM_API_URL}${BASE_PATH}"
+                currentState.workspaceId = runtimeConfiguration.workspaceId
+                currentState.authToken = runtimeConfiguration.authToken
+                currentState.scimApiUrl = runtimeConfiguration.apiUrl
+                currentState.basePath = "/ws/${currentState.workspaceId}/scim/v2"
+                currentState.baseUrl = "${currentState.scimApiUrl}${currentState.basePath}"
                 return
             }
 
@@ -89,25 +125,25 @@ abstract class ScimBaseSpec extends Specification {
             )
         }
 
-        workspaceId = configuredWorkspace
-        AUTH_TOKEN = configuredAuthToken
+        currentState.workspaceId = configuredWorkspace
+        currentState.authToken = configuredAuthToken
 
-        if (AUTH_TOKEN == null || AUTH_TOKEN.isBlank()) {
+        if (currentState.authToken == null || currentState.authToken.isBlank()) {
             throw new IllegalStateException("SCIM_AUTH_TOKEN or -Dscim.authToken must be configured for validator runs")
         }
 
         if (explicitBaseUrl != null && !explicitBaseUrl.isBlank()) {
             URI uri = new URI(explicitBaseUrl.trim())
-            SCIM_API_URL = "${uri.scheme}://${uri.authority}"
-            BASE_PATH = uri.path != null && !uri.path.isBlank() ? uri.path : "/"
-            BASE_URL = explicitBaseUrl.trim()
+            currentState.scimApiUrl = "${uri.scheme}://${uri.authority}"
+            currentState.basePath = uri.path != null && !uri.path.isBlank() ? uri.path : "/"
+            currentState.baseUrl = explicitBaseUrl.trim()
         } else {
-            if (workspaceId == null || workspaceId.isBlank()) {
+            if (currentState.workspaceId == null || currentState.workspaceId.isBlank()) {
                 throw new IllegalStateException("SCIM_WORKSPACE_ID or -Dscim.workspaceId must be configured when SCIM_BASE_URL is not set")
             }
-            SCIM_API_URL = explicitApiUrl
-            BASE_PATH = "/ws/${workspaceId}/scim/v2"
-            BASE_URL = "${SCIM_API_URL}${BASE_PATH}"
+            currentState.scimApiUrl = explicitApiUrl
+            currentState.basePath = "/ws/${currentState.workspaceId}/scim/v2"
+            currentState.baseUrl = "${currentState.scimApiUrl}${currentState.basePath}"
         }
     }
 
@@ -116,10 +152,7 @@ abstract class ScimBaseSpec extends Specification {
     }
 
     protected static void configureRestAssured() {
-        RestAssured.baseURI = SCIM_API_URL
-        RestAssured.basePath = BASE_PATH
-        // Avoid stacking duplicate capture filters across repeated configure calls.
-        RestAssured.replaceFiltersWith(new ScimExchangeCaptureFilter())
+        state()
     }
 
     /**
@@ -127,20 +160,21 @@ abstract class ScimBaseSpec extends Specification {
      */
     protected void loadServiceProviderConfig() {
         configureRestAssured()
-        if (spcLoaded) return
+        RuntimeState currentState = state()
+        if (currentState.spcLoaded) return
         try {
             Response response = scimRequest()
                 .get("/ServiceProviderConfig")
 
             if (response.statusCode() == 200) {
                 def json = response.jsonPath()
-                patchSupported = asBoolean(json.get("patch.supported"), false)
-                bulkSupported = asBoolean(json.get("bulk.supported"), false)
-                bulkMaxOperations = asInt(json.get("bulk.maxOperations"), 0)
-                filterMaxResults = asInt(json.get("filter.maxResults"), 0)
-                etagSupported = asBoolean(json.get("etag.supported"), false)
-                sortSupported = asBoolean(json.get("sort.supported"), false)
-                spcLoaded = true
+                currentState.patchSupported = asBoolean(json.get("patch.supported"), false)
+                currentState.bulkSupported = asBoolean(json.get("bulk.supported"), false)
+                currentState.bulkMaxOperations = asInt(json.get("bulk.maxOperations"), 0)
+                currentState.filterMaxResults = asInt(json.get("filter.maxResults"), 0)
+                currentState.etagSupported = asBoolean(json.get("etag.supported"), false)
+                currentState.sortSupported = asBoolean(json.get("sort.supported"), false)
+                currentState.spcLoaded = true
             }
         } catch (Exception e) {
             System.err.println("WARNING: Could not load ServiceProviderConfig: ${e.message}")
@@ -176,8 +210,12 @@ abstract class ScimBaseSpec extends Specification {
      */
     protected RequestSpecification scimRequest() {
         configureRestAssured()
+        RuntimeState currentState = state()
         def req = RestAssured.given()
-            .header("Authorization", "Bearer ${AUTH_TOKEN}")
+            .baseUri(currentState.scimApiUrl)
+            .basePath(currentState.basePath)
+            .filter(new ScimExchangeCaptureFilter())
+            .header("Authorization", "Bearer ${currentState.authToken}")
             .contentType(SCIM_CONTENT_TYPE)
             .accept(SCIM_CONTENT_TYPE)
 
@@ -194,10 +232,52 @@ abstract class ScimBaseSpec extends Specification {
      */
     protected RequestSpecification scimRequestQuiet() {
         configureRestAssured()
+        RuntimeState currentState = state()
         return RestAssured.given()
-            .header("Authorization", "Bearer ${AUTH_TOKEN}")
+            .baseUri(currentState.scimApiUrl)
+            .basePath(currentState.basePath)
+            .filter(new ScimExchangeCaptureFilter())
+            .header("Authorization", "Bearer ${currentState.authToken}")
             .contentType(SCIM_CONTENT_TYPE)
             .accept(SCIM_CONTENT_TYPE)
+    }
+
+    /**
+     * Build a REST Assured request without an Authorization header.
+     */
+    protected RequestSpecification scimRequestAnonymous() {
+        configureRestAssured()
+        RuntimeState currentState = state()
+        return RestAssured.given()
+            .baseUri(currentState.scimApiUrl)
+            .basePath(currentState.basePath)
+            .filter(new ScimExchangeCaptureFilter())
+            .contentType(SCIM_CONTENT_TYPE)
+            .accept(SCIM_CONTENT_TYPE)
+    }
+
+    private static RuntimeState state() {
+        RuntimeState currentState = STATE.get()
+        if (currentState == null) {
+            currentState = new RuntimeState()
+            STATE.set(currentState)
+        }
+        return currentState
+    }
+
+    private static final class RuntimeState {
+        String scimApiUrl
+        String baseUrl
+        String basePath
+        String authToken
+        String workspaceId
+        boolean spcLoaded
+        boolean patchSupported
+        boolean bulkSupported
+        int bulkMaxOperations
+        int filterMaxResults
+        boolean etagSupported
+        boolean sortSupported
     }
 
     /**

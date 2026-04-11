@@ -3,6 +3,7 @@ package de.palsoftware.scim.server.common.repository;
 import de.palsoftware.scim.server.common.model.Workspace;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -11,6 +12,7 @@ import java.util.Optional;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @PostgresDataJpaTest
 class WorkspaceRepositoryTest extends PostgresRepositoryTestSupport {
@@ -25,14 +27,34 @@ class WorkspaceRepositoryTest extends PostgresRepositoryTestSupport {
     private jakarta.persistence.EntityManager entityManager;
 
     @Test
-    void findByNameReturnsCorrectWorkspace() {
+    void sameNameDifferentOwnersIsAllowed() {
         Workspace w = new Workspace();
         w.setName(TEST_NAME);
+        w.setCreatedByUsername("owner-one@example.com");
         repository.saveAndFlush(w);
 
-        Optional<Workspace> result = repository.findByName(TEST_NAME);
-        assertThat(result).isPresent();
-        assertThat(result.get().getName()).isEqualTo(TEST_NAME);
+        Workspace duplicateName = new Workspace();
+        duplicateName.setName(TEST_NAME);
+        duplicateName.setCreatedByUsername("owner-two@example.com");
+
+        Workspace saved = repository.saveAndFlush(duplicateName);
+
+        assertThat(saved.getId()).isNotNull();
+    }
+
+    @Test
+    void sameNameSameOwnerIsRejected() {
+        Workspace first = new Workspace();
+        first.setName(TEST_NAME);
+        first.setCreatedByUsername(USERNAME);
+        repository.saveAndFlush(first);
+
+        Workspace duplicate = new Workspace();
+        duplicate.setName(TEST_NAME);
+        duplicate.setCreatedByUsername(USERNAME);
+
+        assertThatThrownBy(() -> repository.saveAndFlush(duplicate))
+            .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
@@ -114,19 +136,23 @@ class WorkspaceRepositoryTest extends PostgresRepositoryTestSupport {
 
         Instant cutoff = Instant.now().minus(5, ChronoUnit.DAYS);
         int deleted = repository.deleteByUpdatedAtBefore(cutoff);
+        entityManager.flush();
+        entityManager.clear();
         
         assertThat(deleted).isEqualTo(1);
-        assertThat(repository.existsByName("Old")).isFalse();
-        assertThat(repository.existsByName("New")).isTrue();
+        assertThat(repository.findById(w1.getId())).isEmpty();
+        assertThat(repository.findById(w2.getId())).isPresent();
     }
 
     @Test
-    void existsByNameReturnsTrueIfPresent() {
+    void existsByNameAndCreatedByUsernameReturnsTrueIfPresent() {
         Workspace w = new Workspace();
         w.setName("ExistsTest");
+        w.setCreatedByUsername(USERNAME);
         repository.saveAndFlush(w);
         
-        assertThat(repository.existsByName("ExistsTest")).isTrue();
-        assertThat(repository.existsByName("NotExists")).isFalse();
+        assertThat(repository.existsByNameAndCreatedByUsername("ExistsTest", USERNAME)).isTrue();
+        assertThat(repository.existsByNameAndCreatedByUsername("ExistsTest", "other-user")).isFalse();
+        assertThat(repository.existsByNameAndCreatedByUsername("NotExists", USERNAME)).isFalse();
     }
 }
