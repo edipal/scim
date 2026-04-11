@@ -21,7 +21,7 @@ spring:
 
 logging:
   level:
-    "[com.scimplayground]": DEBUG
+    "[de.palsoftware.scim]": DEBUG
     "[org.springframework.security]": WARN
 
 management:

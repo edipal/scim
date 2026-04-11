@@ -1,7 +1,9 @@
 package de.palsoftware.scim.validator.mgmt.service;
 
+import de.palsoftware.scim.validator.base.ScimBaseSpec;
 import de.palsoftware.scim.validator.base.ScimHttpExchange;
 import de.palsoftware.scim.validator.base.ScimRunContext;
+import de.palsoftware.scim.validator.base.ValidatorConfiguration;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationHttpExchangeView;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationRunForm;
 import de.palsoftware.scim.validator.mgmt.dto.ValidationRunView;
@@ -34,7 +36,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +48,6 @@ import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 public class ValidationRunService {
 
     private static final Logger log = LoggerFactory.getLogger(ValidationRunService.class);
-
-    private static final String SCIM_BASE_URL_PROPERTY = "scim.baseUrl";
-    private static final String SCIM_AUTH_TOKEN_PROPERTY = "scim.authToken";
 
     private static final List<String> SPEC_CLASS_NAMES = List.of(
             "de.palsoftware.scim.validator.specs.A1_ServiceDiscoverySpec",
@@ -94,14 +92,10 @@ public class ValidationRunService {
         run.setFailedTests(0);
         run = runRepository.save(run);
 
-        Map<String, String> previousProperties = captureExistingProperties();
-
         try {
-            System.setProperty(SCIM_BASE_URL_PROPERTY, form.baseUrl().trim());
-            System.setProperty(SCIM_AUTH_TOKEN_PROPERTY, form.authToken().trim());
-
-            ScimRunContext.reset();
-            ScimRunContext.setCaptureEnabled(true);
+            ValidatorConfiguration.useRunOverrides(form.baseUrl(), form.authToken());
+            ScimBaseSpec.resetRunState();
+            ScimRunContext.beginRun(run.getId().toString());
 
             ValidationExecutionListener listener = new ValidationExecutionListener(run, testResultRepository,
                     exchangeRepository);
@@ -117,9 +111,9 @@ public class ValidationRunService {
             log.error("Error executing validation run", ex);
             run.setStatus("ERROR");
         } finally {
-            ScimRunContext.setCaptureEnabled(false);
-            ScimRunContext.reset();
-            restoreProperties(previousProperties);
+            ScimRunContext.endRun();
+            ScimBaseSpec.resetRunState();
+            ValidatorConfiguration.clearRunOverrides();
         }
 
         return runRepository.save(run);
@@ -184,26 +178,6 @@ public class ValidationRunService {
         }
 
         return builder.build();
-    }
-
-    private static Map<String, String> captureExistingProperties() {
-        Map<String, String> values = new HashMap<>();
-        values.put(SCIM_BASE_URL_PROPERTY, System.getProperty(SCIM_BASE_URL_PROPERTY));
-        values.put(SCIM_AUTH_TOKEN_PROPERTY, System.getProperty(SCIM_AUTH_TOKEN_PROPERTY));
-        return values;
-    }
-
-    private static void restoreProperties(Map<String, String> previousProperties) {
-        restoreProperty(SCIM_BASE_URL_PROPERTY, previousProperties.get(SCIM_BASE_URL_PROPERTY));
-        restoreProperty(SCIM_AUTH_TOKEN_PROPERTY, previousProperties.get(SCIM_AUTH_TOKEN_PROPERTY));
-    }
-
-    private static void restoreProperty(String key, String value) {
-        if (value == null) {
-            System.clearProperty(key);
-        } else {
-            System.setProperty(key, value);
-        }
     }
 
     private static class ValidationExecutionListener implements TestExecutionListener {

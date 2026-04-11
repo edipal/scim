@@ -34,6 +34,11 @@ public class WorkspaceService {
 
     @Transactional
     public Workspace createWorkspace(String name, String description, String createdByUsername) {
+        if (workspaceRepository.existsByNameAndCreatedByUsername(name, createdByUsername)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Workspace with name '" + name + "' already exists");
+        }
+
         Workspace ws = new Workspace();
         ws.setName(name);
         ws.setDescription(description);
@@ -53,10 +58,6 @@ public class WorkspaceService {
             return workspaceRepository.findById(id);
         }
         return workspaceRepository.findByIdAndCreatedByUsername(id, actorUsername);
-    }
-
-    public Optional<Workspace> getWorkspaceByName(String name) {
-        return workspaceRepository.findByName(name);
     }
 
     public Workspace requireWorkspaceAccess(UUID id, String actorUsername, boolean admin) {
@@ -117,6 +118,6 @@ public class WorkspaceService {
     }
 
     private String generateSecureToken() {
-        return TokenSecurityUtil.generateUrlSafeToken(64);
+        return TokenSecurityUtil.generateSecureToken();
     }
 }

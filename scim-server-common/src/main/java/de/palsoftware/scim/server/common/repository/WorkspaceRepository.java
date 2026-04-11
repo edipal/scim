@@ -12,8 +12,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
-    Optional<Workspace> findByName(String name);
-
     Optional<Workspace> findByIdAndCreatedByUsername(UUID id, String createdByUsername);
 
     List<Workspace> findByCreatedByUsernameOrderByCreatedAtDesc(String createdByUsername);
@@ -39,5 +37,5 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, UUID> {
     """)
     int deleteByUpdatedAtBefore(@Param("cutoff") Instant cutoff);
 
-    boolean existsByName(String name);
+    boolean existsByNameAndCreatedByUsername(String name, String createdByUsername);
 }

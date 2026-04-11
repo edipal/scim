@@ -85,7 +85,7 @@ public class ScimSchemaDefinitions {
                                 PAGINATION_INDEX, true,
                                 "defaultPaginationMode", PAGINATION_INDEX,
                                 "defaultPageSize", 10,
-                                "maxPageSize", 100,
+                                "maxPageSize", 200,
                                 "cursorTimeout", 3600));
                 config.put("changePassword", Map.of(ATTR_SUPPORTED, false));
                 config.put("sort", Map.of(ATTR_SUPPORTED, true));

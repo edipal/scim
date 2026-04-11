@@ -36,10 +36,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
     "spring.jpa.open-in-view=false",
     "ACTUATOR_API_KEY=test-key",
-    "AZURE_CLIENT_ID=test-client",
-    "AZURE_CLIENT_SECRET=test-secret",
-    "AZURE_SCOPES=openid",
-    "AZURE_TENANT_ID=common"
+    "AUTH0_CLIENT_ID=test-client",
+    "AUTH0_CLIENT_SECRET=test-secret",
+    "AUTH0_REDIRECT_URI=https://ui.scimsandbox.net/login/oauth2/code/auth0",
+    "AUTH0_ISSUER_URI=https://test.auth0.com/"
 })
 class LazyLoadingIntegrationTest extends PostgresIntegrationTestSupport {
 

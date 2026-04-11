@@ -30,14 +30,14 @@ Compatibility mode is route-based and extensible:
 	- converts selected `primary` booleans to string values
 	- adds flattened enterprise manager alias key
 
-Management security is profile-based:
+Management security uses Auth0 OIDC:
 
-- Default profile is `azure`, using interactive Azure OIDC login.
-- `cloudflare` profile switches the management apps to JWT resource-server mode.
-- Cloudflare mode reads the token from `Cf-Access-Jwt-Assertion` by default and maps roles from a configurable claim.
+- Both management modules use standard Spring Security OAuth2 Client with Auth0 as the OIDC provider.
+- Each module has its own `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, and `AUTH0_ISSUER_URI`.
+- Role claims are read from a configurable OIDC claim (`APP_SECURITY_OIDC_ROLE_CLAIM`, default `https://scimplayground.dev/roles`).
 - Management user persistence is email-based in both management modules; resolved emails are normalized and stored as the primary key.
-- Management access now expects a usable email claim from OIDC/JWT principals.
-- Shared helpers live in `scim-server-common` (`AzureOidcSecuritySupport`, `CloudflareJwtSecuritySupport`, `MgmtSecuritySupport`).
+- Management access expects a usable email claim from OIDC principals.
+- Shared helpers live in `scim-server-common` (`Auth0OidcSecuritySupport`, `MgmtSecuritySupport`).
 
 Kubernetes support is split into two trees:
 
@@ -64,12 +64,14 @@ mvn clean install -Dskip.validator.tests=true
 # API local mode (requires datasource env vars and ACTUATOR_API_KEY)
 cd scim-server-api && mvn spring-boot:run
 
-# Mgmt UI/API local mode (defaults to Azure profile; requires datasource env vars,
-# ACTUATOR_API_KEY, and Azure OIDC env vars unless you explicitly set SPRING_PROFILES_ACTIVE=cloudflare)
+# Mgmt UI/API local mode (requires datasource env vars, ACTUATOR_API_KEY, and
+# Auth0 OIDC env vars: AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_ISSUER_URI,
+# AUTH0_REDIRECT_URI — or set SPRING_PROFILES_ACTIVE=cloudflare for Cloudflare JWT mode)
 cd scim-server-mgmt && mvn spring-boot:run
 
-# Validator management local mode (defaults to Azure profile; requires datasource env vars,
-# ACTUATOR_API_KEY, and Azure OIDC env vars unless you explicitly set SPRING_PROFILES_ACTIVE=cloudflare)
+# Validator management local mode (requires datasource env vars, ACTUATOR_API_KEY, and
+# Auth0 OIDC env vars: AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_ISSUER_URI,
+# AUTH0_REDIRECT_URI — or set SPRING_PROFILES_ACTIVE=cloudflare for Cloudflare JWT mode)
 cd scim-validator-mgmt && mvn spring-boot:run
 
 # Docker stack
@@ -186,7 +188,7 @@ If you modify SCIM behavior, review impact across these areas:
 
 If you modify management authentication or deployment behavior, also review:
 
-1. Both management modules' `AzureSecurityConfig` and `CloudflareSecurityConfig`
+1. Both management modules' `SecurityConfig`
 2. Shared helpers in `scim-server-common/src/main/java/.../security`
 3. `docker-compose.yml` and `docker/env/*.env`
 4. `k8s/app/**` and `k8s/cluster/**`

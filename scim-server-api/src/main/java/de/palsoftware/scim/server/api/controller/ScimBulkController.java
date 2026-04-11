@@ -117,7 +117,14 @@ public class ScimBulkController extends ScimBaseController {
 
     private static boolean isErrorResult(Map<String, Object> result) {
         String status = (String) result.get(KEY_STATUS);
-        return status != null && Integer.parseInt(status) >= 400;
+        if (status == null) {
+            return false;
+        }
+        try {
+            return Integer.parseInt(status) >= 400;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private static boolean shouldStopProcessing(int failOnErrors, int errorCount) {

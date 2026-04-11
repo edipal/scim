@@ -63,9 +63,9 @@ playground service provider:
 | --- | --- | --- | --- |
 | `scim-server-common` | Shared JPA entities, repositories, and common security support | n/a | Imported by API and management modules |
 | `scim-server-api` | SCIM 2.0 provider API | `8080` | Stateless bearer-token auth per workspace |
-| `scim-server-mgmt` | Thymeleaf management UI + management REST API | `8081` | Azure OIDC locally, Cloudflare Access JWT supported through the `cloudflare` profile |
+| `scim-server-mgmt` | Thymeleaf management UI + management REST API | `8081` | Auth0 OIDC (interactive login); Cloudflare Access JWT in the `cloudflare` profile |
 | `scim-validator` | Groovy/Spock compliance suite | n/a | Builds a reusable test JAR consumed by validator-mgmt |
-| `scim-validator-mgmt` | Validator execution UI + persistence | `8082` | Azure OIDC locally, Cloudflare Access JWT supported through the `cloudflare` profile |
+| `scim-validator-mgmt` | Validator execution UI + persistence | `8082` | Auth0 OIDC (interactive login); Cloudflare Access JWT in the `cloudflare` profile |
 
 ### Request model
 
@@ -182,15 +182,16 @@ The run currently executes these spec groups:
 
 The management applications support two deployment-facing authentication modes:
 
-- `azure` profile, which is the default for manual local runs and uses
-  interactive Azure OIDC login
+- Default mode uses Auth0 OIDC (Spring Security OAuth2 Client) for interactive
+  login. Required env vars: `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`,
+  `AUTH0_ISSUER_URI`, and `AUTH0_REDIRECT_URI`.
 - `cloudflare` profile, which switches the management apps to JWT resource
   server mode and validates the Cloudflare Access token from the configured
   request header, `Cf-Access-Jwt-Assertion` by default
 
 The Docker Compose env files and the Kubernetes manifests use the `cloudflare`
-profile for the management applications. Manual local runs default to `azure`
-unless you explicitly set `SPRING_PROFILES_ACTIVE=cloudflare`.
+profile for the management applications. Manual local runs use the default
+(Auth0 OIDC) mode unless you explicitly set `SPRING_PROFILES_ACTIVE=cloudflare`.
 
 ## Data Model Notes
 
@@ -250,8 +251,7 @@ Some repository-specific implementation details matter if you extend the code:
 - Maven 3.9+
 - Docker Desktop or compatible Docker Engine for the composed stack
 - PostgreSQL only if you want to run modules manually without Docker
-- Microsoft Entra ID application registration if you want to use the management
-  UIs with Azure OIDC
+- Auth0 application registration if you want to use the management UIs
 - `kubectl`, `kustomize`, `ksops`, `sops`, and an age private key if you want
   to apply the Kubernetes manifests directly from this repository
 - CloudNativePG installed in the target cluster if you want to use the provided
@@ -402,14 +402,14 @@ export SPRING_DATASOURCE_PASSWORD=postgres
 export ACTUATOR_API_KEY=dev-actuator-key
 ```
 
-Azure OIDC profile for management apps (default):
+Auth0 OIDC for management apps (default):
 
 ```bash
-export AZURE_CLIENT_ID=<your-client-id>
-export AZURE_CLIENT_SECRET=<your-client-secret>
-export AZURE_TENANT_ID=<your-tenant-id>
-export AZURE_SCOPES="openid,email,api://<app-id>/usage"
-export APP_SECURITY_AZURE_ROLE_CLAIM=roles
+export AUTH0_CLIENT_ID=<your-auth0-app-client-id>
+export AUTH0_CLIENT_SECRET=<your-auth0-app-client-secret>
+export AUTH0_ISSUER_URI=https://<your-auth0-domain>/
+export AUTH0_REDIRECT_URI=http://localhost:<port>/login/oauth2/code/auth0
+export APP_SECURITY_OIDC_ROLE_CLAIM=<your-namespace>/roles
 export APP_SECURITY_OIDC_ADMIN_ROLE=admin
 export APP_SECURITY_OIDC_USER_ROLE=user
 
@@ -450,8 +450,7 @@ Use Docker Compose, Kubernetes, or run the modules manually.
 
 ### 2. Access the management UI
 
-For the `azure` profile, open `http://localhost:8081` and sign in through the
-configured Azure OIDC provider.
+Open `http://localhost:8081` and sign in through Auth0 (default mode).
 
 For the `cloudflare` profile, place the application behind Cloudflare Access and
 let the proxy provide the access JWT header expected by the application.
@@ -618,8 +617,8 @@ Project-specific conventions that matter when contributing:
 - static mapper utilities are heavily used for SCIM transformations
 - DTO layers in management applications make use of Java records
 - transactional boundaries in services and selected controllers are deliberate
-- management security is profile-driven: Azure OIDC by default, Cloudflare JWT
-  resource-server mode when the `cloudflare` profile is active
+- management security uses Auth0 OIDC by default; the `cloudflare` profile
+  switches to Cloudflare JWT resource-server mode
 - shared security helpers for the management apps live in `scim-server-common`
 
 If you add or change a SCIM attribute, align all of the following:

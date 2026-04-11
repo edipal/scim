@@ -53,7 +53,7 @@ public class BearerTokenAuthFilter extends OncePerRequestFilter {
         try {
             workspaceId = UUID.fromString(workspaceIdStr);
         } catch (IllegalArgumentException e) {
-            sendScimError(response, 404, null, "Invalid workspace ID: " + workspaceIdStr);
+            sendScimError(response, 404, null, "Invalid workspace ID");
             return;
         }
 

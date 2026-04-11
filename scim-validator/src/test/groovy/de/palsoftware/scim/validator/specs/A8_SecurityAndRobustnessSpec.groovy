@@ -1,7 +1,6 @@
 package de.palsoftware.scim.validator.specs
 
 import de.palsoftware.scim.validator.base.ScimBaseSpec
-import io.restassured.RestAssured
 import io.restassured.response.Response
 import groovy.json.JsonOutput
 import spock.lang.Shared
@@ -31,9 +30,7 @@ class A8_SecurityAndRobustnessSpec extends ScimBaseSpec {
     def "SEC_01: Request without Authorization header returns 401"() {
         // RFC 7644 §2 — Authentication and Authorization
         when:
-        Response response = RestAssured.given()
-            .contentType(SCIM_CONTENT_TYPE)
-            .accept(SCIM_CONTENT_TYPE)
+        Response response = scimRequestAnonymous()
             .get("/Users")
 
         then:
@@ -48,10 +45,8 @@ class A8_SecurityAndRobustnessSpec extends ScimBaseSpec {
 
     def "SEC_02: Request with invalid Bearer token returns 401"() {
         when:
-        Response response = RestAssured.given()
+        Response response = scimRequestAnonymous()
             .header("Authorization", "Bearer INVALID_TOKEN_12345")
-            .contentType(SCIM_CONTENT_TYPE)
-            .accept(SCIM_CONTENT_TYPE)
             .get("/Users")
 
         then:

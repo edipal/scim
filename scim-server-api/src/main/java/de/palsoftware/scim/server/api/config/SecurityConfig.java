@@ -38,7 +38,7 @@ public class SecurityConfig {
     private RequestMatcher scimPaths() {
         return request -> {
             String uri = request.getRequestURI();
-            return uri != null && uri.contains("/scim/v2");
+            return uri != null && uri.startsWith("/ws/") && uri.contains("/scim/v2");
         };
     }
 

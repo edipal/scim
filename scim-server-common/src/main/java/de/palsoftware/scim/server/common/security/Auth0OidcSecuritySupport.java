@@ -12,9 +12,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public final class AzureOidcSecuritySupport {
+public final class Auth0OidcSecuritySupport {
 
-    private AzureOidcSecuritySupport() {
+    private Auth0OidcSecuritySupport() {
     }
 
     public static OidcUserService createOidcUserService(String roleClaim,
